@@ -1,0 +1,30 @@
+services:
+  study-buddy:
+    # Published image (auto-built by GitHub Actions on push to main).
+    # On the NAS: `docker compose pull && docker compose up -d`.
+    # For a local build instead, run: `docker compose up --build`.
+    image: ghcr.io/cipgysmo/study-buddy:latest
+    build: .
+    container_name: study-buddy
+    ports:
+      # Exposed on all interfaces so family devices on the LAN can reach it.
+      # Security is provided by the optional APP_PASSWORD gate.
+      - "3000:3000"
+    environment:
+      LLM_BASE_URL: "http://192.168.1.136:8080/v1/"
+      LLM_MODEL: "local-ai"
+      DATA_DIR: "/app/data"
+      PORT: "3000"
+      # Optional LAN password gate. Set a value to require it on every visit.
+      # APP_PASSWORD: "change-me"
+    volumes:
+      # On TrueNAS Scale, point this at a dataset (owned by uid 1000) instead of ./data
+      - ./data:/app/data
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # Keep the app from starving the NAS; it is lightweight (SQLite + Node).
+    mem_limit: 1g
+    cpus: "2.0"

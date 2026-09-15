@@ -1,0 +1,36 @@
+# syntax=docker/dockerfile:1
+
+# ---- 1. Install dependencies ----
+FROM node:24-slim AS deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# ---- 2. Build the app ----
+FROM node:24-slim AS build
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN npm run build
+
+# ---- 3. Runtime ----
+FROM node:24-slim AS run
+WORKDIR /app
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    DATA_DIR=/app/data \
+    PORT=3000
+# Standalone server + its pruned node_modules (includes better-sqlite3)
+COPY --from=build /app/.next/standalone ./
+# Static assets + public (not copied by standalone by default)
+COPY --from=build /app/.next/static ./.next/static
+COPY --from=build /app/public ./public
+# Run as the unprivileged 'node' user (uid 1000). The mounted data volume
+# must be writable by uid 1000 (see README / TrueNAS dataset permissions).
+RUN mkdir -p /app/data && chown -R node:node /app
+USER node
+EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD node -e "const p=process.env.PORT||3000;fetch('http://localhost:'+p+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+CMD ["node", "server.js"]
