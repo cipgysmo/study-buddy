@@ -28,6 +28,11 @@ ENV NODE_ENV=production \
     PORT=3000
 # Standalone server + its pruned node_modules (includes better-sqlite3)
 COPY --from=build /app/.next/standalone ./
+# @napi-rs/canvas ships its native binding as a platform-specific optional
+# package (e.g. @napi-rs/canvas-linux-x64-gnu) that Next.js standalone tracing
+# can miss, which makes pdf-parse fail to load (DOMMatrix is not defined).
+# Copy the whole @napi-rs scope from the deps stage so the right binding is present.
+COPY --from=deps /app/node_modules/@napi-rs /app/node_modules/@napi-rs
 # Static assets + public (not copied by standalone by default)
 COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/public ./public
