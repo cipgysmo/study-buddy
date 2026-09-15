@@ -3,6 +3,11 @@
 # ---- 1. Install dependencies ----
 FROM node:24-slim AS deps
 WORKDIR /app
+# better-sqlite3 is a native module compiled at install time (node-gyp),
+# which needs a C++ toolchain + Python. Only this stage needs them.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 make g++ \
+    && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json ./
 RUN npm ci
 
