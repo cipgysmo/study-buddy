@@ -38,4 +38,6 @@ USER node
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD node -e "const p=process.env.PORT||3000;fetch('http://localhost:'+p+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
-CMD ["node", "server.js"]
+# Docker sets HOSTNAME to the container id; Next.js standalone would bind to it
+# (which /etc/hosts resolves to 127.0.1.1), making the app unreachable. Force 0.0.0.0.
+CMD ["sh", "-c", "HOSTNAME=0.0.0.0 exec node server.js"]
