@@ -170,5 +170,11 @@
     "copied": "Zkopírováno",
     "saveToSubject": "Uložit do předmětu",
     "error": "Chyba při čtení obrázku."
+  },
+  "Settings": {
+    "title": "Nastavení",
+    "subtitle": "Jazyk a preference aplikace.",
+    "language": "Jazyk",
+    "languageHint": "Změna jazyka se projeví okamžitě."
   }
 }

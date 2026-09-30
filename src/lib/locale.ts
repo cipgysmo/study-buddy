@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { DEFAULT_LOCALE, isSupportedLocale, type Locale } from "@/i18n/languages";
-import { getSetting } from "./db";
+import { getSetting, setSetting } from "./db";
 
 const LOCALE_COOKIE = "NEXT_LOCALE";
 
@@ -21,4 +21,16 @@ export async function resolveLocale(): Promise<Locale> {
     locale = getSetting("language") ?? undefined;
   }
   return isSupportedLocale(locale ?? "") ? (locale as Locale) : DEFAULT_LOCALE;
+}
+
+/** Persist a locale choice: cookie (this browser) + DB (across devices). */
+export async function setLocale(locale: Locale): Promise<void> {
+  setSetting("language", locale);
+  const cookieStore = await cookies();
+  cookieStore.set(LOCALE_COOKIE, locale, {
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+    httpOnly: true,
+    sameSite: "lax",
+  });
 }

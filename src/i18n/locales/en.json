@@ -170,5 +170,11 @@
     "copied": "Copied",
     "saveToSubject": "Save to subject",
     "error": "Error reading the image."
+  },
+  "Settings": {
+    "title": "Settings",
+    "subtitle": "App language and preferences.",
+    "language": "Language",
+    "languageHint": "Changes apply immediately."
   }
 }
