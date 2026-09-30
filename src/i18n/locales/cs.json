@@ -24,7 +24,8 @@
     "cancel": "Zrušit",
     "delete": "Smazat",
     "create": "Vytvořit",
-    "loading": "Načítám…"
+    "loading": "Načítám…",
+    "close": "Zavřít"
   },
   "Dashboard": {
     "title": "Přehled",

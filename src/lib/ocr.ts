@@ -11,7 +11,7 @@ const OCR_PROMPT =
  * (heic-decode, WASM — applies the EXIF orientation) and re-encode as
  * JPEG (sharp, which cannot decode HEIC itself).
  */
-async function toJpegIfHeic(
+export async function toJpegIfHeic(
   buffer: Buffer,
   mimeType: string
 ): Promise<{ buffer: Buffer; mimeType: string }> {

@@ -24,7 +24,8 @@
     "cancel": "Cancel",
     "delete": "Delete",
     "create": "Create",
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "close": "Close"
   },
   "Dashboard": {
     "title": "Overview",

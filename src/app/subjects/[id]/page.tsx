@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { getSubject, listMaterials } from "@/lib/subjects";
 import { UploadMaterialForm } from "@/components/subjects/upload-material-form";
 import { DeleteButton } from "@/components/subjects/delete-button";
+import { MaterialImage } from "@/components/subjects/material-image";
 
 export default async function SubjectDetailPage({
   params,
@@ -39,14 +40,19 @@ export default async function SubjectDetailPage({
                 key={m.id}
                 className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3"
               >
-                <span className="min-w-0">
-                  <span className="block truncate text-sm font-medium">{m.filename}</span>
-                  <span className="block text-xs text-muted">
-                    {m.kind === "image"
-                      ? t("image")
-                      : m.extracted_text
-                        ? `${m.extracted_text.length} ${t("chars")}`
-                        : "—"}
+                <span className="flex min-w-0 items-center gap-3">
+                  {m.kind === "image" && (
+                    <MaterialImage src={`/api/materials/${m.id}`} alt={m.filename} />
+                  )}
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-medium">{m.filename}</span>
+                    <span className="block text-xs text-muted">
+                      {m.kind === "image"
+                        ? t("image")
+                        : m.extracted_text
+                          ? `${m.extracted_text.length} ${t("chars")}`
+                          : "—"}
+                    </span>
                   </span>
                 </span>
                 <DeleteButton href={`/api/materials/${m.id}`} label={t("deleteMaterial")} />
