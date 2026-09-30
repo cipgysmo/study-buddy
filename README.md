@@ -77,6 +77,55 @@ router does).
    ```
 6. **Open** `http://<nas-ip>:3000` from any device on the LAN.
 
+### Alternative: install as a custom app via YAML (TrueNAS UI)
+
+Instead of the CLI, you can install it from the Apps UI:
+
+1. Create the data dataset first (steps 2–3 above) — the wizard cannot create
+   storage mid-install.
+2. In the TrueNAS UI go to **Apps** → **Discover**, click the ⋮ (more) menu and
+   choose **Install via YAML**.
+3. Enter a name, e.g. `study-buddy`, and paste the YAML below into
+   **Custom Config** (adjust the dataset path and `LLM_BASE_URL`). Paste only
+   the YAML — no ` ``` ` code fences.
+4. Click **Save** to deploy. The app appears on the **Installed Applications**
+   screen; open `http://<nas-ip>:3000`.
+
+```yaml
+name: study-buddy
+services:
+  study-buddy:
+    image: ghcr.io/cipgysmo/study-buddy:latest
+    ports:
+      - "3000:3000"
+    environment:
+      LLM_BASE_URL: "http://192.168.1.136:8080/v1/"
+      LLM_MODEL: "local-ai"
+      DATA_DIR: "/app/data"
+      PORT: "3000"
+      # Optional LAN password gate. Set a value to require it on every visit.
+      # APP_PASSWORD: "change-me"
+    volumes:
+      # Point at a dataset owned by uid 1000 (see steps above).
+      - /mnt/tank/apps/study-buddy-data:/app/data
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 1g
+    cpus: "2.0"
+```
+
+Notes:
+
+- The YAML editor has no source on the NAS, so `build:` is not supported — this
+  uses the published GHCR image.
+- TrueNAS re-saves the YAML without comments and in its own formatting; edit it
+  later via the app's **Edit** → **Edit App YAML** window.
+- To update, edit and save the YAML to redeploy; to force a fresh image pull,
+  switch the tag from `latest` to a specific `sha` tag (see below) and back.
+
 ### Publishing the image (GHCR)
 
 The image is published automatically to GitHub Container Registry. Pushing to
