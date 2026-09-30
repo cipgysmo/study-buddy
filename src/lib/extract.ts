@@ -1,5 +1,3 @@
-import { PDFParse } from "pdf-parse";
-
 export type MaterialKind = "pdf" | "image" | "text";
 
 export function kindFromMime(mime: string, filename: string): MaterialKind {
@@ -19,6 +17,8 @@ export async function extractText(
 ): Promise<string | null> {
   try {
     if (kind === "pdf") {
+      // Lazy-load so a PDF/canvas issue can't break pages that don't parse PDFs.
+      const { PDFParse } = await import("pdf-parse");
       const parser = new PDFParse({ data: new Uint8Array(buffer) });
       try {
         const result = await parser.getText();
