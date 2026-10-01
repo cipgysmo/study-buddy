@@ -1,7 +1,9 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { LanguageSwitcher } from "@/components/settings/language-switcher";
 import { NameField } from "@/components/settings/name-field";
+import { SoundToggle } from "@/components/settings/sound-toggle";
 import { ThemeSwitcher } from "@/components/settings/theme-switcher";
+import { getSetting } from "@/lib/db";
 import { getStudentName } from "@/lib/profile";
 import { resolveTheme } from "@/lib/theme";
 
@@ -10,6 +12,7 @@ export default async function SettingsPage() {
   const locale = await getLocale();
   const theme = await resolveTheme();
   const name = getStudentName();
+  const sound = (getSetting("sound") ?? "on") as "on" | "off";
 
   return (
     <div className="space-y-6">
@@ -40,6 +43,16 @@ export default async function SettingsPage() {
           <p className="mt-0.5 text-sm text-muted">{t("appearanceHint")}</p>
         </div>
         <ThemeSwitcher current={theme} />
+      </section>
+
+      <section className="max-w-md space-y-3 rounded-2xl border border-border bg-card p-5">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="font-medium">{t("sound")}</h2>
+            <p className="mt-0.5 text-sm text-muted">{t("soundHint")}</p>
+          </div>
+          <SoundToggle current={sound} />
+        </div>
       </section>
     </div>
   );

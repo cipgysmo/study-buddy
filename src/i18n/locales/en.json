@@ -146,6 +146,9 @@
     "empty": "No quizzes yet.",
     "submit": "Submit",
     "score": "Score",
+    "greatScore": "Excellent work!",
+    "goodScore": "Good job!",
+    "keepGoing": "Keep going!",
     "correct": "Correct",
     "incorrect": "Incorrect",
     "explanation": "Explanation",
@@ -255,7 +258,9 @@
     "appearanceHint": "Follow the system, or force light or dark.",
     "themeSystem": "System",
     "themeLight": "Light",
-    "themeDark": "Dark"
+    "themeDark": "Dark",
+    "sound": "Sounds",
+    "soundHint": "Celebrate quiz and exam results with sound."
   },
   "MockExams": {
     "title": "Mock Exams",

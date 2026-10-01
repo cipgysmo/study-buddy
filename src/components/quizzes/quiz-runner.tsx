@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Confetti } from "@/components/ui/confetti";
 import { Diagram } from "@/components/ui/diagram";
 import { ExplainButton } from "@/components/ui/explain-button";
 import { NavIcon } from "@/components/shell/nav-icons";
+import { loadSoundSetting, playSound } from "@/lib/sound";
 
 export interface RunnerQuestion {
   id: string;
@@ -19,6 +21,24 @@ function formatTime(totalSeconds: number): string {
   const m = Math.floor(totalSeconds / 60);
   const s = totalSeconds % 60;
   return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+/** Animates a number from 0 to `to` (ease-out). Isolated so only this re-renders. */
+function CountUp({ to, duration = 900 }: { to: number; duration?: number }) {
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    const start = performance.now();
+    const step = (now: number) => {
+      const p = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setVal(Math.round(eased * to));
+      if (p < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [to, duration]);
+  return <>{val}</>;
 }
 
 /**
@@ -43,6 +63,7 @@ export function QuizRunner({
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [result, setResult] = useState<{ score: number; total: number } | null>(null);
   const [newBadges, setNewBadges] = useState<{ id: string; icon: string }[]>([]);
+  const [celebrate, setCelebrate] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [remaining, setRemaining] = useState<number | null>(
     durationMin ? durationMin * 60 : null
@@ -65,6 +86,8 @@ export function QuizRunner({
     };
     setResult({ score: d.score, total: d.total });
     setNewBadges(d.newAchievements ?? []);
+    setCelebrate(true);
+    void playSound(d.score / d.total >= 0.5 ? "fanfare" : "encourage");
   }, [quiz.id, answers, submitting]);
 
   const running = remaining !== null && result === null;
@@ -83,24 +106,34 @@ export function QuizRunner({
     }
   }, [remaining, result, submit]);
 
+  useEffect(() => {
+    void loadSoundSetting();
+  }, []);
+
   const answeredCount = Object.keys(answers).length;
 
   if (result) {
+    const ratio = result.score / result.total;
+    const message =
+      ratio >= 0.8 ? t("greatScore") : ratio >= 0.5 ? t("goodScore") : t("keepGoing");
     return (
       <div className="space-y-4">
+        <Confetti active={celebrate} count={Math.round(40 + ratio * 100)} />
         <button onClick={onExit} className="text-sm text-muted hover:text-foreground">
           {backLabel}
         </button>
         <h2 className="text-xl font-semibold">{quiz.title}</h2>
         <div className="space-y-4">
-          <div className="rounded-2xl border border-border bg-card p-6 text-center">
-            <p className="text-3xl font-semibold">
-              {result.score}/{result.total}
+          <div className="animate-pop-in rounded-2xl border border-border bg-card p-6 text-center">
+            <p className="text-5xl font-semibold tabular-nums">
+              <CountUp to={result.score} />
+              <span className="text-2xl text-muted">/{result.total}</span>
             </p>
+            <p className="mt-1 text-lg font-medium text-accent">{message}</p>
             <p className="text-muted">{t("score")}</p>
           </div>
           {newBadges.length > 0 && (
-            <div className="rounded-2xl border border-accent/40 bg-accent/5 p-4">
+            <div className="animate-pop-in rounded-2xl border border-accent/40 bg-accent/5 p-4">
               <p className="text-sm font-medium text-accent">{tb("badgeUnlocked")}</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {newBadges.map((b) => (

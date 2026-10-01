@@ -146,6 +146,9 @@
     "empty": "Zatím žádné kvízy.",
     "submit": "Vyhodnotit",
     "score": "Skóre",
+    "greatScore": "Skvělá práce!",
+    "goodScore": "Dobrá práce!",
+    "keepGoing": "Pokračuj tak!",
     "correct": "Správně",
     "incorrect": "Špatně",
     "explanation": "Vysvětlení",
@@ -255,7 +258,9 @@
     "appearanceHint": "Systémové nastavení, světlý nebo tmavý režim.",
     "themeSystem": "Systémové",
     "themeLight": "Světlý",
-    "themeDark": "Tmavý"
+    "themeDark": "Tmavý",
+    "sound": "Zvuky",
+    "soundHint": "Oslava se zvukem při dokončení kvízů a testů."
   },
   "MockExams": {
     "title": "Zkušební testy",
