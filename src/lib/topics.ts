@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
+import { LANGUAGES } from "@/i18n/languages";
 import { getDb } from "./db";
 import { chatJSON } from "./llm";
+import { resolveLocale } from "./locale";
 import { getMaterial } from "./subjects";
 import { extractTopicsPrompt, type ExtractResult } from "./prompts/classify";
 
@@ -114,12 +116,18 @@ export async function autoTagMaterialTopics(materialId: string): Promise<void> {
   if (!material || !text) return;
   const subjectId = material.subject_id;
   try {
+    const locale = await resolveLocale();
+    const languageName = LANGUAGES.find((l) => l.code === locale)?.name ?? locale;
     const existing = listTopics(subjectId).map((t) => t.name);
     const result = await chatJSON<ExtractResult>({
       messages: [
         {
           role: "user",
-          content: extractTopicsPrompt({ text: text.slice(0, 8000), existingTopics: existing }),
+          content: extractTopicsPrompt({
+            text: text.slice(0, 8000),
+            existingTopics: existing,
+            language: languageName,
+          }),
         },
       ],
       temperature: 0,
