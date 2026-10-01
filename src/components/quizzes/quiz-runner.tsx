@@ -163,11 +163,6 @@ export function QuizRunner({
                 <p className={"mt-2 text-sm " + (correct ? "text-success" : "text-danger")}>
                   {correct ? t("correct") : t("incorrect")}
                 </p>
-                {q.explanation && (
-                  <p className="mt-2 text-sm text-muted">
-                    <span className="font-medium">{t("explanation")}:</span> {q.explanation}
-                  </p>
-                )}
                 <ExplainButton
                   question={{
                     prompt: q.prompt,

@@ -19,7 +19,7 @@ export function trueFalseGeneratorPrompt(opts: {
   ];
   if (opts.topics?.length) lines.push(`Focus on these topics: ${opts.topics.join(", ")}.`);
   lines.push(
-    `Create exactly ${opts.count} statements. Each has a statement, whether it is true (is_correct) or false, and a short explanation of why. Mix true and false statements.`,
+    `Create exactly ${opts.count} statements. Each has a statement, whether it is true (is_correct) or false, and a clear 2-4 sentence explanation of why. Mix true and false statements.`,
     `Return ONLY a JSON object: {"items": [{"statement": string, "is_correct": boolean, "explanation": string}]}.`,
     "",
     "<notes>",

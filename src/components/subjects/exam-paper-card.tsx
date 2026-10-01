@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Diagram } from "@/components/ui/diagram";
-import { ExplainButton } from "@/components/ui/explain-button";
 import { MaterialImage } from "@/components/subjects/material-image";
 import { MaterialStatus } from "@/components/subjects/material-status";
 import { DeleteButton } from "@/components/subjects/delete-button";
@@ -196,14 +195,6 @@ export function ExamPaperCard({
                     )}
                   </div>
                 )}
-                <ExplainButton
-                  question={{
-                    prompt: q.prompt,
-                    options: q.options,
-                    answer: q.answer,
-                    explanation: q.explanation,
-                  }}
-                />
               </div>
             ))
           )}

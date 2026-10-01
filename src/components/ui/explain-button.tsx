@@ -11,15 +11,27 @@ export interface ExplainableQuestion {
 }
 
 /**
- * On-demand tutor explanation for a single question. Fetches a one-shot
- * explanation and shows it inline.
+ * Reveals the explanation for a single question. Uses the pre-generated
+ * explanation when available so the reveal is instant; only falls back to an
+ * on-demand tutor explanation for legacy questions that have none.
  */
 export function ExplainButton({ question }: { question: ExplainableQuestion }) {
   const t = useTranslations("Common");
+  const pregenerated = question.explanation?.trim() ?? "";
+  const [revealed, setRevealed] = useState(false);
   const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [text, setText] = useState("");
 
-  async function explain() {
+  async function toggle() {
+    if (revealed) {
+      setRevealed(false);
+      return;
+    }
+    if (pregenerated) {
+      setText(pregenerated);
+      setRevealed(true);
+      return;
+    }
     if (state === "loading") return;
     setState("loading");
     setText("");
@@ -38,6 +50,7 @@ export function ExplainButton({ question }: { question: ExplainableQuestion }) {
       const d = (await r.json()) as { explanation: string };
       setText(d.explanation);
       setState("done");
+      setRevealed(true);
     } catch {
       setState("error");
     }
@@ -46,13 +59,13 @@ export function ExplainButton({ question }: { question: ExplainableQuestion }) {
   return (
     <div className="mt-2">
       <button
-        onClick={() => void explain()}
+        onClick={() => void toggle()}
         disabled={state === "loading"}
         className="text-sm text-accent hover:underline disabled:opacity-50"
       >
-        {state === "loading" ? t("loading") : t("explain")}
+        {revealed ? t("hideExplanation") : state === "loading" ? t("loading") : t("explain")}
       </button>
-      {state === "done" && text && (
+      {revealed && text && (
         <div className="mt-2 whitespace-pre-wrap rounded-xl bg-background p-3 text-sm">{text}</div>
       )}
       {state === "error" && <p className="mt-2 text-sm text-red-500">{t("error")}</p>}

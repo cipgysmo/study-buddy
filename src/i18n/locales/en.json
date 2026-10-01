@@ -32,6 +32,7 @@
     "inProgress": "{count, plural, one {Processing # job} other {Processing # jobs}}",
     "llmOffline": "LLM offline",
     "explain": "Explain",
+    "hideExplanation": "Hide explanation",
     "error": "Error"
   },
   "Dashboard": {

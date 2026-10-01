@@ -32,6 +32,7 @@
     "inProgress": "{count, plural, one {Zpracovávám # úlohu} few {Zpracovávám # úlohy} other {Zpracovávám # úloh}}",
     "llmOffline": "LLM offline",
     "explain": "Vysvětlit",
+    "hideExplanation": "Skrýt vysvětlení",
     "error": "Chyba"
   },
   "Dashboard": {
