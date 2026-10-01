@@ -1,6 +1,7 @@
 import { LANGUAGES } from "@/i18n/languages";
 import { resolveLocale } from "@/lib/locale";
 import { chat } from "@/lib/llm";
+import { getStudentName } from "@/lib/profile";
 
 export const dynamic = "force-dynamic";
 
@@ -24,8 +25,10 @@ export async function POST(req: Request) {
   const languageName = LANGUAGES.find((l) => l.code === locale)?.name ?? locale;
 
   const hasOptions = Array.isArray(body.options) && body.options.length > 0;
+  const name = getStudentName();
   const parts = [
     `You are a patient, encouraging tutor. Explain the following question step by step for a student around 13 years old. Respond in ${languageName}.`,
+    ...(name ? [`The student's name is ${name}. Address them by name warmly.`] : []),
     `Question: ${prompt}`,
   ];
   if (hasOptions) {

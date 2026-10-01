@@ -37,6 +37,7 @@
   "Dashboard": {
     "title": "Přehled",
     "greeting": "Vítej zpět",
+    "greetingWithName": "Vítej zpět, {name}",
     "subtitle": "Tady máš přehled svého učení.",
     "empty": "Zatím tu nic není. Přidej předmět a začni se učit.",
     "subjects": "Předměty",
@@ -207,6 +208,11 @@
   "Settings": {
     "title": "Nastavení",
     "subtitle": "Jazyk a preference aplikace.",
+    "name": "Tvoje jméno",
+    "nameHint": "Study Buddy tě bude oslovovat jménem.",
+    "namePlaceholder": "Tvoje jméno",
+    "save": "Uložit",
+    "nameSaved": "Uloženo",
     "language": "Jazyk",
     "languageHint": "Změna jazyka se projeví okamžitě.",
     "appearance": "Vzhled",

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { getSubject, listMaterials } from "@/lib/subjects";
-import { listTopics } from "@/lib/topics";
+import { listTopics, materialTopicNames } from "@/lib/topics";
 import { getJob } from "@/lib/jobs";
 import { countExamQuestions } from "@/lib/exams";
 import { UploadMaterialForm } from "@/components/subjects/upload-material-form";
@@ -23,6 +23,9 @@ export default async function SubjectDetailPage({
   if (!subject) notFound();
   const materials = listMaterials(id);
   const topics = listTopics(id);
+  const topicTags = materialTopicNames(
+    materials.filter((m) => m.role === "notes").map((m) => m.id)
+  );
 
   return (
     <div className="space-y-6">
@@ -93,6 +96,18 @@ export default async function SubjectDetailPage({
                               ? `${m.extracted_text.length} ${t("chars")}`
                               : "—"}
                       </span>
+                      {topicTags.get(m.id)?.length ? (
+                        <span className="mt-1 flex flex-wrap gap-1">
+                          {topicTags.get(m.id)!.map((name) => (
+                            <span
+                              key={name}
+                              className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent"
+                            >
+                              {name}
+                            </span>
+                          ))}
+                        </span>
+                      ) : null}
                     </span>
                   </span>
                   <span className="flex shrink-0 items-center gap-2">

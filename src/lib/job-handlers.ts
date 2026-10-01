@@ -7,7 +7,7 @@ import { generateQuiz } from "./quizzes";
 import { createPlan } from "./plans";
 import { generateExercises, generateTrueFalse } from "./practice";
 import { addMaterialWithText, getMaterial, linkMaterialParseJob, processMaterial } from "./subjects";
-import { topicNames } from "./topics";
+import { classifyMaterialTopics, topicNames } from "./topics";
 import { generateSimilarExam, parseExam } from "./exams";
 
 function str(v: unknown): string {
@@ -32,6 +32,8 @@ registerJobHandler("ocr", async ({ payload }) => {
   if (m?.role === "exam") {
     const job = enqueueJob("parseExam", { materialId });
     linkMaterialParseJob(materialId, job.id);
+  } else if (m?.role === "notes") {
+    await classifyMaterialTopics(materialId);
   }
   return null;
 });

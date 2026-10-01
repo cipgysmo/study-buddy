@@ -9,6 +9,7 @@ import {
 import { buildSubjectContext } from "@/lib/context";
 import { resolveLocale } from "@/lib/locale";
 import { chatStream, type ChatMessage as LlmMessage } from "@/lib/llm";
+import { getStudentName } from "@/lib/profile";
 import { tutorSystemPrompt } from "@/lib/prompts/tutor";
 import { topicNames } from "@/lib/topics";
 
@@ -46,7 +47,7 @@ export async function POST(req: Request, ctx: Ctx) {
   const topicIds = Array.isArray(body.topicIds)
     ? body.topicIds.filter((x): x is string => typeof x === "string")
     : [];
-  const system = tutorSystemPrompt(languageName, context, topicNames(topicIds));
+  const system = tutorSystemPrompt(languageName, context, topicNames(topicIds), getStudentName());
 
   const history = listMessages(id);
   const messages: LlmMessage[] = [

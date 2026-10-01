@@ -123,19 +123,32 @@ Notes:
   uses the published GHCR image.
 - TrueNAS re-saves the YAML without comments and in its own formatting; edit it
   later via the app's **Edit** → **Edit App YAML** window.
-- To update, edit and save the YAML to redeploy; to force a fresh image pull,
-  switch the tag from `latest` to a specific `sha` tag (see below) and back.
+- To update, edit and save the YAML to redeploy. To force a fresh image pull,
+  either switch the tag from `latest` to a specific `sha` tag (see below) and
+  back, or pull the new image from the shell (over SSH on the NAS) and then
+  recreate the container so it runs it:
+  ```bash
+  docker pull ghcr.io/cipgysmo/study-buddy:latest
+  ```
+  A plain `docker restart` keeps the old image — recreate via the app's
+  **Restart**/**Update** in the Apps UI (or remove + redeploy).
 
 ### Publishing the image (GHCR)
 
 The image is published automatically to GitHub Container Registry. Pushing to
 `main` runs `.github/workflows/publish.yml`, which builds and pushes
 `ghcr.io/cipgysmo/study-buddy:latest` (plus a `sha` tag). To update the app on
-the NAS, just pull again:
+the NAS, pull the new image again:
 
-```bash
-docker compose pull && docker compose up -d
-```
+- **Docker Compose** deployment (run from the folder with `docker-compose.yml`):
+  ```bash
+  docker compose pull && docker compose up -d
+  ```
+- **Custom app** (Apps UI) — over SSH on the NAS:
+  ```bash
+  docker pull ghcr.io/cipgysmo/study-buddy:latest
+  ```
+  then recreate the container (see the custom-app notes above).
 
 The workflow uses the built-in `GITHUB_TOKEN` (needs `packages: write`, already
 set), so no extra secrets are required.

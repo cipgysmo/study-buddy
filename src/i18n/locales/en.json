@@ -37,6 +37,7 @@
   "Dashboard": {
     "title": "Overview",
     "greeting": "Welcome back",
+    "greetingWithName": "Welcome back, {name}",
     "subtitle": "Here's an overview of your learning.",
     "empty": "Nothing here yet. Add a subject and start learning.",
     "subjects": "Subjects",
@@ -207,6 +208,11 @@
   "Settings": {
     "title": "Settings",
     "subtitle": "App language and preferences.",
+    "name": "Your name",
+    "nameHint": "Study Buddy will address you by this name.",
+    "namePlaceholder": "Your name",
+    "save": "Save",
+    "nameSaved": "Saved",
     "language": "Language",
     "languageHint": "Changes apply immediately.",
     "appearance": "Appearance",

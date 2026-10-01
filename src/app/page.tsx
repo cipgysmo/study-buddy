@@ -5,12 +5,14 @@ import { NavIcon } from "@/components/shell/nav-icons";
 import { listSubjects } from "@/lib/subjects";
 import { dueFlashcards } from "@/lib/flashcards";
 import { getProgress } from "@/lib/progress";
+import { getStudentName } from "@/lib/profile";
 
 export default async function DashboardPage() {
   const t = await getTranslations("Dashboard");
   const subjects = listSubjects();
   const due = dueFlashcards();
   const { streak } = getProgress();
+  const name = getStudentName();
 
   const links = [
     { href: "/chat", label: t("chat"), icon: "chat", color: "bg-blue-500/10 text-blue-600" },
@@ -24,7 +26,9 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-3xl font-semibold tracking-tight">{t("greeting")}</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">
+          {name ? t("greetingWithName", { name }) : t("greeting")}
+        </h1>
         <p className="mt-1 text-muted">{t("subtitle")}</p>
       </header>
 

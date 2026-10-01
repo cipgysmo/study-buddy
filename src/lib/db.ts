@@ -215,6 +215,17 @@ const MIGRATIONS: { version: number; sql: string }[] = [
       CREATE INDEX IF NOT EXISTS idx_exam_questions_material ON exam_questions(material_id);
     `,
   },
+  {
+    version: 10,
+    sql: `
+      CREATE TABLE IF NOT EXISTS material_topics (
+        material_id TEXT NOT NULL REFERENCES materials(id) ON DELETE CASCADE,
+        topic_id    TEXT NOT NULL REFERENCES topics(id) ON DELETE CASCADE,
+        PRIMARY KEY (material_id, topic_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_material_topics_topic ON material_topics(topic_id);
+    `,
+  },
 ];
 
 export function getDb(): Database.Database {

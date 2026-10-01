@@ -7,7 +7,15 @@ const dir = mkdtempSync(path.join(tmpdir(), "sb-topics-"));
 process.env.DATA_DIR = dir;
 
 import { getDb } from "@/lib/db";
-import { createTopic, deleteTopic, getTopic, listTopics, topicNames } from "@/lib/topics";
+import {
+  createTopic,
+  deleteTopic,
+  getTopic,
+  listTopics,
+  materialTopicNames,
+  setMaterialTopics,
+  topicNames,
+} from "@/lib/topics";
 
 let subjectId: string;
 
@@ -57,6 +65,24 @@ describe("topics", () => {
     deleteTopic(t.id);
     expect(getTopic(t.id)).toBeNull();
     expect(listTopics(subjectId).map((x) => x.name)).not.toContain("Temp");
+  });
+
+  it("tags a material with topics and lists them by name", () => {
+    const db = getDb();
+    const topics = listTopics(subjectId);
+    const matId = "mat-1";
+    db.prepare(
+      "INSERT INTO materials (id, subject_id, filename, stored_path, mime, kind, size) VALUES (?, ?, ?, ?, ?, ?, ?)"
+    ).run(matId, subjectId, "a.txt", "/tmp/a.txt", "text/plain", "text", 10);
+    setMaterialTopics(matId, [topics[0].id, topics[1].id]);
+    expect(materialTopicNames([matId]).get(matId)).toEqual([
+      topics[0].name,
+      topics[1].name,
+    ]);
+    // re-tagging replaces the previous set
+    setMaterialTopics(matId, [topics[0].id]);
+    expect(materialTopicNames([matId]).get(matId)).toEqual([topics[0].name]);
+    expect(materialTopicNames(["missing"])).toEqual(new Map());
   });
 
   it("cascades topic deletion when the subject is removed", () => {

@@ -5,7 +5,8 @@
 export function tutorSystemPrompt(
   language: string,
   subjectContext?: string,
-  topics?: string[]
+  topics?: string[],
+  studentName?: string
 ): string {
   const parts = [
     "You are a patient, encouraging AI tutor helping a student (around 13, 2nd year of an 8-year gymnasium in Prague).",
@@ -14,6 +15,11 @@ export function tutorSystemPrompt(
     "Keep responses concise and clearly formatted. If the student is stuck, give a hint first, then the solution.",
     'When a geometric figure or diagram would genuinely help, include it as a fenced code block tagged svg containing a complete standalone SVG: ```svg <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"> ... </svg> ``` using stroke="currentColor" fill="none" for shapes and fill="currentColor" font-size="14" for text labels. Only use this when a figure helps; keep it simple and accurate.',
   ];
+  if (studentName?.trim()) {
+    parts.push(
+      `The student's name is ${studentName.trim()}. Address them by name naturally and warmly to keep the tone personal and encouraging.`
+    );
+  }
   if (topics?.length) parts.push(`Focus the discussion on these topics: ${topics.join(", ")}.`);
   if (subjectContext && subjectContext.trim()) {
     parts.push(
