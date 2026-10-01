@@ -1,9 +1,24 @@
 import Database from "better-sqlite3";
+import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { dataDir } from "./env";
 
 let _db: Database.Database | null = null;
+
+/** Default school subjects, seeded once on first run (any missing by name). */
+const DEFAULT_SUBJECTS: { name: string; color: string }[] = [
+  { name: "Informatika", color: "#0071e3" },
+  { name: "Anglický jazyk", color: "#5856d6" },
+  { name: "Fyzika", color: "#af52de" },
+  { name: "Chemie", color: "#ff9500" },
+  { name: "Český jazyk", color: "#ff3b30" },
+  { name: "Matematika", color: "#00c7be" },
+  { name: "Občanská výchova", color: "#ff2d55" },
+  { name: "Biologie", color: "#34c759" },
+  { name: "Dějepis", color: "#b08968" },
+  { name: "Zeměpis", color: "#4dabf7" },
+];
 
 /**
  * Ordered, idempotent migrations. Append a new entry (version = last + 1)
@@ -235,6 +250,33 @@ const MIGRATIONS: { version: number; sql: string }[] = [
       );
     `,
   },
+  {
+    version: 12,
+    sql: `
+      ALTER TABLE flashcards ADD COLUMN stability REAL NOT NULL DEFAULT 0;
+      ALTER TABLE flashcards ADD COLUMN difficulty REAL NOT NULL DEFAULT 0;
+      ALTER TABLE flashcards ADD COLUMN state INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE flashcards ADD COLUMN lapses INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE flashcards ADD COLUMN last_review TEXT;
+
+      -- Carry over SM-2 "learned" cards into FSRS Review state (stability ~ old interval).
+      UPDATE flashcards SET state = 2, stability = interval, difficulty = 5 WHERE interval > 0;
+
+      CREATE TABLE IF NOT EXISTS review_logs (
+        id             TEXT PRIMARY KEY,
+        card_id        TEXT NOT NULL REFERENCES flashcards(id) ON DELETE CASCADE,
+        reviewed_at    TEXT NOT NULL,
+        rating         INTEGER NOT NULL,
+        state          INTEGER NOT NULL,
+        stability      REAL NOT NULL,
+        difficulty     REAL NOT NULL,
+        scheduled_days REAL NOT NULL,
+        retention      REAL
+      );
+      CREATE INDEX IF NOT EXISTS idx_review_logs_card ON review_logs(card_id);
+      CREATE INDEX IF NOT EXISTS idx_review_logs_reviewed ON review_logs(reviewed_at);
+    `,
+  },
 ];
 
 export function getDb(): Database.Database {
@@ -245,8 +287,32 @@ export function getDb(): Database.Database {
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
   migrate(db);
+  seed(db);
   _db = db;
   return db;
+}
+
+/** One-time: add any default subjects not already present (matched by name). */
+function seed(db: Database.Database): void {
+  if (process.env.NODE_ENV === "test") return;
+  const done = (
+    db.prepare("SELECT value FROM settings WHERE key = 'seeded'").get() as
+      | { value: string }
+      | undefined
+  )?.value;
+  if (done) return;
+  // Match by name ignoring case and diacritics (so "dejepis" == "Dějepis").
+  const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const existing = new Set(
+    (db.prepare("SELECT name FROM subjects").all() as { name: string }[]).map((r) => norm(r.name))
+  );
+  const insert = db.prepare("INSERT INTO subjects (id, name, color, icon) VALUES (?, ?, ?, NULL)");
+  for (const s of DEFAULT_SUBJECTS) {
+    if (!existing.has(norm(s.name))) insert.run(randomUUID(), s.name, s.color);
+  }
+  db.prepare(
+    "INSERT INTO settings (key, value) VALUES ('seeded', '1') ON CONFLICT(key) DO UPDATE SET value = '1'"
+  ).run();
 }
 
 function migrate(db: Database.Database): void {

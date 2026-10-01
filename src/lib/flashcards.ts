@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { fsrs, Rating, type CardInput, type Grade } from "ts-fsrs";
 import { LANGUAGES } from "@/i18n/languages";
 import { buildSubjectContext } from "./context";
 import { getDb } from "./db";
@@ -7,7 +8,8 @@ import { chatJSON } from "./llm";
 import { flashcardGeneratorPrompt, type FlashcardDraft } from "./prompts/flashcards";
 import { getSubject } from "./subjects";
 import { topicNames } from "./topics";
-import { sm2 } from "./sm2";
+
+const scheduler = fsrs();
 
 export interface Flashcard {
   id: string;
@@ -18,6 +20,11 @@ export interface Flashcard {
   interval: number;
   reps: number;
   due_at: string;
+  stability: number;
+  difficulty: number;
+  state: number;
+  lapses: number;
+  last_review: string | null;
   created_at: string;
 }
 
@@ -84,7 +91,7 @@ export async function generateFlashcards(
 
   const today = todayISO();
   const insert = getDb().prepare(
-    "INSERT INTO flashcards (id, subject_id, front, back, ease, interval, reps, due_at) VALUES (?, ?, ?, ?, 2.5, 0, 0, ?)"
+    "INSERT INTO flashcards (id, subject_id, front, back, ease, interval, reps, due_at, stability, difficulty, state, lapses, last_review) VALUES (?, ?, ?, ?, 2.5, 0, 0, ?, 0, 0, 0, 0, NULL)"
   );
   const created: Flashcard[] = [];
   for (const fc of (draft.cards ?? []).slice(0, count)) {
@@ -96,12 +103,58 @@ export async function generateFlashcards(
   return created;
 }
 
-export function reviewFlashcard(id: string, quality: number): Flashcard | null {
+/**
+ * Review a card with an FSRS grade (1=Again, 2=Hard, 3=Good, 4=Easy).
+ * Updates the card's memory state and records a review log.
+ */
+export function reviewFlashcard(id: string, rating: number): Flashcard | null {
   const card = getFlashcard(id);
   if (!card) return null;
-  const result = sm2({ ease: card.ease, interval: card.interval, reps: card.reps }, quality, todayISO());
-  getDb()
-    .prepare("UPDATE flashcards SET ease = ?, interval = ?, reps = ?, due_at = ? WHERE id = ?")
-    .run(result.ease, result.interval, result.reps, result.dueISO, id);
+  const grade = Math.round(rating) as Grade;
+  if (grade < Rating.Again || grade > Rating.Easy) return card;
+
+  const now = new Date();
+  const input: CardInput = {
+    due: new Date(card.due_at + "T00:00:00Z"),
+    stability: card.stability,
+    difficulty: card.difficulty,
+    state: card.state,
+    reps: card.reps,
+    lapses: card.lapses,
+    last_review: card.last_review ? new Date(card.last_review) : null,
+    elapsed_days: 0,
+    scheduled_days: 0,
+    learning_steps: 0,
+  };
+  const { card: next, log } = scheduler.next(input, now, grade);
+  const dueISO = next.due.toISOString().slice(0, 10);
+  const reviewedISO = now.toISOString();
+
+  let retention: number | null = null;
+  if (card.last_review) {
+    try {
+      retention = scheduler.get_retrievability(input, now, false);
+    } catch {
+      retention = null;
+    }
+  }
+
+  const db = getDb();
+  db.prepare(
+    "UPDATE flashcards SET stability = ?, difficulty = ?, state = ?, reps = ?, lapses = ?, due_at = ?, last_review = ? WHERE id = ?"
+  ).run(next.stability, next.difficulty, next.state, next.reps, next.lapses, dueISO, reviewedISO, id);
+  db.prepare(
+    "INSERT INTO review_logs (id, card_id, reviewed_at, rating, state, stability, difficulty, scheduled_days, retention) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+  ).run(
+    randomUUID(),
+    id,
+    reviewedISO,
+    grade,
+    next.state,
+    next.stability,
+    next.difficulty,
+    log.scheduled_days,
+    retention
+  );
   return getFlashcard(id);
 }

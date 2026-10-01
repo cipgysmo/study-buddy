@@ -1,5 +1,9 @@
+import { fsrs, type CardInput } from "ts-fsrs";
 import { getDb } from "./db";
+import { dueFlashcards, listFlashcards } from "./flashcards";
 import { listSubjects } from "./subjects";
+
+const retentionScheduler = fsrs();
 
 export interface ProgressData {
   totals: {
@@ -13,6 +17,40 @@ export interface ProgressData {
   activity: { date: string; count: number }[];
   streak: { current: number; best: number };
   mastery: { subjectId: string; name: string; score: number }[];
+  retention: {
+    predicted: number | null;
+    totalReviews: number;
+    dueToday: number;
+    heatmap: { date: string; count: number }[];
+  };
+}
+
+/** Average probability of recall right now, across all reviewed cards. */
+function predictedRetention(): number | null {
+  const cards = listFlashcards().filter((c) => c.last_review);
+  if (!cards.length) return null;
+  const now = new Date();
+  let sum = 0;
+  for (const c of cards) {
+    const input: CardInput = {
+      due: new Date(c.due_at + "T00:00:00Z"),
+      stability: c.stability,
+      difficulty: c.difficulty,
+      state: c.state,
+      reps: c.reps,
+      lapses: c.lapses,
+      last_review: c.last_review ? new Date(c.last_review) : null,
+      elapsed_days: 0,
+      scheduled_days: 0,
+      learning_steps: 0,
+    };
+    try {
+      sum += retentionScheduler.get_retrievability(input, now, false);
+    } catch {
+      /* skip uncomputable card */
+    }
+  }
+  return sum / cards.length;
 }
 
 function dayKey(iso: string): string {
@@ -102,13 +140,12 @@ export function getProgress(): ProgressData {
       quizScore = pct * 100;
     }
     const cards = db
-      .prepare("SELECT interval, ease FROM flashcards WHERE subject_id = ?")
-      .all(s.id) as { interval: number; ease: number }[];
+      .prepare("SELECT state FROM flashcards WHERE subject_id = ?")
+      .all(s.id) as { state: number }[];
     let cardScore = 0;
     if (cards.length) {
-      const learned = cards.filter((c) => c.interval > 0).length;
-      const easeAvg = cards.reduce((a, c) => a + c.ease, 0) / cards.length;
-      cardScore = (learned / cards.length) * 70 + Math.min(1, easeAvg / 3) * 30;
+      const learned = cards.filter((c) => c.state >= 2).length;
+      cardScore = (learned / cards.length) * 100;
     }
     const parts: number[] = [];
     if (attempts.length) parts.push(quizScore);
@@ -117,5 +154,20 @@ export function getProgress(): ProgressData {
     return { subjectId: s.id, name: s.name, score };
   });
 
-  return { totals, activity, streak: { current, best }, mastery };
+  const HEATMAP_DAYS = 112;
+  const reviewCounts = new Map<string, number>();
+  for (const r of db.prepare("SELECT reviewed_at FROM review_logs").all() as { reviewed_at: string }[]) {
+    const k = dayKey(r.reviewed_at);
+    reviewCounts.set(k, (reviewCounts.get(k) ?? 0) + 1);
+  }
+  const heatmap = lastNDays(HEATMAP_DAYS).map((date) => ({ date, count: reviewCounts.get(date) ?? 0 }));
+  const totalReviews = (db.prepare("SELECT COUNT(*) n FROM review_logs").get() as { n: number }).n;
+  const retention = {
+    predicted: predictedRetention(),
+    totalReviews,
+    dueToday: dueFlashcards().length,
+    heatmap,
+  };
+
+  return { totals, activity, streak: { current, best }, mastery, retention };
 }

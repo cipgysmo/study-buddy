@@ -4,6 +4,13 @@ import { NavIcon } from "@/components/shell/nav-icons";
 import { getAchievements, syncAchievements } from "@/lib/achievements";
 import { getProgress } from "@/lib/progress";
 
+function heatColor(count: number): string {
+  if (count === 0) return "bg-foreground/5";
+  if (count <= 2) return "bg-accent/30";
+  if (count <= 5) return "bg-accent/60";
+  return "bg-accent";
+}
+
 export default async function ProgressPage() {
   const t = await getTranslations("Progress");
   const data = getProgress();
@@ -54,6 +61,39 @@ export default async function ProgressPage() {
           <p className="mt-4 text-sm text-muted">
             {t("bestStreak")}: <span className="font-medium text-foreground">{data.streak.best}</span>
           </p>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-card p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-sm font-medium text-muted">{t("memory")}</h2>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+            <span className="text-muted">
+              {t("predictedRetention")}:{" "}
+              <span className="font-medium text-foreground">
+                {data.retention.predicted === null
+                  ? "—"
+                  : `${Math.round(data.retention.predicted * 100)}%`}
+              </span>
+            </span>
+            <span className="text-muted">
+              {t("totalReviews")}:{" "}
+              <span className="font-medium text-foreground">{data.retention.totalReviews}</span>
+            </span>
+            <span className="text-muted">
+              {t("dueToday")}:{" "}
+              <span className="font-medium text-foreground">{data.retention.dueToday}</span>
+            </span>
+          </div>
+        </div>
+        <div className="mt-4 grid grid-flow-col grid-rows-7 gap-0.5">
+          {data.retention.heatmap.map((d) => (
+            <div
+              key={d.date}
+              title={`${d.date}: ${d.count}`}
+              className={"h-3 w-3 rounded-sm " + heatColor(d.count)}
+            />
+          ))}
         </div>
       </div>
 

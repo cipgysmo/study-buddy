@@ -66,16 +66,16 @@ export function FlashcardsApp({
     }
   }
 
-  async function review(quality: number) {
+  async function review(rating: number) {
     if (due.length === 0) return;
     const card = due[0];
     await fetch(`/api/flashcards/${card.id}/review`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ quality }),
+      body: JSON.stringify({ rating }),
     });
-    // Re-queue failures within the session; drop successes.
-    setDue((prev) => (quality < 3 ? [...prev.slice(1), prev[0]] : prev.slice(1)));
+    // Re-queue "Again" within the session; drop the rest.
+    setDue((prev) => (rating === 1 ? [...prev.slice(1), prev[0]] : prev.slice(1)));
     setRevealed(false);
   }
 
@@ -141,13 +141,13 @@ export function FlashcardsApp({
                   <button onClick={() => review(1)} className="rounded-lg border border-border px-4 py-2 text-sm">
                     {t("again")}
                   </button>
-                  <button onClick={() => review(3)} className="rounded-lg border border-border px-4 py-2 text-sm">
+                  <button onClick={() => review(2)} className="rounded-lg border border-border px-4 py-2 text-sm">
                     {t("hard")}
                   </button>
-                  <button onClick={() => review(4)} className="rounded-lg border border-border px-4 py-2 text-sm">
+                  <button onClick={() => review(3)} className="rounded-lg border border-border px-4 py-2 text-sm">
                     {t("good")}
                   </button>
-                  <button onClick={() => review(5)} className="rounded-lg border border-border px-4 py-2 text-sm">
+                  <button onClick={() => review(4)} className="rounded-lg border border-border px-4 py-2 text-sm">
                     {t("easy")}
                   </button>
                 </>
