@@ -81,6 +81,14 @@ export function ChatApp({
     setActiveId(id);
   }
 
+  async function removeSession(id: string) {
+    if (!window.confirm(t("deleteConfirm"))) return;
+    await fetch(`/api/chat/sessions/${id}`, { method: "DELETE" });
+    const next = sessions.filter((s) => s.id !== id);
+    setSessions(next);
+    if (id === activeId) setActiveId(next[0]?.id ?? null);
+  }
+
   async function send() {
     const content = input.trim();
     if (!content || streaming) return;
@@ -177,18 +185,27 @@ export function ChatApp({
           {t("newChat")}
         </button>
         {sessions.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => setActiveId(s.id)}
-            className={
-              "block w-full truncate rounded-lg px-3 py-2 text-left text-sm " +
-              (s.id === activeId
-                ? "bg-foreground/10 font-medium"
-                : "text-muted hover:bg-foreground/5")
-            }
-          >
-            {s.title}
-          </button>
+          <div key={s.id} className="flex items-center gap-1">
+            <button
+              onClick={() => setActiveId(s.id)}
+              className={
+                "min-w-0 flex-1 truncate rounded-lg px-3 py-2 text-left text-sm " +
+                (s.id === activeId
+                  ? "bg-foreground/10 font-medium"
+                  : "text-muted hover:bg-foreground/5")
+              }
+            >
+              {s.title}
+            </button>
+            <button
+              onClick={() => void removeSession(s.id)}
+              aria-label={t("deleteChat")}
+              title={t("deleteChat")}
+              className="shrink-0 rounded-md px-1.5 py-1 text-xs text-muted transition-colors hover:text-danger"
+            >
+              ✕
+            </button>
+          </div>
         ))}
       </aside>
 

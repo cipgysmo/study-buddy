@@ -1,11 +1,16 @@
 import { getTranslations } from "next-intl/server";
 import { StatCard } from "@/components/ui/stat-card";
+import { NavIcon } from "@/components/shell/nav-icons";
+import { getAchievements, syncAchievements } from "@/lib/achievements";
 import { getProgress } from "@/lib/progress";
 
 export default async function ProgressPage() {
   const t = await getTranslations("Progress");
   const data = getProgress();
   const maxActivity = Math.max(1, ...data.activity.map((a) => a.count));
+  syncAchievements();
+  const achievements = getAchievements();
+  const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
   return (
     <div className="space-y-6">
@@ -71,6 +76,49 @@ export default async function ProgressPage() {
             ))}
           </div>
         )}
+      </div>
+
+      <div className="rounded-2xl border border-border bg-card p-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-medium text-muted">{t("badgesTitle")}</h2>
+          <span className="text-xs text-muted">
+            {t("badgesUnlocked", { count: unlockedCount, total: achievements.length })}
+          </span>
+        </div>
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {achievements.map((a) => (
+            <div
+              key={a.id}
+              className={
+                "flex items-start gap-3 rounded-xl border p-3 " +
+                (a.unlocked
+                  ? "border-accent/40 bg-accent/5"
+                  : "border-border bg-background opacity-70")
+              }
+            >
+              <span
+                className={
+                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg " +
+                  (a.unlocked ? "bg-accent/15 text-accent" : "bg-foreground/5 text-muted")
+                }
+              >
+                <NavIcon name={a.icon} className="h-5 w-5" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium">{t(`badge_${a.id}_name`)}</p>
+                <p className="mt-0.5 text-xs text-muted">{t(`badge_${a.id}_desc`)}</p>
+                {!a.unlocked && (
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-foreground/10">
+                    <div
+                      className="h-full rounded-full bg-accent/60"
+                      style={{ width: `${(a.current / a.target) * 100}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

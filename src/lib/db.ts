@@ -226,6 +226,15 @@ const MIGRATIONS: { version: number; sql: string }[] = [
       CREATE INDEX IF NOT EXISTS idx_material_topics_topic ON material_topics(topic_id);
     `,
   },
+  {
+    version: 11,
+    sql: `
+      CREATE TABLE IF NOT EXISTS unlocked_achievements (
+        achievement_id TEXT PRIMARY KEY,
+        unlocked_at    TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+    `,
+  },
 ];
 
 export function getDb(): Database.Database {

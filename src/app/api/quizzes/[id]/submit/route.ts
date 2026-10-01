@@ -1,3 +1,4 @@
+import { achievementIcons, syncAchievements } from "@/lib/achievements";
 import { getQuiz, gradeQuiz } from "@/lib/quizzes";
 
 export const dynamic = "force-dynamic";
@@ -14,5 +15,6 @@ export async function POST(req: Request, ctx: Ctx) {
     /* ignore */
   }
   const result = gradeQuiz(id, body.answers ?? {});
-  return Response.json(result);
+  const newAchievements = achievementIcons(syncAchievements());
+  return Response.json({ ...result, newAchievements });
 }

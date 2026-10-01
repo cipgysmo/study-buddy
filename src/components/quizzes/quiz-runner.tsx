@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Diagram } from "@/components/ui/diagram";
 import { ExplainButton } from "@/components/ui/explain-button";
+import { NavIcon } from "@/components/shell/nav-icons";
 
 export interface RunnerQuestion {
   id: string;
@@ -38,8 +39,10 @@ export function QuizRunner({
   onExit: () => void;
 }) {
   const t = useTranslations("Quizzes");
+  const tb = useTranslations("Progress");
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [result, setResult] = useState<{ score: number; total: number } | null>(null);
+  const [newBadges, setNewBadges] = useState<{ id: string; icon: string }[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [remaining, setRemaining] = useState<number | null>(
     durationMin ? durationMin * 60 : null
@@ -55,8 +58,13 @@ export function QuizRunner({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ answers }),
     });
-    const d = (await r.json()) as { score: number; total: number };
+    const d = (await r.json()) as {
+      score: number;
+      total: number;
+      newAchievements?: { id: string; icon: string }[];
+    };
     setResult({ score: d.score, total: d.total });
+    setNewBadges(d.newAchievements ?? []);
   }, [quiz.id, answers, submitting]);
 
   const running = remaining !== null && result === null;
@@ -91,6 +99,22 @@ export function QuizRunner({
             </p>
             <p className="text-muted">{t("score")}</p>
           </div>
+          {newBadges.length > 0 && (
+            <div className="rounded-2xl border border-accent/40 bg-accent/5 p-4">
+              <p className="text-sm font-medium text-accent">{tb("badgeUnlocked")}</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {newBadges.map((b) => (
+                  <span
+                    key={b.id}
+                    className="flex items-center gap-1.5 rounded-full bg-accent/15 px-3 py-1 text-sm font-medium text-accent"
+                  >
+                    <NavIcon name={b.icon} className="h-4 w-4" />
+                    {tb(`badge_${b.id}_name`)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
           {questions.map((q, qi) => {
             const correct = answers[q.id] === q.correct_index;
             return (
