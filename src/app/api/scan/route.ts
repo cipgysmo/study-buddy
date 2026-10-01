@@ -1,5 +1,9 @@
-import { ocrImage } from "@/lib/ocr";
-import { addMaterial } from "@/lib/subjects";
+import { randomUUID } from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
+import { dataDir } from "@/lib/env";
+import { enqueueJob } from "@/lib/jobs";
+import "@/lib/job-handlers";
 
 export const dynamic = "force-dynamic";
 
@@ -15,18 +19,19 @@ export async function POST(req: Request) {
   }
   const buffer = Buffer.from(await file.arrayBuffer());
 
-  let text: string;
-  try {
-    text = await ocrImage(buffer, mime);
-  } catch (e) {
-    return Response.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
-  }
+  const id = randomUUID();
+  const dir = path.join(dataDir(), "uploads", "_scan");
+  fs.mkdirSync(dir, { recursive: true });
+  const ext = path.extname(file.name) || ".png";
+  const tempPath = path.join(dir, `${id}${ext}`);
+  fs.writeFileSync(tempPath, buffer);
 
   const subjectId = form.get("subjectId");
-  let material = null;
-  if (typeof subjectId === "string" && subjectId) {
-    material = await addMaterial(subjectId, { filename: file.name, mime, buffer }, text);
-  }
-
-  return Response.json({ text, material }, { status: 201 });
+  const job = enqueueJob("scan", {
+    tempPath,
+    filename: file.name,
+    mime,
+    subjectId: typeof subjectId === "string" && subjectId ? subjectId : null,
+  });
+  return Response.json({ job }, { status: 202 });
 }

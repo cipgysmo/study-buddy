@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { StatCard } from "@/components/ui/stat-card";
 import { getProgress } from "@/lib/progress";
 
 export default async function ProgressPage() {
@@ -14,12 +15,12 @@ export default async function ProgressPage() {
       </header>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <Stat label={t("subjects")} value={data.totals.subjects} />
-        <Stat label={t("materials")} value={data.totals.materials} />
-        <Stat label={t("flashcards")} value={data.totals.flashcards} />
-        <Stat label={t("quizzes")} value={data.totals.quizzes} />
-        <Stat label={t("attempts")} value={data.totals.quizAttempts} />
-        <Stat label={t("messages")} value={data.totals.chatMessages} />
+        <StatCard label={t("subjects")} value={data.totals.subjects} />
+        <StatCard label={t("materials")} value={data.totals.materials} />
+        <StatCard label={t("flashcards")} value={data.totals.flashcards} />
+        <StatCard label={t("quizzes")} value={data.totals.quizzes} />
+        <StatCard label={t("attempts")} value={data.totals.quizAttempts} />
+        <StatCard label={t("messages")} value={data.totals.chatMessages} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -71,15 +72,6 @@ export default async function ProgressPage() {
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-2xl border border-border bg-card p-4">
-      <p className="text-2xl font-semibold">{value}</p>
-      <p className="text-sm text-muted">{label}</p>
     </div>
   );
 }

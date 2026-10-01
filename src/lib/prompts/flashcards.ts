@@ -7,15 +7,20 @@ export function flashcardGeneratorPrompt(opts: {
   subjectName: string;
   count: number;
   context: string;
+  topics?: string[];
 }): string {
-  return [
+  const lines = [
     `You create flashcards for a student. Subject: ${opts.subjectName}.`,
     `Respond in ${opts.language}.`,
+  ];
+  if (opts.topics?.length) lines.push(`Focus on these topics: ${opts.topics.join(", ")}.`);
+  lines.push(
     `Create exactly ${opts.count} flashcards based on the notes below. Each card has a concise question or prompt on the front and a clear, correct answer on the back.`,
     `Return ONLY a JSON object: {"cards": [{"front": string, "back": string}]}.`,
     "",
     "<notes>",
     opts.context || "(no notes provided - use general knowledge of the subject)",
-    "</notes>",
-  ].join("\n");
+    "</notes>"
+  );
+  return lines.join("\n");
 }

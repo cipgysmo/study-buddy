@@ -3,16 +3,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { SubjectSelect, type SubjectOption } from "@/components/ui/subject-select";
+import { TopicPicker } from "@/components/ui/topic-picker";
+import { Diagram } from "@/components/ui/diagram";
+import { useJob } from "@/lib/use-jobs";
 
-interface Subject {
-  id: string;
-  name: string;
-}
 interface Exercise {
   id: string;
   prompt: string;
   solution_steps: string[];
   difficulty: string;
+  diagram?: string | null;
 }
 interface TrueFalseItem {
   id: string;
@@ -28,17 +29,30 @@ export function PracticeApp({
 }: {
   exercises: Exercise[];
   items: TrueFalseItem[];
-  subjects: Subject[];
+  subjects: SubjectOption[];
 }) {
   const t = useTranslations("Practice");
   const router = useRouter();
   const [tab, setTab] = useState<"exercises" | "truefalse">("exercises");
   const [subjectId, setSubjectId] = useState("");
+  const [topicIds, setTopicIds] = useState<string[]>([]);
   const [count, setCount] = useState(5);
   const [busy, setBusy] = useState(false);
+  const [jobId, setJobId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
   const [tfAnswers, setTfAnswers] = useState<Record<string, boolean>>({});
+  useJob(jobId, (settled) => {
+    if (settled.status === "done") {
+      setJobId(null);
+      setBusy(false);
+      router.refresh();
+    } else {
+      setJobId(null);
+      setBusy(false);
+      setError(settled.error ?? "error");
+    }
+  });
 
   async function generate(kind: "exercises" | "truefalse") {
     if (!subjectId || busy) return;
@@ -48,14 +62,13 @@ export function PracticeApp({
       const r = await fetch(`/api/${kind}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subjectId, count }),
+        body: JSON.stringify({ subjectId, count, topicIds }),
       });
-      const d = await r.json();
-      if (!r.ok) throw new Error(d.error || "error");
-      router.refresh();
+      const d = (await r.json()) as { job?: { id: string }; error?: string };
+      if (!r.ok || !d.job) throw new Error(d.error || "error");
+      setJobId(d.job.id);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
-    } finally {
       setBusy(false);
     }
   }
@@ -74,18 +87,15 @@ export function PracticeApp({
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-card p-4">
-        <select
+        <SubjectSelect
           value={subjectId}
-          onChange={(e) => setSubjectId(e.target.value)}
-          className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
-        >
-          <option value="">{t("selectSubject")}</option>
-          {subjects.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
+          onChange={(v) => {
+            setSubjectId(v);
+            setTopicIds([]);
+          }}
+          subjects={subjects}
+          placeholder={t("selectSubject")}
+        />
         <input
           type="number"
           min={1}
@@ -110,6 +120,8 @@ export function PracticeApp({
         </button>
         {error && <span className="text-sm text-red-500">{error}</span>}
       </div>
+
+      <TopicPicker subjectId={subjectId} selected={topicIds} onChange={setTopicIds} />
 
       <div className="flex gap-2">
         <button
@@ -157,6 +169,11 @@ export function PracticeApp({
                     {difficultyLabel(ex.difficulty)}
                   </span>
                 </div>
+                {ex.diagram && (
+                  <div className="mt-3">
+                    <Diagram svg={ex.diagram} />
+                  </div>
+                )}
                 <button
                   onClick={() => setRevealed((p) => ({ ...p, [ex.id]: !p[ex.id] }))}
                   className="mt-3 text-sm text-accent hover:underline"

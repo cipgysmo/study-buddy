@@ -1,4 +1,6 @@
-import { addMaterial, listMaterials } from "@/lib/subjects";
+import { enqueueJob } from "@/lib/jobs";
+import "@/lib/job-handlers";
+import { addMaterialPending, linkMaterialJob, listMaterials } from "@/lib/subjects";
 
 export const dynamic = "force-dynamic";
 
@@ -17,10 +19,17 @@ export async function POST(req: Request, ctx: Ctx) {
     return Response.json({ error: "file_required" }, { status: 400 });
   }
   const buffer = Buffer.from(await file.arrayBuffer());
-  const material = await addMaterial(id, {
-    filename: file.name,
-    mime: file.type || "application/octet-stream",
-    buffer,
-  });
-  return Response.json({ material }, { status: 201 });
+  const role = form.get("role") === "exam" ? "exam" : "notes";
+  const material = addMaterialPending(
+    id,
+    {
+      filename: file.name,
+      mime: file.type || "application/octet-stream",
+      buffer,
+    },
+    role
+  );
+  const job = enqueueJob("ocr", { materialId: material.id });
+  linkMaterialJob(material.id, job.id);
+  return Response.json({ material, job }, { status: 201 });
 }

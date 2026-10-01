@@ -1,4 +1,6 @@
-import { generateExercises, listExercises } from "@/lib/practice";
+import { enqueueJob } from "@/lib/jobs";
+import "@/lib/job-handlers";
+import { listExercises } from "@/lib/practice";
 
 export const dynamic = "force-dynamic";
 
@@ -8,7 +10,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  let body: { subjectId?: string; count?: number } = {};
+  let body: { subjectId?: string; count?: number; topicIds?: string[] } = {};
   try {
     body = await req.json();
   } catch {
@@ -16,10 +18,9 @@ export async function POST(req: Request) {
   }
   if (!body.subjectId) return Response.json({ error: "subjectId_required" }, { status: 400 });
   const count = Math.max(1, Math.min(20, body.count ?? 5));
-  try {
-    const exercises = await generateExercises(body.subjectId, count);
-    return Response.json({ exercises }, { status: 201 });
-  } catch (e) {
-    return Response.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
-  }
+  const topicIds = Array.isArray(body.topicIds)
+    ? body.topicIds.filter((x): x is string => typeof x === "string")
+    : [];
+  const job = enqueueJob("exercises", { subjectId: body.subjectId, count, topicIds });
+  return Response.json({ job }, { status: 202 });
 }

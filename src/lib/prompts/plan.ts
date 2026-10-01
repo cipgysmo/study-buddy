@@ -19,6 +19,7 @@ export function planGeneratorPrompt(opts: {
   daysAvailable: number;
   targetGrade: string | null;
   context: string;
+  topics?: string[];
 }): string {
   const lines = [
     "You are an exam-prep planner. Create a day-by-day study plan for a student preparing for an exam.",
@@ -26,6 +27,7 @@ export function planGeneratorPrompt(opts: {
     `Subject: ${opts.subjectName}.`,
     `There are ${opts.daysAvailable} day(s) available. dayIndex 0 is today; the last dayIndex is the exam day.`,
   ];
+  if (opts.topics?.length) lines.push(`Focus on these topics: ${opts.topics.join(", ")}.`);
   if (opts.targetGrade) lines.push(`Target grade: ${opts.targetGrade}.`);
   lines.push(
     `Create exactly ${opts.daysAvailable} items, one per day, in chronological order (dayIndex 0..${opts.daysAvailable - 1}). Each item has a focused topic and concrete, actionable instructions (what to review, practice, or self-test).`,

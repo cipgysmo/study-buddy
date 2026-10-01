@@ -1,4 +1,6 @@
-import { createPlan, listPlans } from "@/lib/plans";
+import { enqueueJob } from "@/lib/jobs";
+import "@/lib/job-handlers";
+import { listPlans } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +14,7 @@ export async function POST(req: Request) {
     title?: string;
     examDate?: string;
     targetGrade?: string;
+    topicIds?: string[];
   } = {};
   try {
     body = await req.json();
@@ -21,15 +24,15 @@ export async function POST(req: Request) {
   if (!body.subjectId || !body.examDate) {
     return Response.json({ error: "subjectId_and_examDate_required" }, { status: 400 });
   }
-  try {
-    const plan = await createPlan({
-      subjectId: body.subjectId,
-      title: body.title?.trim() || "Study plan",
-      examDate: body.examDate,
-      targetGrade: body.targetGrade?.trim() || null,
-    });
-    return Response.json({ plan }, { status: 201 });
-  } catch (e) {
-    return Response.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
-  }
+  const topicIds = Array.isArray(body.topicIds)
+    ? body.topicIds.filter((x): x is string => typeof x === "string")
+    : [];
+  const job = enqueueJob("plan", {
+    subjectId: body.subjectId,
+    title: body.title?.trim() || "Study plan",
+    examDate: body.examDate,
+    targetGrade: body.targetGrade?.trim() || null,
+    topicIds,
+  });
+  return Response.json({ job }, { status: 202 });
 }

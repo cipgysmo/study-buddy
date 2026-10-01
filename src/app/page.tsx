@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { StatCard } from "@/components/ui/stat-card";
+import { NavIcon } from "@/components/shell/nav-icons";
 import { listSubjects } from "@/lib/subjects";
 import { dueFlashcards } from "@/lib/flashcards";
 import { getProgress } from "@/lib/progress";
@@ -11,12 +13,12 @@ export default async function DashboardPage() {
   const { streak } = getProgress();
 
   const links = [
-    { href: "/chat", label: t("chat") },
-    { href: "/flashcards", label: t("flashcards") },
-    { href: "/quizzes", label: t("quizzes") },
-    { href: "/exercises", label: t("exercises") },
-    { href: "/scan", label: t("scan") },
-    { href: "/progress", label: t("progress") },
+    { href: "/chat", label: t("chat"), icon: "chat", color: "bg-blue-500/10 text-blue-600" },
+    { href: "/flashcards", label: t("flashcards"), icon: "flashcards", color: "bg-purple-500/10 text-purple-600" },
+    { href: "/quizzes", label: t("quizzes"), icon: "quizzes", color: "bg-amber-500/10 text-amber-600" },
+    { href: "/exercises", label: t("exercises"), icon: "exercises", color: "bg-green-500/10 text-green-600" },
+    { href: "/scan", label: t("scan"), icon: "scan", color: "bg-rose-500/10 text-rose-600" },
+    { href: "/progress", label: t("progress"), icon: "progress", color: "bg-cyan-500/10 text-cyan-600" },
   ];
 
   return (
@@ -39,22 +41,16 @@ export default async function DashboardPage() {
             <Link
               key={l.href}
               href={l.href}
-              className="rounded-2xl border border-border bg-card p-4 font-medium transition-colors hover:border-accent"
+              className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 transition-colors hover:border-accent"
             >
-              {l.label}
+              <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${l.color}`}>
+                <NavIcon name={l.icon} className="h-5 w-5" />
+              </span>
+              <span className="font-medium">{l.label}</span>
             </Link>
           ))}
         </div>
       </div>
-    </div>
-  );
-}
-
-function StatCard({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-2xl border border-border bg-card p-4">
-      <p className="text-2xl font-semibold">{value}</p>
-      <p className="text-sm text-muted">{label}</p>
     </div>
   );
 }

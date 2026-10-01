@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
 import { AppShell } from "@/components/shell/app-shell";
+import { JobsProvider } from "@/components/shell/jobs-provider";
+import { resolveTheme } from "@/lib/theme";
 import "./globals.css";
 
 // Single-user, data-driven app: never statically prerender.
@@ -17,11 +19,18 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const locale = await getLocale();
+  const theme = await resolveTheme();
   return (
-    <html lang={locale} className="h-full antialiased">
+    <html
+      lang={locale}
+      className="h-full antialiased"
+      data-theme={theme === "system" ? undefined : theme}
+    >
       <body className="min-h-full">
         <NextIntlClientProvider>
-          <AppShell>{children}</AppShell>
+          <JobsProvider>
+            <AppShell>{children}</AppShell>
+          </JobsProvider>
         </NextIntlClientProvider>
       </body>
     </html>

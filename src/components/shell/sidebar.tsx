@@ -2,6 +2,11 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { JobsIndicator } from "./jobs-indicator";
+import { useActiveJobs } from "./jobs-provider";
+import { LlmStatus } from "./llm-status";
+import { NavIcon } from "./nav-icons";
+import { ThemeToggle } from "./theme-toggle";
 
 interface NavItem {
   href: string;
@@ -18,7 +23,6 @@ const NAV: NavItem[] = [
   { href: "/exercises", labelKey: "exercises" },
   { href: "/mock-exams", labelKey: "mockExams" },
   { href: "/scan", labelKey: "scan" },
-  { href: "/podcasts", labelKey: "podcasts" },
   { href: "/progress", labelKey: "progress" },
   { href: "/settings", labelKey: "settings" },
 ];
@@ -31,6 +35,7 @@ export function Sidebar({
   onNavigate?: () => void;
 }) {
   const t = useTranslations("Nav");
+  const activeJobs = useActiveJobs();
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
@@ -51,17 +56,27 @@ export function Sidebar({
                 onClick={onNavigate}
                 aria-current={active ? "page" : undefined}
                 className={
-                  "flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors " +
+                  "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors " +
                   (active
                     ? "bg-accent text-accent-foreground"
                     : "text-foreground/80 hover:bg-foreground/5")
                 }
               >
+                <NavIcon name={item.labelKey} />
                 {t(item.labelKey)}
               </Link>
             );
           })}
         </nav>
+        {activeJobs.length > 0 && (
+          <div className="px-4 pb-1">
+            <JobsIndicator />
+          </div>
+        )}
+        <div className="flex items-center justify-between gap-2 border-t border-border px-4 py-3">
+          <LlmStatus />
+          <ThemeToggle />
+        </div>
       </div>
     </aside>
   );

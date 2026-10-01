@@ -10,6 +10,7 @@ import { buildSubjectContext } from "@/lib/context";
 import { resolveLocale } from "@/lib/locale";
 import { chatStream, type ChatMessage as LlmMessage } from "@/lib/llm";
 import { tutorSystemPrompt } from "@/lib/prompts/tutor";
+import { topicNames } from "@/lib/topics";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,7 @@ export async function POST(req: Request, ctx: Ctx) {
   const session = getSession(id);
   if (!session) return Response.json({ error: "not_found" }, { status: 404 });
 
-  let body: { content?: string; subjectId?: string | null } = {};
+  let body: { content?: string; subjectId?: string | null; topicIds?: string[] } = {};
   try {
     body = await req.json();
   } catch {
@@ -42,7 +43,10 @@ export async function POST(req: Request, ctx: Ctx) {
   const locale = await resolveLocale();
   const languageName = LANGUAGES.find((l) => l.code === locale)?.name ?? locale;
   const context = subjectId ? buildSubjectContext(subjectId) : undefined;
-  const system = tutorSystemPrompt(languageName, context);
+  const topicIds = Array.isArray(body.topicIds)
+    ? body.topicIds.filter((x): x is string => typeof x === "string")
+    : [];
+  const system = tutorSystemPrompt(languageName, context, topicNames(topicIds));
 
   const history = listMessages(id);
   const messages: LlmMessage[] = [
@@ -60,14 +64,19 @@ export async function POST(req: Request, ctx: Ctx) {
       const send = (obj: unknown) =>
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
       try {
-        for await (const delta of chatStream({ messages })) {
+        for await (const delta of chatStream({ messages, signal: req.signal })) {
           full += delta;
           send({ type: "delta", content: delta });
         }
         const saved = addMessage(id, "assistant", full);
         send({ type: "done", messageId: saved.id });
       } catch (e) {
-        send({ type: "error", message: e instanceof Error ? e.message : String(e) });
+        // Client stopped the stream: keep any partial answer, report nothing.
+        if (req.signal.aborted) {
+          if (full) addMessage(id, "assistant", full);
+        } else {
+          send({ type: "error", message: e instanceof Error ? e.message : String(e) });
+        }
       } finally {
         controller.close();
       }

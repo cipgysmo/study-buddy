@@ -1,0 +1,69 @@
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+
+const dir = mkdtempSync(path.join(tmpdir(), "sb-topics-"));
+process.env.DATA_DIR = dir;
+
+import { getDb } from "@/lib/db";
+import { createTopic, deleteTopic, getTopic, listTopics, topicNames } from "@/lib/topics";
+
+let subjectId: string;
+
+beforeAll(() => {
+  const db = getDb();
+  const info = db.prepare("INSERT INTO subjects (id, name) VALUES (?, ?)").run("subj-1", "Math");
+  subjectId = "subj-1";
+  expect(info.changes).toBe(1);
+});
+
+afterAll(() => {
+  rmSync(dir, { recursive: true, force: true });
+});
+
+describe("topics", () => {
+  it("creates and lists topics for a subject", () => {
+    const a = createTopic(subjectId, "Pythagoras");
+    const b = createTopic(subjectId, "Triangles");
+    expect(a.name).toBe("Pythagoras");
+    expect(b.name).toBe("Triangles");
+    const topics = listTopics(subjectId);
+    expect(topics.map((t) => t.name)).toEqual(["Pythagoras", "Triangles"]);
+    expect(topics.every((t) => t.subject_id === subjectId)).toBe(true);
+  });
+
+  it("trims topic names", () => {
+    const t = createTopic(subjectId, "  Circles  ");
+    expect(t.name).toBe("Circles");
+  });
+
+  it("resolves ids to names, skipping unknown ids", () => {
+    const topics = listTopics(subjectId);
+    const names = topicNames([topics[0].id, "nope", topics[1].id]);
+    expect(names).toEqual(["Pythagoras", "Triangles"]);
+    expect(topicNames([])).toEqual([]);
+  });
+
+  it("fetches a single topic or null", () => {
+    const t = listTopics(subjectId)[0];
+    expect(getTopic(t.id)?.name).toBe(t.name);
+    expect(getTopic("missing")).toBeNull();
+  });
+
+  it("deletes a topic", () => {
+    const t = createTopic(subjectId, "Temp");
+    expect(getTopic(t.id)).not.toBeNull();
+    deleteTopic(t.id);
+    expect(getTopic(t.id)).toBeNull();
+    expect(listTopics(subjectId).map((x) => x.name)).not.toContain("Temp");
+  });
+
+  it("cascades topic deletion when the subject is removed", () => {
+    const db = getDb();
+    db.prepare("INSERT INTO subjects (id, name) VALUES (?, ?)").run("subj-2", "Physics");
+    const t = createTopic("subj-2", "Mechanics");
+    db.prepare("DELETE FROM subjects WHERE id = ?").run("subj-2");
+    expect(getTopic(t.id)).toBeNull();
+  });
+});

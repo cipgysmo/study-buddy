@@ -12,6 +12,8 @@ export interface Quiz {
   subject_id: string;
   title: string;
   created_at: string;
+  /** Time limit in minutes; null = untimed. Timed quizzes are mock exams. */
+  duration_min: number | null;
 }
 
 export interface Question {
@@ -22,6 +24,8 @@ export interface Question {
   correct_index: number;
   explanation: string;
   sort_order: number;
+  /** Optional standalone SVG figure attached to the question. */
+  diagram: string | null;
 }
 
 export interface QuizAttempt {
@@ -35,6 +39,12 @@ export interface QuizAttempt {
 
 export function listQuizzes(): Quiz[] {
   return getDb().prepare("SELECT * FROM quizzes ORDER BY created_at DESC").all() as Quiz[];
+}
+
+export function listTimedQuizzes(): Quiz[] {
+  return getDb()
+    .prepare("SELECT * FROM quizzes WHERE duration_min IS NOT NULL ORDER BY created_at DESC")
+    .all() as Quiz[];
 }
 
 export function getQuiz(id: string): Quiz | null {
@@ -54,6 +64,7 @@ export function listQuestions(quizId: string): Question[] {
     correct_index: r.correct_index,
     explanation: r.explanation,
     sort_order: r.sort_order,
+    diagram: r.diagram ?? null,
   }));
 }
 
@@ -70,7 +81,9 @@ export function deleteQuiz(id: string): void {
 export async function generateQuiz(
   subjectId: string,
   count: number,
-  title?: string
+  title?: string,
+  durationMin?: number,
+  topics?: string[]
 ): Promise<Quiz> {
   const subject = getSubject(subjectId);
   if (!subject) throw new Error("subject_not_found");
@@ -87,27 +100,46 @@ export async function generateQuiz(
           subjectName: subject.name,
           count,
           context,
+          topics,
         }),
       },
     ],
     temperature: 0.5,
   });
 
+  return insertQuiz(
+    subjectId,
+    draft.title?.trim() || title?.trim() || "Quiz",
+    durationMin ?? null,
+    (draft.questions ?? []).slice(0, count)
+  );
+}
+
+/** Insert a quiz and its questions from a validated draft. Shared by the
+ * subject-context and similar-exam generators. */
+export function insertQuiz(
+  subjectId: string,
+  quizTitle: string,
+  durationMin: number | null,
+  questions: QuizDraft["questions"]
+): Quiz {
   const id = randomUUID();
   const db = getDb();
-  db.prepare("INSERT INTO quizzes (id, subject_id, title) VALUES (?, ?, ?)").run(
+  db.prepare("INSERT INTO quizzes (id, subject_id, title, duration_min) VALUES (?, ?, ?, ?)").run(
     id,
     subjectId,
-    draft.title?.trim() || title?.trim() || "Quiz"
+    quizTitle,
+    durationMin
   );
   const insertQ = db.prepare(
-    "INSERT INTO questions (id, quiz_id, prompt, options, correct_index, explanation, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)"
+    "INSERT INTO questions (id, quiz_id, prompt, options, correct_index, explanation, diagram, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
   );
   let order = 0;
-  for (const q of (draft.questions ?? []).slice(0, count)) {
+  for (const q of questions) {
     if (!q.prompt || !Array.isArray(q.options) || q.options.length < 2) continue;
     const correctIndex = Math.max(0, Math.min(q.options.length - 1, q.correct_index ?? 0));
-    insertQ.run(randomUUID(), id, q.prompt, JSON.stringify(q.options), correctIndex, q.explanation ?? "", order);
+    const diagram = typeof q.diagram === "string" && q.diagram.trim() ? q.diagram.trim() : null;
+    insertQ.run(randomUUID(), id, q.prompt, JSON.stringify(q.options), correctIndex, q.explanation ?? "", diagram, order);
     order++;
   }
   return getQuiz(id)!;

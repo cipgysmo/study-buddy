@@ -22,6 +22,8 @@ export interface ChatOptions {
   maxTokens?: number;
   /** Request a strict JSON object response (used by chatJSON). */
   json?: boolean;
+  /** Abort the upstream request (e.g. when the client disconnects). */
+  signal?: AbortSignal;
 }
 
 /** Non-streaming completion. Returns the raw assistant text. */
@@ -32,6 +34,7 @@ export async function chat(opts: ChatOptions): Promise<string> {
     temperature: opts.temperature ?? 0.4,
     ...(opts.maxTokens ? { max_tokens: opts.maxTokens } : {}),
     ...(opts.json ? { response_format: { type: "json_object" as const } } : {}),
+    ...(opts.signal ? { signal: opts.signal } : {}),
   });
   return res.choices[0]?.message?.content ?? "";
 }
@@ -44,6 +47,7 @@ export async function* chatStream(opts: ChatOptions): AsyncGenerator<string> {
     temperature: opts.temperature ?? 0.4,
     ...(opts.maxTokens ? { max_tokens: opts.maxTokens } : {}),
     stream: true,
+    ...(opts.signal ? { signal: opts.signal } : {}),
   });
   for await (const chunk of stream) {
     const delta = chunk.choices[0]?.delta?.content;

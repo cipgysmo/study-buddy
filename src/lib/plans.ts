@@ -76,6 +76,7 @@ export async function createPlan(opts: {
   title: string;
   examDate: string;
   targetGrade?: string | null;
+  topics?: string[];
 }): Promise<StudyPlan> {
   const subject = getSubject(opts.subjectId);
   if (!subject) throw new Error("subject_not_found");
@@ -98,6 +99,7 @@ export async function createPlan(opts: {
           daysAvailable,
           targetGrade: opts.targetGrade ?? null,
           context,
+          topics: opts.topics,
         }),
       },
     ],

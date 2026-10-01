@@ -1,4 +1,6 @@
-import { generateFlashcards, listFlashcards } from "@/lib/flashcards";
+import { listFlashcards } from "@/lib/flashcards";
+import { enqueueJob } from "@/lib/jobs";
+import "@/lib/job-handlers";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +11,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  let body: { subjectId?: string; count?: number } = {};
+  let body: { subjectId?: string; count?: number; topicIds?: string[] } = {};
   try {
     body = await req.json();
   } catch {
@@ -17,10 +19,9 @@ export async function POST(req: Request) {
   }
   if (!body.subjectId) return Response.json({ error: "subjectId_required" }, { status: 400 });
   const count = Math.max(1, Math.min(50, body.count ?? 10));
-  try {
-    const flashcards = await generateFlashcards(body.subjectId, count);
-    return Response.json({ flashcards }, { status: 201 });
-  } catch (e) {
-    return Response.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
-  }
+  const topicIds = Array.isArray(body.topicIds)
+    ? body.topicIds.filter((x): x is string => typeof x === "string")
+    : [];
+  const job = enqueueJob("flashcards", { subjectId: body.subjectId, count, topicIds });
+  return Response.json({ job }, { status: 202 });
 }

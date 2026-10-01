@@ -14,6 +14,8 @@ export interface Exercise {
   prompt: string;
   solution_steps: string[];
   difficulty: string;
+  /** Optional standalone SVG figure attached to the exercise. */
+  diagram: string | null;
   created_at: string;
 }
 
@@ -57,7 +59,11 @@ export function deleteExercise(id: string): void {
   getDb().prepare("DELETE FROM exercises WHERE id = ?").run(id);
 }
 
-export async function generateExercises(subjectId: string, count: number): Promise<Exercise[]> {
+export async function generateExercises(
+  subjectId: string,
+  count: number,
+  topics?: string[]
+): Promise<Exercise[]> {
   const subject = getSubject(subjectId);
   if (!subject) throw new Error("subject_not_found");
   const locale = await resolveLocale();
@@ -73,6 +79,7 @@ export async function generateExercises(subjectId: string, count: number): Promi
           subjectName: subject.name,
           count,
           context,
+          topics,
         }),
       },
     ],
@@ -80,7 +87,7 @@ export async function generateExercises(subjectId: string, count: number): Promi
   });
 
   const insert = getDb().prepare(
-    "INSERT INTO exercises (id, subject_id, prompt, solution_steps, difficulty) VALUES (?, ?, ?, ?, ?)"
+    "INSERT INTO exercises (id, subject_id, prompt, solution_steps, difficulty, diagram) VALUES (?, ?, ?, ?, ?, ?)"
   );
   const created: Exercise[] = [];
   for (const ex of (draft.exercises ?? []).slice(0, count)) {
@@ -89,7 +96,8 @@ export async function generateExercises(subjectId: string, count: number): Promi
     const steps = Array.isArray(ex.solution_steps)
       ? ex.solution_steps.filter((s) => typeof s === "string" && s.trim())
       : [];
-    insert.run(id, subjectId, ex.prompt, JSON.stringify(steps), ex.difficulty ?? "medium");
+    const diagram = typeof ex.diagram === "string" && ex.diagram.trim() ? ex.diagram.trim() : null;
+    insert.run(id, subjectId, ex.prompt, JSON.stringify(steps), ex.difficulty ?? "medium", diagram);
     const saved = getExercise(id);
     if (saved) created.push(saved);
   }
@@ -116,7 +124,11 @@ export function deleteTrueFalse(id: string): void {
   getDb().prepare("DELETE FROM truefalse WHERE id = ?").run(id);
 }
 
-export async function generateTrueFalse(subjectId: string, count: number): Promise<TrueFalseItem[]> {
+export async function generateTrueFalse(
+  subjectId: string,
+  count: number,
+  topics?: string[]
+): Promise<TrueFalseItem[]> {
   const subject = getSubject(subjectId);
   if (!subject) throw new Error("subject_not_found");
   const locale = await resolveLocale();
@@ -132,6 +144,7 @@ export async function generateTrueFalse(subjectId: string, count: number): Promi
           subjectName: subject.name,
           count,
           context,
+          topics,
         }),
       },
     ],

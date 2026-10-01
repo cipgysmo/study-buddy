@@ -54,7 +54,11 @@ export function deleteFlashcard(id: string): void {
   getDb().prepare("DELETE FROM flashcards WHERE id = ?").run(id);
 }
 
-export async function generateFlashcards(subjectId: string, count: number): Promise<Flashcard[]> {
+export async function generateFlashcards(
+  subjectId: string,
+  count: number,
+  topics?: string[]
+): Promise<Flashcard[]> {
   const subject = getSubject(subjectId);
   if (!subject) throw new Error("subject_not_found");
   const locale = await resolveLocale();
@@ -70,6 +74,7 @@ export async function generateFlashcards(subjectId: string, count: number): Prom
           subjectName: subject.name,
           count,
           context,
+          topics,
         }),
       },
     ],

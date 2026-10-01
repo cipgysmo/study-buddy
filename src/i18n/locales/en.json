@@ -13,7 +13,6 @@
     "exercises": "Exercises",
     "mockExams": "Mock Exams",
     "scan": "Scan",
-    "podcasts": "Podcasts",
     "progress": "Progress",
     "settings": "Settings"
   },
@@ -25,7 +24,15 @@
     "delete": "Delete",
     "create": "Create",
     "loading": "Loading…",
-    "close": "Close"
+    "close": "Close",
+    "processing": "Processing…",
+    "failed": "Failed",
+    "ready": "Ready",
+    "retry": "Retry",
+    "inProgress": "{count, plural, one {Processing # job} other {Processing # jobs}}",
+    "llmOffline": "LLM offline",
+    "explain": "Explain",
+    "error": "Error"
   },
   "Dashboard": {
     "title": "Overview",
@@ -35,7 +42,13 @@
     "subjects": "Subjects",
     "due": "Cards due today",
     "streak": "Streak (days)",
-    "quickLinks": "Quick links"
+    "quickLinks": "Quick links",
+    "chat": "Chat",
+    "flashcards": "Flashcards",
+    "quizzes": "Quizzes",
+    "exercises": "Exercises",
+    "scan": "Scan",
+    "progress": "Progress"
   },
   "Subjects": {
     "title": "Subjects",
@@ -44,6 +57,11 @@
     "newSubject": "New subject",
     "namePlaceholder": "Subject name",
     "add": "Add",
+    "topics": "Topics",
+    "topicPlaceholder": "Topic name (e.g. Pythagorean theorem)",
+    "addTopic": "Add topic",
+    "noTopics": "No topics yet. Add some and pick them in practice flows.",
+    "deleteTopic": "Delete topic",
     "materials": "Materials",
     "noMaterials": "No materials. Upload a PDF, photos, or text.",
     "upload": "Upload material",
@@ -51,7 +69,20 @@
     "image": "image",
     "deleteSubject": "Delete subject",
     "deleteMaterial": "Delete",
-    "backToSubjects": "Back to subjects"
+    "backToSubjects": "Back to subjects",
+    "examPaper": "School exam",
+    "schoolExam": "This is a school exam",
+    "parsingQuestions": "Splitting the exam into questions…",
+    "parseFailed": "Failed to split the exam",
+    "questionCount": "{count, plural, one {# question} other {# questions}}",
+    "noQuestions": "No questions",
+    "viewQuestions": "View questions",
+    "hideQuestions": "Hide questions",
+    "generateSimilar": "Generate similar exam",
+    "hideAnswer": "Hide answer",
+    "showAnswer": "Show answer",
+    "answer": "Answer",
+    "explanation": "Explanation"
   },
   "Chat": {
     "title": "AI Tutor",
@@ -61,7 +92,8 @@
     "empty": "Start a conversation. Ask anything.",
     "placeholder": "Ask anything…",
     "send": "Send",
-    "error": "Error"
+    "error": "Error",
+    "stop": "Stop"
   },
   "ExamPrep": {
     "title": "Exam Prep",
@@ -176,6 +208,27 @@
     "title": "Settings",
     "subtitle": "App language and preferences.",
     "language": "Language",
-    "languageHint": "Changes apply immediately."
+    "languageHint": "Changes apply immediately.",
+    "appearance": "Appearance",
+    "appearanceHint": "Follow the system, or force light or dark.",
+    "themeSystem": "System",
+    "themeLight": "Light",
+    "themeDark": "Dark"
+  },
+  "MockExams": {
+    "title": "Mock Exams",
+    "subtitle": "Timed tests that feel like the real exam.",
+    "generate": "Generate exam",
+    "generating": "Generating…",
+    "selectSubject": "Select a subject",
+    "questions": "Number of questions",
+    "duration": "Duration (minutes)",
+    "minutes": "min",
+    "empty": "No mock exams yet.",
+    "back": "Back to mock exams"
+  },
+  "NotFound": {
+    "message": "This page doesn't exist.",
+    "backHome": "Back to dashboard"
   }
 }

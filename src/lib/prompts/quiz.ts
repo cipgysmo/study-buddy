@@ -1,3 +1,5 @@
+import { DIAGRAM_INSTRUCTION } from "./diagram";
+
 export interface QuizDraft {
   title: string;
   questions: {
@@ -5,6 +7,7 @@ export interface QuizDraft {
     options: string[];
     correct_index: number;
     explanation: string;
+    diagram?: string;
   }[];
 }
 
@@ -13,15 +16,21 @@ export function quizGeneratorPrompt(opts: {
   subjectName: string;
   count: number;
   context: string;
+  topics?: string[];
 }): string {
-  return [
+  const lines = [
     `You create a multiple-choice quiz for a student. Subject: ${opts.subjectName}.`,
     `Respond in ${opts.language}.`,
+  ];
+  if (opts.topics?.length) lines.push(`Focus on these topics: ${opts.topics.join(", ")}.`);
+  lines.push(
     `Create exactly ${opts.count} questions. Each has a prompt, exactly 4 options, the index (0-3) of the correct option, and a short explanation of why it is correct.`,
-    `Return ONLY a JSON object: {"title": string, "questions": [{"prompt": string, "options": [string, string, string, string], "correct_index": number, "explanation": string}]}.`,
+    DIAGRAM_INSTRUCTION,
+    `Return ONLY a JSON object: {"title": string, "questions": [{"prompt": string, "options": [string, string, string, string], "correct_index": number, "explanation": string, "diagram": string}]}. "diagram" is optional.`,
     "",
     "<notes>",
     opts.context || "(no notes provided - use general knowledge of the subject)",
-    "</notes>",
-  ].join("\n");
+    "</notes>"
+  );
+  return lines.join("\n");
 }

@@ -3,6 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { TopicPicker } from "@/components/ui/topic-picker";
+import { Diagram } from "@/components/ui/diagram";
+import { splitSvgBlocks } from "@/lib/svg-blocks";
 
 interface Session {
   id: string;
@@ -34,10 +37,12 @@ export function ChatApp({
   const [sessions, setSessions] = useState<Session[]>(initialSessions);
   const [activeId, setActiveId] = useState<string | null>(initialSessions[0]?.id ?? null);
   const [subjectId, setSubjectId] = useState<string>("");
+  const [topicIds, setTopicIds] = useState<string[]>([]);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (!activeId) {
@@ -91,12 +96,15 @@ export function ChatApp({
       { id: TMP_ASST, role: "assistant", content: "" },
     ]);
     setStreaming(true);
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     try {
       const res = await fetch(`/api/chat/sessions/${sessionId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, subjectId: subjectId || null }),
+        body: JSON.stringify({ content, subjectId: subjectId || null, topicIds }),
+        signal: controller.signal,
       });
       const reader = res.body!.getReader();
       const decoder = new TextDecoder();
@@ -136,17 +144,27 @@ export function ChatApp({
         }
       }
     } catch (e) {
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === TMP_ASST
-            ? { ...m, content: `${m.content}\n\n[${t("error")}] ${String(e)}` }
-            : m
-        )
-      );
+      if (controller.signal.aborted) {
+        // Stopped by the user: keep the partial answer, drop an empty bubble.
+        setMessages((prev) => prev.filter((m) => !(m.id === TMP_ASST && m.content === "")));
+      } else {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === TMP_ASST
+              ? { ...m, content: `${m.content}\n\n[${t("error")}] ${String(e)}` }
+              : m
+          )
+        );
+      }
     } finally {
+      abortRef.current = null;
       setStreaming(false);
       router.refresh();
     }
+  }
+
+  function stop() {
+    abortRef.current?.abort();
   }
 
   return (
@@ -175,10 +193,13 @@ export function ChatApp({
       </aside>
 
       <section className="flex min-w-0 flex-1 flex-col rounded-2xl border border-border bg-card">
-        <div className="flex items-center gap-2 border-b border-border px-4 py-2">
+        <div className="space-y-2 border-b border-border px-4 py-2">
           <select
             value={subjectId}
-            onChange={(e) => setSubjectId(e.target.value)}
+            onChange={(e) => {
+              setSubjectId(e.target.value);
+              setTopicIds([]);
+            }}
             className="rounded-lg border border-border bg-background px-2 py-1 text-sm"
           >
             <option value="">{t("noSubject")}</option>
@@ -188,6 +209,7 @@ export function ChatApp({
               </option>
             ))}
           </select>
+          <TopicPicker subjectId={subjectId} selected={topicIds} onChange={setTopicIds} />
         </div>
 
         <div className="flex-1 space-y-3 overflow-y-auto p-4">
@@ -204,7 +226,17 @@ export function ChatApp({
                   : "bg-foreground/5")
               }
             >
-              {m.content}
+              {m.role === "assistant"
+                ? splitSvgBlocks(m.content).map((part, i) =>
+                    part.svg ? (
+                      <div key={i} className="my-2">
+                        <Diagram svg={part.svg} />
+                      </div>
+                    ) : (
+                      <span key={i}>{part.text}</span>
+                    )
+                  )
+                : m.content}
             </div>
           ))}
           <div ref={bottomRef} />
@@ -223,13 +255,22 @@ export function ChatApp({
             placeholder={t("placeholder")}
             className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
           />
-          <button
-            onClick={send}
-            disabled={streaming || !input.trim()}
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground disabled:opacity-50"
-          >
-            {t("send")}
-          </button>
+          {streaming ? (
+            <button
+              onClick={stop}
+              className="rounded-lg bg-danger px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
+            >
+              {t("stop")}
+            </button>
+          ) : (
+            <button
+              onClick={send}
+              disabled={!input.trim()}
+              className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground disabled:opacity-50"
+            >
+              {t("send")}
+            </button>
+          )}
         </div>
       </section>
     </div>

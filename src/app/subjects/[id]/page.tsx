@@ -2,9 +2,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { getSubject, listMaterials } from "@/lib/subjects";
+import { listTopics } from "@/lib/topics";
+import { getJob } from "@/lib/jobs";
+import { countExamQuestions } from "@/lib/exams";
 import { UploadMaterialForm } from "@/components/subjects/upload-material-form";
 import { DeleteButton } from "@/components/subjects/delete-button";
 import { MaterialImage } from "@/components/subjects/material-image";
+import { MaterialStatus } from "@/components/subjects/material-status";
+import { TopicManager } from "@/components/subjects/topic-manager";
+import { ExamPaperCard } from "@/components/subjects/exam-paper-card";
 
 export default async function SubjectDetailPage({
   params,
@@ -16,6 +22,7 @@ export default async function SubjectDetailPage({
   const subject = getSubject(id);
   if (!subject) notFound();
   const materials = listMaterials(id);
+  const topics = listTopics(id);
 
   return (
     <div className="space-y-6">
@@ -29,35 +36,72 @@ export default async function SubjectDetailPage({
       </header>
 
       <section className="space-y-3">
+        <h2 className="text-lg font-semibold">{t("topics")}</h2>
+        <TopicManager
+          subjectId={id}
+          initial={topics.map((x) => ({ id: x.id, name: x.name }))}
+        />
+      </section>
+
+      <section className="space-y-3">
         <h2 className="text-lg font-semibold">{t("materials")}</h2>
         <UploadMaterialForm subjectId={id} />
         {materials.length === 0 ? (
           <p className="text-sm text-muted">{t("noMaterials")}</p>
         ) : (
           <ul className="space-y-2">
-            {materials.map((m) => (
-              <li
-                key={m.id}
-                className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3"
-              >
-                <span className="flex min-w-0 items-center gap-3">
-                  {m.kind === "image" && (
-                    <MaterialImage src={`/api/materials/${m.id}`} alt={m.filename} />
-                  )}
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-medium">{m.filename}</span>
-                    <span className="block text-xs text-muted">
-                      {m.kind === "image"
-                        ? t("image")
-                        : m.extracted_text
-                          ? `${m.extracted_text.length} ${t("chars")}`
-                          : "—"}
+            {materials.map((m) => {
+              if (m.role === "exam") {
+                const parseJob = m.parse_job_id ? getJob(m.parse_job_id) : null;
+                const parseStatus = parseJob ? parseJob.status : "none";
+                return (
+                  <li key={m.id}>
+                    <ExamPaperCard
+                      material={{
+                        id: m.id,
+                        filename: m.filename,
+                        kind: m.kind,
+                        status: m.status,
+                        error: m.error,
+                        job_id: m.job_id,
+                        parse_job_id: m.parse_job_id,
+                      }}
+                      parseStatus={parseStatus}
+                      parseError={parseJob?.error ?? null}
+                      questionCount={countExamQuestions(m.id)}
+                    />
+                  </li>
+                );
+              }
+              return (
+                <li
+                  key={m.id}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3"
+                >
+                  <span className="flex min-w-0 items-center gap-3">
+                    {m.kind === "image" && (
+                      <MaterialImage src={`/api/materials/${m.id}`} alt={m.filename} />
+                    )}
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-medium">{m.filename}</span>
+                      <span className="block truncate text-xs text-muted">
+                        {m.status === "failed" && m.error
+                          ? m.error
+                          : m.kind === "image"
+                            ? t("image")
+                            : m.extracted_text
+                              ? `${m.extracted_text.length} ${t("chars")}`
+                              : "—"}
+                      </span>
                     </span>
                   </span>
-                </span>
-                <DeleteButton href={`/api/materials/${m.id}`} label={t("deleteMaterial")} />
-              </li>
-            ))}
+                  <span className="flex shrink-0 items-center gap-2">
+                    <MaterialStatus status={m.status} error={m.error} jobId={m.job_id} />
+                    <DeleteButton href={`/api/materials/${m.id}`} label={t("deleteMaterial")} />
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
+import { JobsIndicator } from "./jobs-indicator";
 import { Sidebar } from "./sidebar";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -32,6 +33,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </svg>
         </button>
         <span className="font-semibold tracking-tight">Study Buddy</span>
+        <span className="ml-auto">
+          <JobsIndicator />
+        </span>
       </header>
 
       {open && (

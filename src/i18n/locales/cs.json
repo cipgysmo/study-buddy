@@ -13,7 +13,6 @@
     "exercises": "Cvičení",
     "mockExams": "Zkušební testy",
     "scan": "Sken",
-    "podcasts": "Podcasty",
     "progress": "Progres",
     "settings": "Nastavení"
   },
@@ -25,7 +24,15 @@
     "delete": "Smazat",
     "create": "Vytvořit",
     "loading": "Načítám…",
-    "close": "Zavřít"
+    "close": "Zavřít",
+    "processing": "Zpracovávám…",
+    "failed": "Chyba",
+    "ready": "Hotovo",
+    "retry": "Zkusit znovu",
+    "inProgress": "{count, plural, one {Zpracovávám # úlohu} few {Zpracovávám # úlohy} other {Zpracovávám # úloh}}",
+    "llmOffline": "LLM offline",
+    "explain": "Vysvětlit",
+    "error": "Chyba"
   },
   "Dashboard": {
     "title": "Přehled",
@@ -35,7 +42,13 @@
     "subjects": "Předměty",
     "due": "Kartičky dnes",
     "streak": "Série (dny)",
-    "quickLinks": "Rychlé odkazy"
+    "quickLinks": "Rychlé odkazy",
+    "chat": "Chat",
+    "flashcards": "Karty",
+    "quizzes": "Kvízy",
+    "exercises": "Cvičení",
+    "scan": "Skenovat",
+    "progress": "Progrese"
   },
   "Subjects": {
     "title": "Předměty",
@@ -44,6 +57,11 @@
     "newSubject": "Nový předmět",
     "namePlaceholder": "Název předmětu",
     "add": "Přidat",
+    "topics": "Témata",
+    "topicPlaceholder": "Název tématu (např. Pythagorova věta)",
+    "addTopic": "Přidat téma",
+    "noTopics": "Zatím žádná témata. Přidej je a u praxe je vyber.",
+    "deleteTopic": "Smazat téma",
     "materials": "Materiály",
     "noMaterials": "Žádné materiály. Nahrát PDF, fotky nebo text.",
     "upload": "Nahrát materiál",
@@ -51,7 +69,20 @@
     "image": "obrázek",
     "deleteSubject": "Smazat předmět",
     "deleteMaterial": "Smazat",
-    "backToSubjects": "Zpět na předměty"
+    "backToSubjects": "Zpět na předměty",
+    "examPaper": "Zkušební test",
+    "schoolExam": "Jde o zkušební test ze školy",
+    "parsingQuestions": "Rozkládám test na otázky…",
+    "parseFailed": "Nepodařilo se rozložit test",
+    "questionCount": "{count, plural, one {# otázka} few {# otázky} other {# otázek}}",
+    "noQuestions": "Žádné otázky",
+    "viewQuestions": "Zobrazit otázky",
+    "hideQuestions": "Skrýt otázky",
+    "generateSimilar": "Vygenerovat podobný test",
+    "hideAnswer": "Skrýt odpověď",
+    "showAnswer": "Zobrazit odpověď",
+    "answer": "Odpověď",
+    "explanation": "Vysvětlení"
   },
   "Chat": {
     "title": "AI tutor",
@@ -61,7 +92,8 @@
     "empty": "Začni konverzaci. Zeptej se na cokoli.",
     "placeholder": "Zeptej se na cokoli…",
     "send": "Odeslat",
-    "error": "Chyba"
+    "error": "Chyba",
+    "stop": "Zastavit"
   },
   "ExamPrep": {
     "title": "Příprava na zkoušky",
@@ -176,6 +208,27 @@
     "title": "Nastavení",
     "subtitle": "Jazyk a preference aplikace.",
     "language": "Jazyk",
-    "languageHint": "Změna jazyka se projeví okamžitě."
+    "languageHint": "Změna jazyka se projeví okamžitě.",
+    "appearance": "Vzhled",
+    "appearanceHint": "Systémové nastavení, světlý nebo tmavý režim.",
+    "themeSystem": "Systémové",
+    "themeLight": "Světlý",
+    "themeDark": "Tmavý"
+  },
+  "MockExams": {
+    "title": "Zkušební testy",
+    "subtitle": "Časově omezený test, jako skutečná zkouška.",
+    "generate": "Vytvořit test",
+    "generating": "Vytvářím…",
+    "selectSubject": "Vyber předmět",
+    "questions": "Počet otázek",
+    "duration": "Délka (minuty)",
+    "minutes": "min",
+    "empty": "Zatím žádné zkušební testy.",
+    "back": "Zpět na testy"
+  },
+  "NotFound": {
+    "message": "Tahle stránka neexistuje.",
+    "backHome": "Zpět na přehled"
   }
 }

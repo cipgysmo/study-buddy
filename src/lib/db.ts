@@ -158,6 +158,63 @@ const MIGRATIONS: { version: number; sql: string }[] = [
       CREATE INDEX IF NOT EXISTS idx_truefalse_subject ON truefalse(subject_id);
     `,
   },
+  {
+    version: 7,
+    sql: `
+      CREATE TABLE IF NOT EXISTS jobs (
+        id          TEXT PRIMARY KEY,
+        type        TEXT NOT NULL,
+        payload     TEXT NOT NULL,
+        status      TEXT NOT NULL DEFAULT 'pending',
+        error       TEXT,
+        result      TEXT,
+        created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+        started_at  TEXT,
+        finished_at TEXT
+      );
+      CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
+
+      ALTER TABLE materials ADD COLUMN status TEXT NOT NULL DEFAULT 'ready';
+      ALTER TABLE materials ADD COLUMN error TEXT;
+      ALTER TABLE materials ADD COLUMN job_id TEXT;
+
+      ALTER TABLE quizzes ADD COLUMN duration_min INTEGER;
+    `,
+  },
+  {
+    version: 8,
+    sql: `
+      CREATE TABLE IF NOT EXISTS topics (
+        id         TEXT PRIMARY KEY,
+        subject_id TEXT NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+        name       TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_topics_subject ON topics(subject_id);
+
+      ALTER TABLE questions ADD COLUMN diagram TEXT;
+      ALTER TABLE exercises ADD COLUMN diagram TEXT;
+    `,
+  },
+  {
+    version: 9,
+    sql: `
+      ALTER TABLE materials ADD COLUMN role TEXT NOT NULL DEFAULT 'notes';
+      ALTER TABLE materials ADD COLUMN parse_job_id TEXT;
+
+      CREATE TABLE IF NOT EXISTS exam_questions (
+        id          TEXT PRIMARY KEY,
+        material_id TEXT NOT NULL REFERENCES materials(id) ON DELETE CASCADE,
+        prompt      TEXT NOT NULL,
+        options     TEXT,
+        answer      TEXT,
+        explanation TEXT,
+        diagram     TEXT,
+        sort_order  INTEGER NOT NULL DEFAULT 0
+      );
+      CREATE INDEX IF NOT EXISTS idx_exam_questions_material ON exam_questions(material_id);
+    `,
+  },
 ];
 
 export function getDb(): Database.Database {
