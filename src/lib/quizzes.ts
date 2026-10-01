@@ -6,6 +6,7 @@ import { resolveLocale } from "./locale";
 import { chatJSON } from "./llm";
 import { quizGeneratorPrompt, type QuizDraft } from "./prompts/quiz";
 import { getSubject } from "./subjects";
+import { topicNames } from "./topics";
 
 export interface Quiz {
   id: string;
@@ -83,13 +84,13 @@ export async function generateQuiz(
   count: number,
   title?: string,
   durationMin?: number,
-  topics?: string[]
+  topicIds?: string[]
 ): Promise<Quiz> {
   const subject = getSubject(subjectId);
   if (!subject) throw new Error("subject_not_found");
   const locale = await resolveLocale();
   const languageName = LANGUAGES.find((l) => l.code === locale)?.name ?? locale;
-  const context = buildSubjectContext(subjectId);
+  const context = buildSubjectContext(subjectId, topicIds);
 
   const draft = await chatJSON<QuizDraft>({
     messages: [
@@ -100,7 +101,7 @@ export async function generateQuiz(
           subjectName: subject.name,
           count,
           context,
-          topics,
+          topics: topicNames(topicIds ?? []),
         }),
       },
     ],

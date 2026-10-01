@@ -10,6 +10,7 @@ import { DeleteButton } from "@/components/subjects/delete-button";
 import { MaterialImage } from "@/components/subjects/material-image";
 import { MaterialStatus } from "@/components/subjects/material-status";
 import { TopicManager } from "@/components/subjects/topic-manager";
+import { RetagTopicsButton } from "@/components/subjects/retag-topics-button";
 import { ExamPaperCard } from "@/components/subjects/exam-paper-card";
 
 export default async function SubjectDetailPage({
@@ -44,6 +45,7 @@ export default async function SubjectDetailPage({
           subjectId={id}
           initial={topics.map((x) => ({ id: x.id, name: x.name }))}
         />
+        <RetagTopicsButton subjectId={id} />
       </section>
 
       <section className="space-y-3">

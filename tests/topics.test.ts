@@ -13,6 +13,7 @@ import {
   getTopic,
   listTopics,
   materialTopicNames,
+  resolveTopicIds,
   setMaterialTopics,
   topicNames,
 } from "@/lib/topics";
@@ -91,5 +92,25 @@ describe("topics", () => {
     const t = createTopic("subj-2", "Mechanics");
     db.prepare("DELETE FROM subjects WHERE id = ?").run("subj-2");
     expect(getTopic(t.id)).toBeNull();
+  });
+
+  it("resolveTopicIds reuses matches, creates new ones, dedupes, skips empty", () => {
+    const db = getDb();
+    db.prepare("INSERT INTO subjects (id, name) VALUES (?, ?)").run("subj-resolve", "Chem");
+    const sid = "subj-resolve";
+    const existing = createTopic(sid, "Stoichiometry");
+    const ids = resolveTopicIds(sid, ["Stoichiometry", "  Stoichiometry  ", "Moles", ""]);
+    expect(ids.length).toBe(2);
+    expect(ids[0]).toBe(existing.id);
+    expect(listTopics(sid).map((t) => t.name)).toEqual(["Stoichiometry", "Moles"]);
+  });
+
+  it("resolveTopicIds creates all topics when the subject has none", () => {
+    const db = getDb();
+    db.prepare("INSERT INTO subjects (id, name) VALUES (?, ?)").run("subj-resolve2", "Bio");
+    const sid = "subj-resolve2";
+    const ids = resolveTopicIds(sid, ["Cells", "DNA"]);
+    expect(ids.length).toBe(2);
+    expect(listTopics(sid).map((t) => t.name)).toEqual(["Cells", "DNA"]);
   });
 });

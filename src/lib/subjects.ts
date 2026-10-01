@@ -5,6 +5,7 @@ import { getDb } from "./db";
 import { dataDir } from "./env";
 import { extractText, kindFromMime, type MaterialKind } from "./extract";
 import { ocrImage } from "./ocr";
+import { removeDerivedDir, removeDerivedImages } from "./image-derive";
 
 export interface Subject {
   id: string;
@@ -71,6 +72,7 @@ export function deleteSubject(id: string): void {
       /* ignore */
     }
   }
+  removeDerivedDir(id);
   getDb().prepare("DELETE FROM subjects WHERE id = ?").run(id);
 }
 
@@ -174,5 +176,6 @@ export function deleteMaterial(id: string): void {
   } catch {
     /* ignore */
   }
+  removeDerivedImages(m.subject_id, id);
   getDb().prepare("DELETE FROM materials WHERE id = ?").run(id);
 }

@@ -7,6 +7,7 @@ import { chatJSON } from "./llm";
 import { exerciseGeneratorPrompt, type ExerciseDraft } from "./prompts/exercises";
 import { trueFalseGeneratorPrompt, type TrueFalseDraft } from "./prompts/truefalse";
 import { getSubject } from "./subjects";
+import { topicNames } from "./topics";
 
 export interface Exercise {
   id: string;
@@ -62,13 +63,13 @@ export function deleteExercise(id: string): void {
 export async function generateExercises(
   subjectId: string,
   count: number,
-  topics?: string[]
+  topicIds?: string[]
 ): Promise<Exercise[]> {
   const subject = getSubject(subjectId);
   if (!subject) throw new Error("subject_not_found");
   const locale = await resolveLocale();
   const languageName = LANGUAGES.find((l) => l.code === locale)?.name ?? locale;
-  const context = buildSubjectContext(subjectId);
+  const context = buildSubjectContext(subjectId, topicIds);
 
   const draft = await chatJSON<ExerciseDraft>({
     messages: [
@@ -79,7 +80,7 @@ export async function generateExercises(
           subjectName: subject.name,
           count,
           context,
-          topics,
+          topics: topicNames(topicIds ?? []),
         }),
       },
     ],
@@ -127,13 +128,13 @@ export function deleteTrueFalse(id: string): void {
 export async function generateTrueFalse(
   subjectId: string,
   count: number,
-  topics?: string[]
+  topicIds?: string[]
 ): Promise<TrueFalseItem[]> {
   const subject = getSubject(subjectId);
   if (!subject) throw new Error("subject_not_found");
   const locale = await resolveLocale();
   const languageName = LANGUAGES.find((l) => l.code === locale)?.name ?? locale;
-  const context = buildSubjectContext(subjectId);
+  const context = buildSubjectContext(subjectId, topicIds);
 
   const draft = await chatJSON<TrueFalseDraft>({
     messages: [
@@ -144,7 +145,7 @@ export async function generateTrueFalse(
           subjectName: subject.name,
           count,
           context,
-          topics,
+          topics: topicNames(topicIds ?? []),
         }),
       },
     ],

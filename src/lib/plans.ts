@@ -6,6 +6,7 @@ import { resolveLocale } from "./locale";
 import { chatJSON } from "./llm";
 import { planGeneratorPrompt, type PlanDraft } from "./prompts/plan";
 import { getSubject } from "./subjects";
+import { topicNames } from "./topics";
 
 export interface StudyPlan {
   id: string;
@@ -76,7 +77,7 @@ export async function createPlan(opts: {
   title: string;
   examDate: string;
   targetGrade?: string | null;
-  topics?: string[];
+  topicIds?: string[];
 }): Promise<StudyPlan> {
   const subject = getSubject(opts.subjectId);
   if (!subject) throw new Error("subject_not_found");
@@ -87,7 +88,7 @@ export async function createPlan(opts: {
 
   const locale = await resolveLocale();
   const languageName = LANGUAGES.find((l) => l.code === locale)?.name ?? locale;
-  const context = buildSubjectContext(opts.subjectId);
+  const context = buildSubjectContext(opts.subjectId, opts.topicIds);
 
   const draft = await chatJSON<PlanDraft>({
     messages: [
@@ -99,7 +100,7 @@ export async function createPlan(opts: {
           daysAvailable,
           targetGrade: opts.targetGrade ?? null,
           context,
-          topics: opts.topics,
+          topics: topicNames(opts.topicIds ?? []),
         }),
       },
     ],

@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { getDb } from "./db";
 import { chatJSON } from "./llm";
 import { getMaterial } from "./subjects";
-import { classifyTopicsPrompt, type ClassifyResult } from "./prompts/classify";
+import { extractTopicsPrompt, type ExtractResult } from "./prompts/classify";
 
 export interface Topic {
   id: string;
@@ -77,35 +77,55 @@ export function materialTopicNames(materialIds: string[]): Map<string, string[]>
 }
 
 /**
- * Best-effort: tag a material with the subject's topics its content covers,
- * using an LLM classification. No-ops when the subject has no topics or the
- * material has no text; never throws (a failure leaves the material untagged
- * rather than failing the upload).
+ * Reconcile a list of topic names against a subject's existing topics: reuse an
+ * existing topic when the name matches (case-insensitive), otherwise create it.
+ * Returns the resolved topic ids in order, deduped.
  */
-export async function classifyMaterialTopics(materialId: string): Promise<void> {
+export function resolveTopicIds(subjectId: string, names: string[]): string[] {
+  const idByName = new Map(listTopics(subjectId).map((t) => [t.name.toLowerCase(), t.id]));
+  const ids: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of names) {
+    const name = raw.trim();
+    if (!name) continue;
+    const key = name.toLowerCase();
+    let id = idByName.get(key);
+    if (!id) {
+      id = createTopic(subjectId, name).id;
+      idByName.set(key, id);
+    }
+    if (!seen.has(id)) {
+      seen.add(id);
+      ids.push(id);
+    }
+  }
+  return ids;
+}
+
+/**
+ * Best-effort: derive the topics a material's content covers (creating any that
+ * don't yet exist for the subject) and tag the material with them. No-ops when
+ * the material has no text; never throws (a failure leaves the material
+ * untagged rather than failing the upload).
+ */
+export async function autoTagMaterialTopics(materialId: string): Promise<void> {
   const material = getMaterial(materialId);
   const text = material?.extracted_text?.trim();
   if (!material || !text) return;
-  const topics = listTopics(material.subject_id);
-  if (topics.length === 0) return;
+  const subjectId = material.subject_id;
   try {
-    const result = await chatJSON<ClassifyResult>({
+    const existing = listTopics(subjectId).map((t) => t.name);
+    const result = await chatJSON<ExtractResult>({
       messages: [
         {
           role: "user",
-          content: classifyTopicsPrompt({
-            topics: topics.map((t) => t.name),
-            text: text.slice(0, 8000),
-          }),
+          content: extractTopicsPrompt({ text: text.slice(0, 8000), existingTopics: existing }),
         },
       ],
       temperature: 0,
     });
-    const idByName = new Map(topics.map((t) => [t.name.toLowerCase(), t.id]));
-    const ids = (result.topics ?? [])
-      .map((n) => idByName.get(n.trim().toLowerCase()))
-      .filter((x): x is string => Boolean(x));
-    setMaterialTopics(materialId, ids);
+    const ids = resolveTopicIds(subjectId, (result.topics ?? []).slice(0, 5));
+    if (ids.length > 0) setMaterialTopics(materialId, ids);
   } catch {
     /* best-effort: leave untagged on failure */
   }
