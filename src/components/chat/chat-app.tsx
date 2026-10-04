@@ -4,8 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { TopicPicker } from "@/components/ui/topic-picker";
-import { Diagram } from "@/components/ui/diagram";
-import { splitSvgBlocks } from "@/lib/svg-blocks";
+import { RichText } from "@/components/ui/rich-text";
 
 interface Session {
   id: string;
@@ -28,18 +27,27 @@ const TMP_ASST = "tmp-asst";
 export function ChatApp({
   initialSessions,
   subjects,
+  initialSubjectId = "",
+  initialTopicIds = [],
+  initialPrompt = "",
 }: {
   initialSessions: Session[];
   subjects: Subject[];
+  initialSubjectId?: string;
+  initialTopicIds?: string[];
+  initialPrompt?: string;
 }) {
   const t = useTranslations("Chat");
   const router = useRouter();
   const [sessions, setSessions] = useState<Session[]>(initialSessions);
-  const [activeId, setActiveId] = useState<string | null>(initialSessions[0]?.id ?? null);
-  const [subjectId, setSubjectId] = useState<string>("");
-  const [topicIds, setTopicIds] = useState<string[]>([]);
+  // A chapter "ask tutor" link starts a clean thread rather than reusing one.
+  const [activeId, setActiveId] = useState<string | null>(
+    initialPrompt ? null : (initialSessions[0]?.id ?? null)
+  );
+  const [subjectId, setSubjectId] = useState<string>(initialSubjectId);
+  const [topicIds, setTopicIds] = useState<string[]>(initialTopicIds);
   const [messages, setMessages] = useState<Msg[]>([]);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(initialPrompt);
   const [streaming, setStreaming] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -237,23 +245,13 @@ export function ChatApp({
             <div
               key={m.id}
               className={
-                "max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2 text-sm " +
+                "max-w-[80%] rounded-2xl px-4 py-2 text-sm " +
                 (m.role === "user"
-                  ? "ml-auto bg-accent text-accent-foreground"
+                  ? "ml-auto whitespace-pre-wrap bg-accent text-accent-foreground"
                   : "bg-foreground/5")
               }
             >
-              {m.role === "assistant"
-                ? splitSvgBlocks(m.content).map((part, i) =>
-                    part.svg ? (
-                      <div key={i} className="my-2">
-                        <Diagram svg={part.svg} />
-                      </div>
-                    ) : (
-                      <span key={i}>{part.text}</span>
-                    )
-                  )
-                : m.content}
+              {m.role === "assistant" ? <RichText content={m.content} /> : m.content}
             </div>
           ))}
           <div ref={bottomRef} />

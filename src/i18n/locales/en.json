@@ -6,6 +6,7 @@
   "Nav": {
     "dashboard": "Dashboard",
     "chat": "AI Tutor",
+    "lessons": "Guided Learning",
     "subjects": "Subjects",
     "examPrep": "Exam Prep",
     "flashcards": "Flashcards",
@@ -67,6 +68,7 @@
     "retagAll": "Re-tag materials",
     "retagging": "Re-tagging…",
     "retagHint": "Re-derive topics from the content of all materials.",
+    "guidedLesson": "Guided lesson",
     "materials": "Materials",
     "noMaterials": "No materials. Upload a PDF, photos, or text.",
     "upload": "Upload material",
@@ -101,6 +103,31 @@
     "stop": "Stop",
     "deleteChat": "Delete chat",
     "deleteConfirm": "Delete this chat? This cannot be undone."
+  },
+  "Lessons": {
+    "title": "Guided Learning",
+    "subtitle": "Break a subject into chapters and learn it step by step.",
+    "empty": "No lessons yet. Build one from a subject's topics.",
+    "newLesson": "Build lesson",
+    "building": "Building lesson…",
+    "buildHint": "Pick topics (optional), then generate a step-by-step lesson.",
+    "processing": "Generating…",
+    "failed": "Failed",
+    "open": "Open",
+    "delete": "Delete lesson",
+    "chapterCount": "{count, plural, one {# chapter} other {# chapters}}",
+    "chapterOf": "Chapter {n} of {total}",
+    "checkUnderstanding": "Check your understanding",
+    "checkCorrect": "Correct!",
+    "checkIncorrect": "Not quite.",
+    "askTutor": "Ask the tutor about this chapter",
+    "figures": "From your material",
+    "backToLessons": "Back to lessons",
+    "topicsLabel": "Topics (optional)",
+    "allTopics": "Whole subject",
+    "next": "Next",
+    "prev": "Previous",
+    "generatingChapters": "Writing chapters…"
   },
   "ExamPrep": {
     "title": "Exam Prep",
@@ -152,6 +179,9 @@
     "keepGoing": "Keep going!",
     "correct": "Correct",
     "incorrect": "Incorrect",
+    "yourAnswer": "Your answer",
+    "correctAnswer": "Correct answer",
+    "notAnswered": "Not answered",
     "explanation": "Explanation",
     "backToQuizzes": "Back to quizzes",
     "deleteQuiz": "Delete quiz"
@@ -278,6 +308,13 @@
     "minutes": "min",
     "empty": "No mock exams yet.",
     "back": "Back to mock exams"
+  },
+  "Login": {
+    "title": "Study Buddy",
+    "subtitle": "Enter the password to continue.",
+    "password": "Password",
+    "signIn": "Sign in",
+    "error": "Incorrect password."
   },
   "NotFound": {
     "message": "This page doesn't exist.",

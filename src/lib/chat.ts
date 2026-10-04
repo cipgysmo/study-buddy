@@ -6,6 +6,7 @@ export interface ChatSession {
   subject_id: string | null;
   title: string;
   created_at: string;
+  updated_at: string;
 }
 
 export interface ChatMessage {
@@ -18,7 +19,9 @@ export interface ChatMessage {
 
 export function listSessions(): ChatSession[] {
   return getDb()
-    .prepare("SELECT * FROM chat_sessions ORDER BY created_at DESC")
+    .prepare(
+      "SELECT * FROM chat_sessions ORDER BY COALESCE(updated_at, created_at) DESC, created_at DESC"
+    )
     .all() as ChatSession[];
 }
 
@@ -32,7 +35,9 @@ export function getSession(id: string): ChatSession | null {
 export function createSession(subjectId: string | null, title?: string): ChatSession {
   const id = randomUUID();
   getDb()
-    .prepare("INSERT INTO chat_sessions (id, subject_id, title) VALUES (?, ?, ?)")
+    .prepare(
+      "INSERT INTO chat_sessions (id, subject_id, title, updated_at) VALUES (?, ?, ?, datetime('now'))"
+    )
     .run(id, subjectId, title?.trim() || "New chat");
   return getSession(id)!;
 }
@@ -61,8 +66,13 @@ export function addMessage(
   content: string
 ): ChatMessage {
   const id = randomUUID();
-  getDb()
-    .prepare("INSERT INTO chat_messages (id, session_id, role, content) VALUES (?, ?, ?, ?)")
-    .run(id, sessionId, role, content);
-  return getDb().prepare("SELECT * FROM chat_messages WHERE id = ?").get(id) as ChatMessage;
+  const db = getDb();
+  db.prepare("INSERT INTO chat_messages (id, session_id, role, content) VALUES (?, ?, ?, ?)").run(
+    id,
+    sessionId,
+    role,
+    content
+  );
+  db.prepare("UPDATE chat_sessions SET updated_at = datetime('now') WHERE id = ?").run(sessionId);
+  return db.prepare("SELECT * FROM chat_messages WHERE id = ?").get(id) as ChatMessage;
 }

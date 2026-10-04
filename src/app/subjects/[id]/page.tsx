@@ -12,6 +12,7 @@ import { MaterialStatus } from "@/components/subjects/material-status";
 import { TopicManager } from "@/components/subjects/topic-manager";
 import { RetagTopicsButton } from "@/components/subjects/retag-topics-button";
 import { ExamPaperCard } from "@/components/subjects/exam-paper-card";
+import { BuildLessonButton } from "@/components/lessons/build-lesson-button";
 
 export default async function SubjectDetailPage({
   params,
@@ -46,6 +47,11 @@ export default async function SubjectDetailPage({
           initial={topics.map((x) => ({ id: x.id, name: x.name }))}
         />
         <RetagTopicsButton subjectId={id} />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold">{t("guidedLesson")}</h2>
+        <BuildLessonButton subjectId={id} />
       </section>
 
       <section className="space-y-3">

@@ -11,7 +11,8 @@ export type JobType =
   | "truefalse"
   | "parseExam"
   | "similarExam"
-  | "retag";
+  | "retag"
+  | "lesson";
 
 export type JobStatus = "pending" | "running" | "done" | "failed";
 

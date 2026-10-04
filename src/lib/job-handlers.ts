@@ -9,6 +9,7 @@ import { generateExercises, generateTrueFalse } from "./practice";
 import { addMaterialWithText, getMaterial, linkMaterialParseJob, listMaterials, processMaterial } from "./subjects";
 import { autoTagMaterialTopics } from "./topics";
 import { generateSimilarExam, parseExam } from "./exams";
+import { generateLesson } from "./lessons";
 
 function str(v: unknown): string {
   return typeof v === "string" ? v : "";
@@ -130,4 +131,9 @@ registerJobHandler("exercises", async ({ payload }) => {
 registerJobHandler("truefalse", async ({ payload }) => {
   await generateTrueFalse(str(payload.subjectId), num(payload.count, 5), topicIdArray(payload.topicIds));
   return null;
+});
+
+registerJobHandler("lesson", async ({ payload }) => {
+  const count = await generateLesson(str(payload.lessonId));
+  return String(count);
 });

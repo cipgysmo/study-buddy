@@ -3,10 +3,23 @@ import { listSessions } from "@/lib/chat";
 import { listSubjects } from "@/lib/subjects";
 import { ChatApp } from "@/components/chat/chat-app";
 
-export default async function ChatPage() {
+function first(v: string | string[] | undefined): string | undefined {
+  return Array.isArray(v) ? v[0] : v;
+}
+
+export default async function ChatPage(props: PageProps<"/chat">) {
   const t = await getTranslations("Chat");
+  const params = await props.searchParams;
   const sessions = listSessions();
   const subjects = listSubjects().map((s) => ({ id: s.id, name: s.name }));
+
+  const initialSubjectId = first(params.subjectId) ?? "";
+  const initialTopicIds = Array.isArray(params.topicIds)
+    ? params.topicIds
+    : params.topicIds
+      ? [params.topicIds]
+      : [];
+  const initialPrompt = first(params.prompt) ?? "";
 
   return (
     <div className="space-y-4">
@@ -21,6 +34,9 @@ export default async function ChatPage() {
           subject_id: s.subject_id,
         }))}
         subjects={subjects}
+        initialSubjectId={initialSubjectId}
+        initialTopicIds={initialTopicIds}
+        initialPrompt={initialPrompt}
       />
     </div>
   );

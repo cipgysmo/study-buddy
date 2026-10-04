@@ -149,7 +149,9 @@ export function QuizRunner({
             </div>
           )}
           {questions.map((q, qi) => {
-            const correct = answers[q.id] === q.correct_index;
+            const chosen = answers[q.id];
+            const answered = chosen !== undefined;
+            const correct = chosen === q.correct_index;
             return (
               <div key={q.id} className="rounded-2xl border border-border bg-card p-4">
                 <p className="font-medium">
@@ -160,8 +162,47 @@ export function QuizRunner({
                     <Diagram svg={q.diagram} />
                   </div>
                 )}
-                <p className={"mt-2 text-sm " + (correct ? "text-success" : "text-danger")}>
-                  {correct ? t("correct") : t("incorrect")}
+                <div className="mt-3 space-y-2">
+                  {q.options.map((opt, oi) => {
+                    const isCorrect = oi === q.correct_index;
+                    const isChosen = oi === chosen;
+                    return (
+                      <div
+                        key={oi}
+                        className={
+                          "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm " +
+                          (isCorrect
+                            ? "border-success bg-success/10"
+                            : isChosen
+                              ? "border-danger bg-danger/10"
+                              : "border-border opacity-70")
+                        }
+                      >
+                        <span className="w-4 shrink-0 text-center">
+                          {isCorrect ? "✓" : isChosen ? "✗" : ""}
+                        </span>
+                        <span className="min-w-0 flex-1">{opt}</span>
+                        {isChosen && (
+                          <span className="shrink-0 text-xs font-medium text-muted">
+                            {t("yourAnswer")}
+                          </span>
+                        )}
+                        {isCorrect && (
+                          <span className="shrink-0 text-xs font-medium text-success">
+                            {t("correctAnswer")}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                <p
+                  className={
+                    "mt-2 text-sm " +
+                    (!answered ? "text-muted" : correct ? "text-success" : "text-danger")
+                  }
+                >
+                  {!answered ? t("notAnswered") : correct ? t("correct") : t("incorrect")}
                 </p>
                 <ExplainButton
                   question={{

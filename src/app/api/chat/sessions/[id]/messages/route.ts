@@ -15,6 +15,11 @@ import { topicNames } from "@/lib/topics";
 
 export const dynamic = "force-dynamic";
 
+// Keep the local model fast: cap how much history and how many note characters
+// go into each turn.
+const MAX_HISTORY_MESSAGES = 24;
+const CHAT_CONTEXT_CHARS = 16000;
+
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(_req: Request, ctx: Ctx) {
@@ -41,15 +46,18 @@ export async function POST(req: Request, ctx: Ctx) {
   if (body.subjectId !== undefined) setSessionSubject(id, subjectId);
   if (session.title === "New chat") setSessionTitle(id, content.slice(0, 40));
 
-  const locale = await resolveLocale();
-  const languageName = LANGUAGES.find((l) => l.code === locale)?.name ?? locale;
-  const context = subjectId ? buildSubjectContext(subjectId) : undefined;
   const topicIds = Array.isArray(body.topicIds)
     ? body.topicIds.filter((x): x is string => typeof x === "string")
     : [];
+
+  const locale = await resolveLocale();
+  const languageName = LANGUAGES.find((l) => l.code === locale)?.name ?? locale;
+  const context = subjectId
+    ? buildSubjectContext(subjectId, topicIds, CHAT_CONTEXT_CHARS)
+    : undefined;
   const system = tutorSystemPrompt(languageName, context, topicNames(topicIds), getStudentName());
 
-  const history = listMessages(id);
+  const history = listMessages(id).slice(-MAX_HISTORY_MESSAGES);
   const messages: LlmMessage[] = [
     { role: "system", content: system },
     ...history.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),

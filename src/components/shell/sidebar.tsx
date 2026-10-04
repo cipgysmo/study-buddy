@@ -16,6 +16,7 @@ interface NavItem {
 const NAV: NavItem[] = [
   { href: "/", labelKey: "dashboard" },
   { href: "/chat", labelKey: "chat" },
+  { href: "/lessons", labelKey: "lessons" },
   { href: "/subjects", labelKey: "subjects" },
   { href: "/exam-prep", labelKey: "examPrep" },
   { href: "/flashcards", labelKey: "flashcards" },

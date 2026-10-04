@@ -277,6 +277,47 @@ const MIGRATIONS: { version: number; sql: string }[] = [
       CREATE INDEX IF NOT EXISTS idx_review_logs_reviewed ON review_logs(reviewed_at);
     `,
   },
+  {
+    version: 13,
+    sql: `
+      ALTER TABLE chat_sessions ADD COLUMN updated_at TEXT;
+      UPDATE chat_sessions SET updated_at = created_at WHERE updated_at IS NULL;
+    `,
+  },
+  {
+    version: 14,
+    sql: `
+      CREATE TABLE IF NOT EXISTS lessons (
+        id         TEXT PRIMARY KEY,
+        subject_id TEXT NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+        title      TEXT NOT NULL,
+        topic_ids  TEXT NOT NULL DEFAULT '[]',
+        status     TEXT NOT NULL DEFAULT 'processing',
+        error      TEXT,
+        job_id     TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_lessons_subject ON lessons(subject_id);
+
+      CREATE TABLE IF NOT EXISTS lesson_chapters (
+        id         TEXT PRIMARY KEY,
+        lesson_id  TEXT NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
+        title      TEXT NOT NULL,
+        summary    TEXT NOT NULL DEFAULT '',
+        body       TEXT NOT NULL DEFAULT '',
+        diagram    TEXT,
+        check_json TEXT,
+        sort_order INTEGER NOT NULL DEFAULT 0
+      );
+      CREATE INDEX IF NOT EXISTS idx_lesson_chapters_lesson ON lesson_chapters(lesson_id);
+    `,
+  },
+  {
+    version: 15,
+    sql: `
+      ALTER TABLE lesson_chapters ADD COLUMN figure_ids TEXT NOT NULL DEFAULT '[]';
+    `,
+  },
 ];
 
 export function getDb(): Database.Database {

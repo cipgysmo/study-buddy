@@ -1,30 +1,45 @@
+import DOMPurify from "isomorphic-dompurify";
+
 /**
  * Sanitize LLM-generated standalone SVG for safe inline rendering.
- * Pure and SSR-safe (no DOM APIs). Strips executable/embedded content and
- * dangerous attributes. The SVG comes from our own local model, so this is
+ *
+ * Primary pass is DOMPurify with a strict SVG-only profile (no HTML, no
+ * embedded/executable content). A small pre-pass neutralizes dangerous inline
+ * `style` values (url(javascript:), expression()) that DOMPurify's CSS handling
+ * can miss under jsdom. The SVG comes from our own local model, so this is
  * defense in depth rather than a hard security boundary.
  */
+
+// Elements that embed or execute external content; never needed in our diagrams.
+const FORBID_TAGS = ["foreignObject", "iframe", "object", "embed", "image", "script", "style"];
+// <use> is valid SVG but not in DOMPurify's default allowlist.
+const ADD_TAGS = ["use"];
+// Presentation/reference attributes the model commonly emits.
+const ADD_ATTR = [
+  "xlink:href",
+  "href",
+  "transform",
+  "stroke-dasharray",
+  "stroke-linecap",
+  "stroke-linejoin",
+  "fill-rule",
+  "clip-rule",
+  "text-anchor",
+  "dominant-baseline",
+  "marker-end",
+  "marker-start",
+];
+
 export function sanitizeSvg(svg: string): string {
-  let s = svg;
-  // Remove <script> elements (with or without content).
-  s = s.replace(/<script\b[\s\S]*?<\/script>/gi, "");
-  s = s.replace(/<script\b[^>]*\/?>/gi, "");
-  // Remove elements that can embed or execute external content.
-  for (const tag of ["foreignObject", "iframe", "object", "embed", "image"]) {
-    s = s.replace(new RegExp(`<${tag}\\b[\\s\\S]*?<\\/${tag}>`, "gi"), "");
-    s = s.replace(new RegExp(`<${tag}\\b[^>]*\\/?>`, "gi"), "");
-  }
-  // Remove inline event handlers (on*="...").
-  s = s.replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "");
-  // Remove javascript: URLs in href / xlink:href.
-  s = s.replace(
-    /\s(xlink:)?href\s*=\s*("[^"]*javascript:[^"]*"|'[^']*javascript:[^']*')/gi,
-    ""
-  );
-  // Remove style attributes with dangerous content.
-  s = s.replace(
+  // Strip inline style attributes whose value could execute or load remote code.
+  const pre = svg.replace(
     /\sstyle\s*=\s*("[^"]*(?:javascript:|expression\(|url\()[^"]*"|'[^']*(?:javascript:|expression\(|url\()[^']*')/gi,
     ""
   );
-  return s;
+  return DOMPurify.sanitize(pre, {
+    USE_PROFILES: { svg: true, svgFilters: true },
+    ADD_TAGS,
+    ADD_ATTR,
+    FORBID_TAGS,
+  });
 }

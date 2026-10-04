@@ -6,6 +6,7 @@
   "Nav": {
     "dashboard": "Přehled",
     "chat": "AI tutor",
+    "lessons": "Řízené učení",
     "subjects": "Předměty",
     "examPrep": "Příprava na zkoušky",
     "flashcards": "Kartičky",
@@ -67,6 +68,7 @@
     "retagAll": "Přeznačkovat materiály",
     "retagging": "Přeznačtuji…",
     "retagHint": "Znovu odvodí témata z obsahu všech materiálů.",
+    "guidedLesson": "Řízená lekce",
     "materials": "Materiály",
     "noMaterials": "Žádné materiály. Nahrát PDF, fotky nebo text.",
     "upload": "Nahrát materiál",
@@ -101,6 +103,31 @@
     "stop": "Zastavit",
     "deleteChat": "Smazat chat",
     "deleteConfirm": "Smazat tento chat? Tuto akci nelze vrátit."
+  },
+  "Lessons": {
+    "title": "Řízené učení",
+    "subtitle": "Rozděl předmět na kapitoly a uč se krok za krokem.",
+    "empty": "Zatím žádné lekce. Vytvoř ji z témat předmětu.",
+    "newLesson": "Vytvořit lekci",
+    "building": "Vytvářím lekci…",
+    "buildHint": "Vyber témata (volitelné) a vygeneruj lekci krok za krokem.",
+    "processing": "Generuji…",
+    "failed": "Nepovedlo se",
+    "open": "Otevřít",
+    "delete": "Smazat lekci",
+    "chapterCount": "{count, plural, one {# kapitola} few {# kapitoly} other {# kapitol}}",
+    "chapterOf": "Kapitola {n} z {total}",
+    "checkUnderstanding": "Zkontroluj, jak rozumíš",
+    "checkCorrect": "Správně!",
+    "checkIncorrect": "Ne úplně.",
+    "askTutor": "Zeptej se tutora na tuto kapitolu",
+    "figures": "Z tvých materiálů",
+    "backToLessons": "Zpět na lekce",
+    "topicsLabel": "Témata (volitelná)",
+    "allTopics": "Celý předmět",
+    "next": "Další",
+    "prev": "Předchozí",
+    "generatingChapters": "Píšu kapitoly…"
   },
   "ExamPrep": {
     "title": "Příprava na zkoušky",
@@ -152,6 +179,9 @@
     "keepGoing": "Pokračuj tak!",
     "correct": "Správně",
     "incorrect": "Špatně",
+    "yourAnswer": "Tvoje odpověď",
+    "correctAnswer": "Správná odpověď",
+    "notAnswered": "Nezodpovězeno",
     "explanation": "Vysvětlení",
     "backToQuizzes": "Zpět na kvízy",
     "deleteQuiz": "Smazat kvíz"
@@ -278,6 +308,13 @@
     "minutes": "min",
     "empty": "Zatím žádné zkušební testy.",
     "back": "Zpět na testy"
+  },
+  "Login": {
+    "title": "Study Buddy",
+    "subtitle": "Zadej heslo pro pokračování.",
+    "password": "Heslo",
+    "signIn": "Přihlásit se",
+    "error": "Nesprávné heslo."
   },
   "NotFound": {
     "message": "Tahle stránka neexistuje.",

@@ -5,6 +5,12 @@ const ICONS: Record<string, ReactNode> = {
     <path d="m3 10 9-7 9 7v11a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" />
   ),
   chat: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />,
+  lessons: (
+    <>
+      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+    </>
+  ),
   subjects: (
     <>
       <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
