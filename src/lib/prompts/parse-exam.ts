@@ -20,6 +20,7 @@ export function parseExamPrompt(opts: {
   examText: string;
 }): string {
   return [
+    "/no_think",
     `You are transcribing a real school exam for the subject ${opts.subjectName}.`,
     `Respond in ${opts.language}.`,
     "Split the exam below into its individual questions, in the order they appear. For each question provide:",

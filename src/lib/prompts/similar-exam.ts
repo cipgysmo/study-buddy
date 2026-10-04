@@ -11,6 +11,7 @@ export function similarExamPrompt(opts: {
   examText: string;
 }): string {
   return [
+    "/no_think",
     `You create a practice exam for a student. Subject: ${opts.subjectName}.`,
     `Respond in ${opts.language}.`,
     "A real school exam is provided below. Create a NEW, similar exam: the same kinds of exercises and similar difficulty, but with different specific problems, numbers, and wording. Do not copy the original questions.",

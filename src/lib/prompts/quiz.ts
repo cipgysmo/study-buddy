@@ -19,6 +19,7 @@ export function quizGeneratorPrompt(opts: {
   topics?: string[];
 }): string {
   const lines = [
+    "/no_think",
     `You create a multiple-choice quiz for a student. Subject: ${opts.subjectName}.`,
     `Respond in ${opts.language}.`,
   ];

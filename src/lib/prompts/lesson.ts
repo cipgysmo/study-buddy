@@ -45,6 +45,7 @@ export function lessonOutlinePrompt(opts: {
 }): string {
   const topics = opts.topicNames.length ? ` Focus on: ${opts.topicNames.join(", ")}.` : "";
   return [
+    "/no_think",
     "You are designing a guided lesson for a student around 13 years old.",
     `Subject: ${opts.subjectName}.${topics}`,
     `Respond in ${opts.language}.`,
@@ -68,6 +69,7 @@ export function lessonChapterPrompt(opts: {
   figures?: FigureOption[];
 }): string {
   const lines = [
+    "/no_think",
     "You are writing ONE chapter of a guided lesson for a student around 13 years old.",
     `Subject: ${opts.subjectName}. Lesson: ${opts.lessonTitle}.`,
     `Chapter: ${opts.chapterTitle}. It covers: ${opts.chapterSummary}.`,

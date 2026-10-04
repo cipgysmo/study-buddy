@@ -27,6 +27,7 @@ export async function POST(req: Request) {
   const hasOptions = Array.isArray(body.options) && body.options.length > 0;
   const name = getStudentName();
   const parts = [
+    "/no_think",
     `You are a patient, encouraging tutor. Explain the following question step by step for a student around 13 years old. Respond in ${languageName}.`,
     ...(name ? [`The student's name is ${name}. Address them by name warmly.`] : []),
     `Question: ${prompt}`,

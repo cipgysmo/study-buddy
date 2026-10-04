@@ -14,6 +14,10 @@ import {
 import { getSubject, listMaterials } from "./subjects";
 import { topicNames } from "./topics";
 
+// Character budgets for the notes sent to the model during a lesson build.
+const LESSON_OUTLINE_CHARS = 24000;
+const LESSON_CHAPTER_CHARS = 12000;
+
 export type LessonStatus = "processing" | "ready" | "failed";
 
 export interface Lesson {
@@ -162,11 +166,14 @@ export async function generateLesson(lessonId: string): Promise<number> {
 
   const locale = await resolveLocale();
   const languageName = LANGUAGES.find((l) => l.code === locale)?.name ?? locale;
-  const notes = buildSubjectContext(lesson.subject_id, lesson.topic_ids);
+  // Bound the notes sent to the model: a fuller slice for the outline, a smaller
+  // one re-sent per chapter (the per-chapter calls are the dominant cost).
+  const notes = buildSubjectContext(lesson.subject_id, lesson.topic_ids, LESSON_OUTLINE_CHARS);
   if (!notes.trim()) {
     setLessonStatus(lessonId, "failed", "no_material");
     throw new Error("no_material");
   }
+  const chapterNotes = notes.length > LESSON_CHAPTER_CHARS ? notes.slice(0, LESSON_CHAPTER_CHARS) : notes;
 
   // Pass 1: outline.
   const outline = await chatJSON<LessonOutline>({
@@ -218,7 +225,7 @@ export async function generateLesson(lessonId: string): Promise<number> {
             lessonTitle: title,
             chapterTitle: ch.title.trim(),
             chapterSummary: ch.summary?.trim() || ch.title.trim(),
-            notes,
+            notes: chapterNotes,
             figures: figures.map(({ index, label }) => ({ index, label })),
           }),
         },

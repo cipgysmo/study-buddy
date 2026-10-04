@@ -10,6 +10,7 @@ export function flashcardGeneratorPrompt(opts: {
   topics?: string[];
 }): string {
   const lines = [
+    "/no_think",
     `You create flashcards for a student. Subject: ${opts.subjectName}.`,
     `Respond in ${opts.language}.`,
   ];

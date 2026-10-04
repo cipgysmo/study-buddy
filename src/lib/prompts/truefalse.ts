@@ -14,6 +14,7 @@ export function trueFalseGeneratorPrompt(opts: {
   topics?: string[];
 }): string {
   const lines = [
+    "/no_think",
     `You create true/false statements for a student. Subject: ${opts.subjectName}.`,
     `Respond in ${opts.language}.`,
   ];

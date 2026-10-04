@@ -22,6 +22,7 @@ export function planGeneratorPrompt(opts: {
   topics?: string[];
 }): string {
   const lines = [
+    "/no_think",
     "You are an exam-prep planner. Create a day-by-day study plan for a student preparing for an exam.",
     `Respond in ${opts.language}.`,
     `Subject: ${opts.subjectName}.`,

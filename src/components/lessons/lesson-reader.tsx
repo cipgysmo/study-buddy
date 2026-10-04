@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { RichText } from "@/components/ui/rich-text";
 import { Diagram } from "@/components/ui/diagram";
+import { MaterialImage } from "@/components/subjects/material-image";
 import type { Lesson, LessonChapter } from "@/lib/lessons";
 
 export function LessonReader({
@@ -113,13 +114,10 @@ export function LessonReader({
                   <p className="text-xs font-medium text-muted">{t("figures")}</p>
                   <div className="flex flex-wrap gap-2">
                     {chapter.figure_ids.map((fid) => (
-                      // eslint-disable-next-line @next/next/no-img-element -- same-origin API serves the stored image; next/image adds no value
-                      <img
+                      <MaterialImage
                         key={fid}
                         src={`/api/materials/${fid}`}
-                        alt=""
-                        loading="lazy"
-                        className="max-h-64 rounded-lg border border-border"
+                        alt={t("figures")}
                       />
                     ))}
                   </div>

@@ -17,6 +17,7 @@ export function exerciseGeneratorPrompt(opts: {
   topics?: string[];
 }): string {
   const lines = [
+    "/no_think",
     `You create practice exercises for a student. Subject: ${opts.subjectName}.`,
     `Respond in ${opts.language}.`,
   ];
