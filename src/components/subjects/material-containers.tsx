@@ -212,7 +212,7 @@ export function MaterialContainers({
           e.stopPropagation();
           if (card) handleDropOnColumn(card.column_id);
         }}
-        className="flex items-start gap-2 rounded-xl border border-border bg-background/60 p-2"
+        className="flex items-start gap-3 rounded-xl border border-border bg-background/60 p-3"
       >
         <span
           draggable
@@ -312,7 +312,7 @@ export function MaterialContainers({
   }
 
   return (
-    <div className="space-y-3 rounded-2xl border border-border bg-card p-3">
+    <div className="w-full space-y-3 rounded-2xl border border-border bg-card p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-semibold">{t("board")}</h3>
         <span className="text-xs text-muted">{t("dragMaterialHint")}</span>
@@ -353,7 +353,7 @@ export function MaterialContainers({
           handleDropOnTray();
         }}
         className={
-          "rounded-xl border p-2 transition-colors " +
+          "w-full rounded-xl border p-3 transition-colors " +
           (dragOverTray ? "border-accent bg-accent/5" : "border-border")
         }
       >
@@ -370,7 +370,7 @@ export function MaterialContainers({
       {columns.length === 0 ? (
         <p className="text-xs text-muted">{t("noBoardColumns")}</p>
       ) : (
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="w-full space-y-2">
           {columns.map((column) => (
             <section
               key={column.id}
@@ -384,7 +384,7 @@ export function MaterialContainers({
                 handleDropOnColumn(column.id);
               }}
               className={
-                "rounded-xl border p-2 transition-colors " +
+                "w-full rounded-xl border p-3 transition-colors " +
                 (dragOverColumnId === column.id ? "border-accent bg-accent/5" : "border-border")
               }
             >
