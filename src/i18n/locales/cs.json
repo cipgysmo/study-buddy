@@ -83,6 +83,7 @@
     "cardKindMaterial": "Materiál",
     "materialsTray": "Nerazdělené materiály",
     "dragMaterialHint": "Přetáhni materiál do kontejneru.",
+    "renameCategory": "Přejmenovat kontejner",
     "unassign": "Vyřadit z kontejneru",
     "deleteColumn": "Smazat kontejner",
     "deleteCard": "Smazat kartu",

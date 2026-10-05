@@ -83,6 +83,7 @@
     "cardKindMaterial": "Material",
     "materialsTray": "Unsorted materials",
     "dragMaterialHint": "Drag a material into a container.",
+    "renameCategory": "Rename container",
     "unassign": "Remove from container",
     "deleteColumn": "Delete container",
     "deleteCard": "Delete card",

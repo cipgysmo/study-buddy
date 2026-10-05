@@ -13,7 +13,7 @@ import { MaterialStatus } from "@/components/subjects/material-status";
 import { TopicManager } from "@/components/subjects/topic-manager";
 import { RetagTopicsButton } from "@/components/subjects/retag-topics-button";
 import { ExamPaperCard } from "@/components/subjects/exam-paper-card";
-import { SubjectBoard } from "@/components/subjects/subject-board";
+import { MaterialContainers } from "@/components/subjects/material-containers";
 import { BuildLessonButton } from "@/components/lessons/build-lesson-button";
 
 export default async function SubjectDetailPage({
@@ -58,8 +58,9 @@ export default async function SubjectDetailPage({
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold">{t("board")}</h2>
-        <SubjectBoard
+        <h2 className="text-lg font-semibold">{t("materials")}</h2>
+        <UploadMaterialForm subjectId={id} />
+        <MaterialContainers
           subjectId={id}
           initial={board}
           materials={materials.map((m) => ({
@@ -70,11 +71,6 @@ export default async function SubjectDetailPage({
             status: m.status,
           }))}
         />
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold">{t("materials")}</h2>
-        <UploadMaterialForm subjectId={id} />
         {materials.length === 0 ? (
           <p className="text-sm text-muted">{t("noMaterials")}</p>
         ) : (

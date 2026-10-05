@@ -145,22 +145,6 @@ function ensureColumn(subjectId, name) {
   return id;
 }
 
-function ensureCard(columnId, title, kind, lessonId = null, chapterId = null) {
-  const row = db.prepare("SELECT id FROM board_cards WHERE column_id = ? AND title = ?").get(columnId, title);
-  if (row) return row.id;
-  const column = db.prepare("SELECT subject_id FROM board_columns WHERE id = ?").get(columnId);
-  const id = randomUUID();
-  const sort =
-    (db.prepare("SELECT COALESCE(MAX(sort_order), -1) AS n FROM board_cards WHERE column_id = ?").get(columnId)
-      .n ?? -1) + 1;
-  db.prepare(
-    `INSERT INTO board_cards
-      (id, subject_id, column_id, title, kind, lesson_id, chapter_id, sort_order)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(id, column.subject_id, columnId, title, kind, lessonId, chapterId, sort);
-  return id;
-}
-
 function ensureMaterialCard(columnId, materialId) {
   const row = db.prepare("SELECT id FROM board_cards WHERE material_id = ?").get(materialId);
   if (row) return row.id;
@@ -236,6 +220,18 @@ const diagramMaterial = ensureImageMaterial(
 </svg>`
 );
 
+const scanMaterial = ensureImageMaterial(
+  mathId,
+  "naskenovany-list.svg",
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Sken poznámek">
+  <rect width="360" height="240" fill="#ffffff"/>
+  <rect x="30" y="30" width="300" height="180" fill="#f5f5f7" stroke="#d2d2d7" stroke-width="3"/>
+  <text x="55" y="75" font-family="sans-serif" font-size="22" fill="#1d1d1f">3x + 5 = 20</text>
+  <text x="55" y="115" font-family="sans-serif" font-size="22" fill="#1d1d1f">3x = 15</text>
+  <text x="55" y="155" font-family="sans-serif" font-size="22" fill="#1d1d1f">x = 5</text>
+</svg>`
+);
+
 db.prepare("INSERT OR IGNORE INTO material_topics (material_id, topic_id) VALUES (?, ?)").run(
   notesMaterial,
   pythagorasTopic
@@ -250,7 +246,7 @@ db.prepare("INSERT OR IGNORE INTO material_topics (material_id, topic_id) VALUES
 );
 
 const lessonId = ensureLesson(mathId, "Pythagorova věta od nuly", [pythagorasTopic]);
-const chapter1 = ensureChapter(
+ensureChapter(
   lessonId,
   "Co je pravoúhlý trojúhelník",
   "Strany a pravý úhel.",
@@ -269,7 +265,7 @@ $$a^2 + b^2 = c^2$$`,
   [diagramMaterial],
   0
 );
-const chapter2 = ensureChapter(
+ensureChapter(
   lessonId,
   "Výpočet přepony",
   "Dosadíme do vzorce.",
@@ -321,20 +317,13 @@ ensureChapter(
   0
 );
 
-const ideas = ensureColumn(mathId, "Nápady");
-const lessonsCol = ensureColumn(mathId, "Lekce");
-const chaptersCol = ensureColumn(mathId, "Kapitoly");
-const doneCol = ensureColumn(mathId, "Hotovo");
+const notesCol = ensureColumn(mathId, "Poznámky");
+const photosCol = ensureColumn(mathId, "Fotky z tabule");
+const todoCol = ensureColumn(mathId, "Ke zpracování");
 
-ensureCard(ideas, "Naskenovat tabuli", "task");
-ensureCard(ideas, "Přidat příklady z knihy", "task");
-ensureCard(lessonsCol, "Pythagorova věta od nuly", "lesson", lessonId);
-ensureCard(lessonsCol, "Lineární rovnice", "lesson");
-ensureCard(chaptersCol, "Co je pravoúhlý trojúhelník", "chapter", lessonId, chapter1);
-ensureCard(chaptersCol, "Výpočet přepony", "chapter", lessonId, chapter2);
-ensureCard(doneCol, "Obsah obdélníka", "lesson", doneLessonId);
-ensureMaterialCard(lessonsCol, notesMaterial);
-ensureMaterialCard(chaptersCol, diagramMaterial);
+ensureMaterialCard(notesCol, notesMaterial);
+ensureMaterialCard(photosCol, diagramMaterial);
+ensureMaterialCard(todoCol, scanMaterial);
 
 ensureFlashcard(mathId, "Pythagorova věta", "a² + b² = c²");
 ensureFlashcard(mathId, "Přepona", "nejdelší strana pravoúhlého trojúhelníku");
