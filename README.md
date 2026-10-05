@@ -32,14 +32,6 @@ Guided lesson reader:
 
 ![Lesson reader](docs/screenshots/lesson-reader.png)
 
-Quizzes:
-
-![Quizzes](docs/screenshots/quizzes.png)
-
-Flashcards:
-
-![Flashcards](docs/screenshots/flashcards.png)
-
 ## Tech stack
 
 Next.js (App Router) · React · TypeScript · Tailwind CSS · SQLite (better-sqlite3) ·
