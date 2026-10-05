@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { SubjectSelect, type SubjectOption } from "@/components/ui/subject-select";
-import { TopicPicker } from "@/components/ui/topic-picker";
+import { GenerationScopePicker } from "@/components/ui/generation-scope-picker";
 import { useJob } from "@/lib/use-jobs";
 
 export function CreatePlanForm({ subjects }: { subjects: SubjectOption[] }) {
@@ -12,6 +12,8 @@ export function CreatePlanForm({ subjects }: { subjects: SubjectOption[] }) {
   const router = useRouter();
   const [subjectId, setSubjectId] = useState("");
   const [topicIds, setTopicIds] = useState<string[]>([]);
+  const [columnIds, setColumnIds] = useState<string[]>([]);
+  const [keywords, setKeywords] = useState<string[]>([]);
   const [title, setTitle] = useState("");
   const [examDate, setExamDate] = useState("");
   const [targetGrade, setTargetGrade] = useState("");
@@ -39,7 +41,15 @@ export function CreatePlanForm({ subjects }: { subjects: SubjectOption[] }) {
       const r = await fetch("/api/study-plans", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subjectId, title, examDate, targetGrade, topicIds }),
+        body: JSON.stringify({
+          subjectId,
+          title,
+          examDate,
+          targetGrade,
+          topicIds,
+          columnIds,
+          keywords,
+        }),
       });
       const d = (await r.json()) as { job?: { id: string }; error?: string };
       if (!r.ok || !d.job) throw new Error(d.error || "error");
@@ -58,6 +68,8 @@ export function CreatePlanForm({ subjects }: { subjects: SubjectOption[] }) {
           onChange={(v) => {
             setSubjectId(v);
             setTopicIds([]);
+            setColumnIds([]);
+            setKeywords([]);
           }}
           subjects={subjects}
           placeholder={t("selectSubject")}
@@ -81,7 +93,15 @@ export function CreatePlanForm({ subjects }: { subjects: SubjectOption[] }) {
           className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
         />
       </div>
-      <TopicPicker subjectId={subjectId} selected={topicIds} onChange={setTopicIds} />
+      <GenerationScopePicker
+        subjectId={subjectId}
+        topicIds={topicIds}
+        onTopicIdsChange={setTopicIds}
+        columnIds={columnIds}
+        onColumnIdsChange={setColumnIds}
+        keywords={keywords}
+        onKeywordsChange={setKeywords}
+      />
       {error && <p className="text-sm text-red-500">{error}</p>}
       <button
         type="submit"

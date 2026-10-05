@@ -128,6 +128,17 @@ export function deleteBoardCard(id: string): boolean {
   return info.changes > 0;
 }
 
+export function listMaterialIdsInColumns(columnIds: string[]): string[] {
+  if (columnIds.length === 0) return [];
+  const placeholders = columnIds.map(() => "?").join(",");
+  const rows = getDb()
+    .prepare(
+      `SELECT DISTINCT material_id FROM board_cards WHERE column_id IN (${placeholders}) AND material_id IS NOT NULL`
+    )
+    .all(...columnIds) as { material_id: string }[];
+  return rows.map((row) => row.material_id);
+}
+
 export function getBoardCardByMaterial(materialId: string): BoardCard | null {
   const row = getDb().prepare("SELECT * FROM board_cards WHERE material_id = ?").get(materialId) as
     | BoardCard

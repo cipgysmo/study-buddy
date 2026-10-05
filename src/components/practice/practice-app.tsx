@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { SubjectSelect, type SubjectOption } from "@/components/ui/subject-select";
-import { TopicPicker } from "@/components/ui/topic-picker";
+import { GenerationScopePicker } from "@/components/ui/generation-scope-picker";
 import { Diagram } from "@/components/ui/diagram";
 import { useJob } from "@/lib/use-jobs";
 
@@ -36,6 +36,8 @@ export function PracticeApp({
   const [tab, setTab] = useState<"exercises" | "truefalse">("exercises");
   const [subjectId, setSubjectId] = useState("");
   const [topicIds, setTopicIds] = useState<string[]>([]);
+  const [columnIds, setColumnIds] = useState<string[]>([]);
+  const [keywords, setKeywords] = useState<string[]>([]);
   const [count, setCount] = useState(5);
   const [busy, setBusy] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
@@ -62,7 +64,7 @@ export function PracticeApp({
       const r = await fetch(`/api/${kind}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subjectId, count, topicIds }),
+        body: JSON.stringify({ subjectId, count, topicIds, columnIds, keywords }),
       });
       const d = (await r.json()) as { job?: { id: string }; error?: string };
       if (!r.ok || !d.job) throw new Error(d.error || "error");
@@ -92,6 +94,8 @@ export function PracticeApp({
           onChange={(v) => {
             setSubjectId(v);
             setTopicIds([]);
+            setColumnIds([]);
+            setKeywords([]);
           }}
           subjects={subjects}
           placeholder={t("selectSubject")}
@@ -121,7 +125,15 @@ export function PracticeApp({
         {error && <span className="text-sm text-red-500">{error}</span>}
       </div>
 
-      <TopicPicker subjectId={subjectId} selected={topicIds} onChange={setTopicIds} />
+      <GenerationScopePicker
+        subjectId={subjectId}
+        topicIds={topicIds}
+        onTopicIdsChange={setTopicIds}
+        columnIds={columnIds}
+        onColumnIdsChange={setColumnIds}
+        keywords={keywords}
+        onKeywordsChange={setKeywords}
+      />
 
       <div className="flex gap-2">
         <button

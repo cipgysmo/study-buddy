@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { fsrs, Rating, type CardInput, type Grade } from "ts-fsrs";
 import { LANGUAGES } from "@/i18n/languages";
-import { buildSubjectContext } from "./context";
+import { buildSubjectContext, type SubjectContextOptions } from "./context";
 import { getDb } from "./db";
 import { resolveLocale } from "./locale";
 import { chatJSON } from "./llm";
@@ -65,13 +65,14 @@ export function deleteFlashcard(id: string): void {
 export async function generateFlashcards(
   subjectId: string,
   count: number,
-  topicIds?: string[]
+  topicIds?: string[],
+  opts: SubjectContextOptions = {}
 ): Promise<Flashcard[]> {
   const subject = getSubject(subjectId);
   if (!subject) throw new Error("subject_not_found");
   const locale = await resolveLocale();
   const languageName = LANGUAGES.find((l) => l.code === locale)?.name ?? locale;
-  const context = buildSubjectContext(subjectId, topicIds);
+  const context = buildSubjectContext(subjectId, topicIds, 60000, opts);
 
   const draft = await chatJSON<FlashcardDraft>({
     messages: [
@@ -83,6 +84,7 @@ export async function generateFlashcards(
           count,
           context,
           topics: topicNames(topicIds ?? []),
+          keywords: opts.keywords,
         }),
       },
     ],

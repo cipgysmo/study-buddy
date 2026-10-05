@@ -15,6 +15,7 @@ export function exerciseGeneratorPrompt(opts: {
   count: number;
   context: string;
   topics?: string[];
+  keywords?: string[];
 }): string {
   const lines = [
     "/no_think",
@@ -22,6 +23,7 @@ export function exerciseGeneratorPrompt(opts: {
     `Respond in ${opts.language}.`,
   ];
   if (opts.topics?.length) lines.push(`Focus on these topics: ${opts.topics.join(", ")}.`);
+  if (opts.keywords?.length) lines.push(`Prioritize these keywords: ${opts.keywords.join(", ")}.`);
   lines.push(
     `Create exactly ${opts.count} exercises. Each has a prompt (the task for the student), a step-by-step solution (an array of short steps that lead to the answer), and a difficulty ("easy", "medium", or "hard").`,
     DIAGRAM_INSTRUCTION,

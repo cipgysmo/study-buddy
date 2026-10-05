@@ -8,6 +8,7 @@ export function flashcardGeneratorPrompt(opts: {
   count: number;
   context: string;
   topics?: string[];
+  keywords?: string[];
 }): string {
   const lines = [
     "/no_think",
@@ -15,6 +16,7 @@ export function flashcardGeneratorPrompt(opts: {
     `Respond in ${opts.language}.`,
   ];
   if (opts.topics?.length) lines.push(`Focus on these topics: ${opts.topics.join(", ")}.`);
+  if (opts.keywords?.length) lines.push(`Prioritize these keywords: ${opts.keywords.join(", ")}.`);
   lines.push(
     `Create exactly ${opts.count} flashcards based on the notes below. Each card has a concise question or prompt on the front and a clear, correct answer on the back.`,
     `Return ONLY a JSON object: {"cards": [{"front": string, "back": string}]}.`,

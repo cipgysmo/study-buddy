@@ -10,6 +10,7 @@ import { addMaterialWithText, getMaterial, linkMaterialParseJob, listMaterials, 
 import { autoTagMaterialTopics } from "./topics";
 import { generateSimilarExam, parseExam } from "./exams";
 import { generateLesson } from "./lessons";
+import { cleanStringArray } from "./request-utils";
 
 function str(v: unknown): string {
   return typeof v === "string" ? v : "";
@@ -21,7 +22,7 @@ function num(v: unknown, fallback: number): number {
 
 /** Coerce a payload's topicIds field to a clean string array. */
 function topicIdArray(v: unknown): string[] {
-  return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+  return cleanStringArray(v);
 }
 
 registerJobHandler("ocr", async ({ payload }) => {
@@ -93,7 +94,10 @@ registerJobHandler("scan", async ({ id, payload }) => {
 });
 
 registerJobHandler("flashcards", async ({ payload }) => {
-  await generateFlashcards(str(payload.subjectId), num(payload.count, 10), topicIdArray(payload.topicIds));
+  await generateFlashcards(str(payload.subjectId), num(payload.count, 10), topicIdArray(payload.topicIds), {
+    columnIds: cleanStringArray(payload.columnIds),
+    keywords: cleanStringArray(payload.keywords),
+  });
   return null;
 });
 
@@ -107,7 +111,11 @@ registerJobHandler("quiz", async ({ payload }) => {
     num(payload.count, 5),
     str(payload.title) || undefined,
     durationMin,
-    topicIdArray(payload.topicIds)
+    topicIdArray(payload.topicIds),
+    {
+      columnIds: cleanStringArray(payload.columnIds),
+      keywords: cleanStringArray(payload.keywords),
+    }
   );
   return null;
 });
@@ -119,17 +127,25 @@ registerJobHandler("plan", async ({ payload }) => {
     examDate: str(payload.examDate),
     targetGrade: str(payload.targetGrade) || null,
     topicIds: topicIdArray(payload.topicIds),
+    columnIds: cleanStringArray(payload.columnIds),
+    keywords: cleanStringArray(payload.keywords),
   });
   return plan.id;
 });
 
 registerJobHandler("exercises", async ({ payload }) => {
-  await generateExercises(str(payload.subjectId), num(payload.count, 5), topicIdArray(payload.topicIds));
+  await generateExercises(str(payload.subjectId), num(payload.count, 5), topicIdArray(payload.topicIds), {
+    columnIds: cleanStringArray(payload.columnIds),
+    keywords: cleanStringArray(payload.keywords),
+  });
   return null;
 });
 
 registerJobHandler("truefalse", async ({ payload }) => {
-  await generateTrueFalse(str(payload.subjectId), num(payload.count, 5), topicIdArray(payload.topicIds));
+  await generateTrueFalse(str(payload.subjectId), num(payload.count, 5), topicIdArray(payload.topicIds), {
+    columnIds: cleanStringArray(payload.columnIds),
+    keywords: cleanStringArray(payload.keywords),
+  });
   return null;
 });
 

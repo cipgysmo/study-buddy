@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import { useTranslations } from "next-intl";
 import { SubjectSelect, type SubjectOption } from "@/components/ui/subject-select";
-import { TopicPicker } from "@/components/ui/topic-picker";
+import { GenerationScopePicker } from "@/components/ui/generation-scope-picker";
 import { useJob } from "@/lib/use-jobs";
 
 interface Card {
@@ -22,6 +22,8 @@ export function FlashcardsApp({
   const t = useTranslations("Flashcards");
   const [subjectId, setSubjectId] = useState("");
   const [topicIds, setTopicIds] = useState<string[]>([]);
+  const [columnIds, setColumnIds] = useState<string[]>([]);
+  const [keywords, setKeywords] = useState<string[]>([]);
   const [count, setCount] = useState(10);
   const [busy, setBusy] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
@@ -55,7 +57,7 @@ export function FlashcardsApp({
       const r = await fetch("/api/flashcards", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subjectId, count, topicIds }),
+        body: JSON.stringify({ subjectId, count, topicIds, columnIds, keywords }),
       });
       const d = (await r.json()) as { job?: { id: string }; error?: string };
       if (!r.ok || !d.job) throw new Error(d.error || "error");
@@ -89,6 +91,8 @@ export function FlashcardsApp({
           onChange={(v) => {
             setSubjectId(v);
             setTopicIds([]);
+            setColumnIds([]);
+            setKeywords([]);
             void loadDue(v);
           }}
           subjects={subjects}
@@ -112,7 +116,15 @@ export function FlashcardsApp({
         {error && <span className="text-sm text-red-500">{error}</span>}
       </div>
 
-      <TopicPicker subjectId={subjectId} selected={topicIds} onChange={setTopicIds} />
+      <GenerationScopePicker
+        subjectId={subjectId}
+        topicIds={topicIds}
+        onTopicIdsChange={setTopicIds}
+        columnIds={columnIds}
+        onColumnIdsChange={setColumnIds}
+        keywords={keywords}
+        onKeywordsChange={setKeywords}
+      />
 
       <div>
         <p className="mb-3 text-sm text-muted">

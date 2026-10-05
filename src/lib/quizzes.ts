@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { LANGUAGES } from "@/i18n/languages";
-import { buildSubjectContext } from "./context";
+import { buildSubjectContext, type SubjectContextOptions } from "./context";
 import { getDb } from "./db";
 import { resolveLocale } from "./locale";
 import { chatJSON } from "./llm";
@@ -84,13 +84,14 @@ export async function generateQuiz(
   count: number,
   title?: string,
   durationMin?: number,
-  topicIds?: string[]
+  topicIds?: string[],
+  opts: SubjectContextOptions = {}
 ): Promise<Quiz> {
   const subject = getSubject(subjectId);
   if (!subject) throw new Error("subject_not_found");
   const locale = await resolveLocale();
   const languageName = LANGUAGES.find((l) => l.code === locale)?.name ?? locale;
-  const context = buildSubjectContext(subjectId, topicIds);
+  const context = buildSubjectContext(subjectId, topicIds, 60000, opts);
 
   const draft = await chatJSON<QuizDraft>({
     messages: [
@@ -102,6 +103,7 @@ export async function generateQuiz(
           count,
           context,
           topics: topicNames(topicIds ?? []),
+          keywords: opts.keywords,
         }),
       },
     ],

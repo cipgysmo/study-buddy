@@ -78,6 +78,8 @@ export async function createPlan(opts: {
   examDate: string;
   targetGrade?: string | null;
   topicIds?: string[];
+  columnIds?: string[];
+  keywords?: string[];
 }): Promise<StudyPlan> {
   const subject = getSubject(opts.subjectId);
   if (!subject) throw new Error("subject_not_found");
@@ -88,7 +90,10 @@ export async function createPlan(opts: {
 
   const locale = await resolveLocale();
   const languageName = LANGUAGES.find((l) => l.code === locale)?.name ?? locale;
-  const context = buildSubjectContext(opts.subjectId, opts.topicIds);
+  const context = buildSubjectContext(opts.subjectId, opts.topicIds, 60000, {
+    columnIds: opts.columnIds,
+    keywords: opts.keywords,
+  });
 
   const draft = await chatJSON<PlanDraft>({
     messages: [
@@ -101,6 +106,7 @@ export async function createPlan(opts: {
           targetGrade: opts.targetGrade ?? null,
           context,
           topics: topicNames(opts.topicIds ?? []),
+          keywords: opts.keywords,
         }),
       },
     ],

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { LANGUAGES } from "@/i18n/languages";
-import { buildSubjectContext } from "./context";
+import { buildSubjectContext, type SubjectContextOptions } from "./context";
 import { getDb } from "./db";
 import { resolveLocale } from "./locale";
 import { chatJSON } from "./llm";
@@ -63,13 +63,14 @@ export function deleteExercise(id: string): void {
 export async function generateExercises(
   subjectId: string,
   count: number,
-  topicIds?: string[]
+  topicIds?: string[],
+  opts: SubjectContextOptions = {}
 ): Promise<Exercise[]> {
   const subject = getSubject(subjectId);
   if (!subject) throw new Error("subject_not_found");
   const locale = await resolveLocale();
   const languageName = LANGUAGES.find((l) => l.code === locale)?.name ?? locale;
-  const context = buildSubjectContext(subjectId, topicIds);
+  const context = buildSubjectContext(subjectId, topicIds, 60000, opts);
 
   const draft = await chatJSON<ExerciseDraft>({
     messages: [
@@ -81,6 +82,7 @@ export async function generateExercises(
           count,
           context,
           topics: topicNames(topicIds ?? []),
+          keywords: opts.keywords,
         }),
       },
     ],
@@ -128,13 +130,14 @@ export function deleteTrueFalse(id: string): void {
 export async function generateTrueFalse(
   subjectId: string,
   count: number,
-  topicIds?: string[]
+  topicIds?: string[],
+  opts: SubjectContextOptions = {}
 ): Promise<TrueFalseItem[]> {
   const subject = getSubject(subjectId);
   if (!subject) throw new Error("subject_not_found");
   const locale = await resolveLocale();
   const languageName = LANGUAGES.find((l) => l.code === locale)?.name ?? locale;
-  const context = buildSubjectContext(subjectId, topicIds);
+  const context = buildSubjectContext(subjectId, topicIds, 60000, opts);
 
   const draft = await chatJSON<TrueFalseDraft>({
     messages: [
@@ -146,6 +149,7 @@ export async function generateTrueFalse(
           count,
           context,
           topics: topicNames(topicIds ?? []),
+          keywords: opts.keywords,
         }),
       },
     ],

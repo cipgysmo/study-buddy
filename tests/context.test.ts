@@ -65,4 +65,29 @@ describe("buildSubjectContext", () => {
     expect(ctx).toContain("BETA");
     expect(ctx).toContain("GAMMA");
   });
+
+  it("filters materials by board container", () => {
+    getDb()
+      .prepare("INSERT INTO board_columns (id, subject_id, name, sort_order) VALUES (?, ?, ?, ?)")
+      .run("col-1", subjectId, "Photos", 0);
+    getDb()
+      .prepare(
+        `INSERT INTO board_cards
+          (id, subject_id, column_id, title, kind, material_id, sort_order)
+         VALUES (?, ?, ?, ?, 'material', ?, ?)`
+      )
+      .run("card-1", subjectId, "col-1", "a.txt", "mat-a", 0);
+
+    const ctx = buildSubjectContext(subjectId, undefined, 60000, { columnIds: ["col-1"] });
+    expect(ctx).toContain("ALPHA");
+    expect(ctx).not.toContain("BETA");
+    expect(ctx).not.toContain("GAMMA");
+  });
+
+  it("filters materials by keywords", () => {
+    const ctx = buildSubjectContext(subjectId, undefined, 60000, { keywords: ["BETA"] });
+    expect(ctx).toContain("BETA");
+    expect(ctx).not.toContain("ALPHA");
+    expect(ctx).not.toContain("GAMMA");
+  });
 });

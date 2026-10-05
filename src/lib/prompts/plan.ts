@@ -20,6 +20,7 @@ export function planGeneratorPrompt(opts: {
   targetGrade: string | null;
   context: string;
   topics?: string[];
+  keywords?: string[];
 }): string {
   const lines = [
     "/no_think",
@@ -29,6 +30,7 @@ export function planGeneratorPrompt(opts: {
     `There are ${opts.daysAvailable} day(s) available. dayIndex 0 is today; the last dayIndex is the exam day.`,
   ];
   if (opts.topics?.length) lines.push(`Focus on these topics: ${opts.topics.join(", ")}.`);
+  if (opts.keywords?.length) lines.push(`Prioritize these keywords: ${opts.keywords.join(", ")}.`);
   if (opts.targetGrade) lines.push(`Target grade: ${opts.targetGrade}.`);
   lines.push(
     `Create exactly ${opts.daysAvailable} items, one per day, in chronological order (dayIndex 0..${opts.daysAvailable - 1}). Each item has a focused topic and concrete, actionable instructions (what to review, practice, or self-test).`,

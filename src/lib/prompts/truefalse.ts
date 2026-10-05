@@ -12,6 +12,7 @@ export function trueFalseGeneratorPrompt(opts: {
   count: number;
   context: string;
   topics?: string[];
+  keywords?: string[];
 }): string {
   const lines = [
     "/no_think",
@@ -19,6 +20,7 @@ export function trueFalseGeneratorPrompt(opts: {
     `Respond in ${opts.language}.`,
   ];
   if (opts.topics?.length) lines.push(`Focus on these topics: ${opts.topics.join(", ")}.`);
+  if (opts.keywords?.length) lines.push(`Prioritize these keywords: ${opts.keywords.join(", ")}.`);
   lines.push(
     `Create exactly ${opts.count} statements. Each has a statement, whether it is true (is_correct) or false, and a clear 2-4 sentence explanation of why. Mix true and false statements.`,
     `Return ONLY a JSON object: {"items": [{"statement": string, "is_correct": boolean, "explanation": string}]}.`,
