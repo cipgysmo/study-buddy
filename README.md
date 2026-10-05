@@ -193,6 +193,10 @@ set), so no extra secrets are required.
 The container runs as a non-root user, drops all capabilities, and has a health
 check. Data persists in the mounted dataset.
 
+The restart policy is not set in the `Dockerfile`; Docker restart policies are
+runtime configuration. It is set by the deployment files (`docker-compose.yml`
+and the TrueNAS custom-app YAML) as `restart: unless-stopped`.
+
 ## Notes
 
 - The app is single-user by design; the optional `APP_PASSWORD` gate is the only
