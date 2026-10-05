@@ -7,14 +7,42 @@ to your local model over the LAN. No data leaves your network.
 ## Features
 
 - **Subjects & materials** — organize subjects; upload PDFs, images, or text.
+- **Subject planner** — create your own categories (lessons, chapters, done…) and drag cards between them.
+- **Guided learning** — build a lesson from a subject's notes, then read it chapter by chapter.
 - **AI tutor** — Socratic chat grounded in a subject's materials (streaming).
 - **Exam prep** — generate a day-by-day study plan from an exam date + level.
-- **Flashcards** — generate cards and review them with SM-2 spaced repetition.
+- **Flashcards** — generate cards and review them with FSRS spaced repetition.
 - **Quizzes** — generate multiple-choice quizzes, take them, get graded.
 - **Practice** — open-ended exercises with step-by-step solutions, plus true/false drills.
 - **Scan** — photograph a page and OCR it to text (uses the model's vision).
 - **Progress** — activity, streaks, and per-subject mastery.
 - **i18n** — Czech and English (cookie-based, easy to extend).
+
+## Screenshots
+
+Dashboard with demo content:
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+Subjects:
+
+![Subjects](docs/screenshots/subjects.png)
+
+Subject planner with manually created categories and draggable cards:
+
+![Subject planner](docs/screenshots/subject-board.png)
+
+Guided lesson reader:
+
+![Lesson reader](docs/screenshots/lesson-reader.png)
+
+Quizzes:
+
+![Quizzes](docs/screenshots/quizzes.png)
+
+Flashcards:
+
+![Flashcards](docs/screenshots/flashcards.png)
 
 ## Tech stack
 
@@ -37,6 +65,15 @@ npm run typecheck   # tsc --noEmit
 npm run lint        # eslint .
 npm run build       # production build
 npm test            # vitest (unit tests)
+npm run seed:demo   # add Czech demo content for screenshots/testing
+```
+
+For the screenshots above, start the app once so the database is created, then run:
+
+```bash
+npm run dev
+# open http://localhost:3000 once, then in another terminal:
+npm run seed:demo
 ```
 
 ## Configuration

@@ -318,6 +318,34 @@ const MIGRATIONS: { version: number; sql: string }[] = [
       ALTER TABLE lesson_chapters ADD COLUMN figure_ids TEXT NOT NULL DEFAULT '[]';
     `,
   },
+  {
+    version: 16,
+    sql: `
+      CREATE TABLE IF NOT EXISTS board_columns (
+        id         TEXT PRIMARY KEY,
+        subject_id TEXT NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+        name       TEXT NOT NULL,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_board_columns_subject ON board_columns(subject_id);
+
+      CREATE TABLE IF NOT EXISTS board_cards (
+        id         TEXT PRIMARY KEY,
+        subject_id TEXT NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+        column_id  TEXT NOT NULL REFERENCES board_columns(id) ON DELETE CASCADE,
+        title      TEXT NOT NULL,
+        note       TEXT NOT NULL DEFAULT '',
+        kind       TEXT NOT NULL DEFAULT 'task',
+        lesson_id  TEXT REFERENCES lessons(id) ON DELETE SET NULL,
+        chapter_id TEXT REFERENCES lesson_chapters(id) ON DELETE SET NULL,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_board_cards_subject ON board_cards(subject_id);
+      CREATE INDEX IF NOT EXISTS idx_board_cards_column ON board_cards(column_id);
+    `,
+  },
 ];
 
 export function getDb(): Database.Database {

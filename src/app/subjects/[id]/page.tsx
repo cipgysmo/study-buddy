@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { getSubject, listMaterials } from "@/lib/subjects";
 import { listTopics, materialTopicNames } from "@/lib/topics";
+import { listBoard } from "@/lib/board";
 import { getJob } from "@/lib/jobs";
 import { countExamQuestions } from "@/lib/exams";
 import { UploadMaterialForm } from "@/components/subjects/upload-material-form";
@@ -12,6 +13,7 @@ import { MaterialStatus } from "@/components/subjects/material-status";
 import { TopicManager } from "@/components/subjects/topic-manager";
 import { RetagTopicsButton } from "@/components/subjects/retag-topics-button";
 import { ExamPaperCard } from "@/components/subjects/exam-paper-card";
+import { SubjectBoard } from "@/components/subjects/subject-board";
 import { BuildLessonButton } from "@/components/lessons/build-lesson-button";
 
 export default async function SubjectDetailPage({
@@ -25,6 +27,7 @@ export default async function SubjectDetailPage({
   if (!subject) notFound();
   const materials = listMaterials(id);
   const topics = listTopics(id);
+  const board = listBoard(id);
   const topicTags = materialTopicNames(
     materials.filter((m) => m.role === "notes").map((m) => m.id)
   );
@@ -52,6 +55,20 @@ export default async function SubjectDetailPage({
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">{t("guidedLesson")}</h2>
         <BuildLessonButton subjectId={id} />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold">{t("board")}</h2>
+        <SubjectBoard
+          subjectId={id}
+          initial={board.map((column) => ({
+            ...column,
+            cards: column.cards.map((card) => ({
+              ...card,
+              kind: card.kind === "lesson" || card.kind === "chapter" ? card.kind : "task",
+            })),
+          }))}
+        />
       </section>
 
       <section className="space-y-3">
