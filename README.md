@@ -85,12 +85,18 @@ Environment variables (see `.env.example`):
 | `LLM_BASE_URL` | `http://192.168.1.136:8080/v1/`  | OpenAI-compatible endpoint (llama-swap).     |
 | `LLM_MODEL`    | `local-ai`                       | Model id exposed by the router.              |
 | `LLM_API_KEY`  | `local`                          | Ignored by llama-swap; some servers need it. |
+| `LLM_BUSY_TIMEOUT_MS` | `300000`                   | Retry/queue LLM requests for this long when busy. |
+| `LLM_MAX_CONCURRENCY` | `2`                        | In-process LLM request queue cap.            |
 | `PORT`         | `3000`                           | Port the server listens on.                  |
 | `DATA_DIR`     | `./data`                         | Where the SQLite DB + uploads live.          |
 | `APP_PASSWORD` | *(empty)*                        | Optional LAN password gate (empty = off).    |
 
 The LLM must support **vision** for the Scan feature (the current `local-ai`
 router does).
+
+When the local LLM is busy or temporarily unavailable, Study Buddy queues the
+request and retries it with backoff for up to `LLM_BUSY_TIMEOUT_MS` (default:
+5 minutes).
 
 ## Deploy on TrueNAS Scale (Docker)
 
