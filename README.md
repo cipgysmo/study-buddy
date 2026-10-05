@@ -7,7 +7,7 @@ to your local model over the LAN. No data leaves your network.
 ## Features
 
 - **Subjects & materials** — organize subjects; upload PDFs, images, or text.
-- **Subject planner** — create your own categories (lessons, chapters, done…) and drag cards between them.
+- **Material containers** — create your own categories (lessons, chapters, done…) and drag uploaded photos/materials or custom cards between them.
 - **Guided learning** — build a lesson from a subject's notes, then read it chapter by chapter.
 - **AI tutor** — Socratic chat grounded in a subject's materials (streaming).
 - **Exam prep** — generate a day-by-day study plan from an exam date + level.
@@ -28,9 +28,9 @@ Subjects:
 
 ![Subjects](docs/screenshots/subjects.png)
 
-Subject planner with manually created categories and draggable cards:
+Material containers with uploaded materials and draggable cards:
 
-![Subject planner](docs/screenshots/subject-board.png)
+![Material containers](docs/screenshots/subject-board.png)
 
 Guided lesson reader:
 

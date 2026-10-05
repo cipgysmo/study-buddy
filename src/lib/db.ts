@@ -346,6 +346,15 @@ const MIGRATIONS: { version: number; sql: string }[] = [
       CREATE INDEX IF NOT EXISTS idx_board_cards_column ON board_cards(column_id);
     `,
   },
+  {
+    version: 17,
+    sql: `
+      ALTER TABLE board_cards ADD COLUMN material_id TEXT REFERENCES materials(id) ON DELETE CASCADE;
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_board_cards_material_unique
+        ON board_cards(material_id)
+        WHERE material_id IS NOT NULL;
+    `,
+  },
 ];
 
 export function getDb(): Database.Database {

@@ -8,10 +8,12 @@ process.env.DATA_DIR = dir;
 
 import { getDb } from "@/lib/db";
 import {
+  assignMaterialToColumn,
   createBoardCard,
   createBoardColumn,
   deleteBoardCard,
   deleteBoardColumn,
+  getBoardCardByMaterial,
   listBoard,
   renameBoardColumn,
   saveBoardOrder,
@@ -75,6 +77,27 @@ describe("subject board", () => {
     expect(saved[0].cards.map((c) => c.title)).toEqual(["Stay", "Move me"]);
     expect(saved[0].cards[1].column_id).toBe(second.id);
     expect(saved[0].cards[1].sort_order).toBe(1);
+  });
+
+  it("assigns an uploaded material to a container and moves the same card", () => {
+    const db = getDb();
+    db.prepare(
+      "INSERT INTO materials (id, subject_id, filename, stored_path, mime, kind, size, status, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    ).run("mat-board", subjectId, "photo.png", "/tmp/photo.png", "image/png", "image", 10, "ready", "notes");
+
+    const board = listBoard(subjectId);
+    const first = createBoardColumn(subjectId, "Photos");
+    const second = createBoardColumn(subjectId, "Archive");
+
+    const card = assignMaterialToColumn("mat-board", first.id);
+    expect(card?.kind).toBe("material");
+    expect(card?.material_id).toBe("mat-board");
+    expect(getBoardCardByMaterial("mat-board")?.column_id).toBe(first.id);
+
+    const moved = assignMaterialToColumn("mat-board", second.id);
+    expect(moved?.column_id).toBe(second.id);
+    expect(listBoard(subjectId).flatMap((c) => c.cards.filter((c2) => c2.material_id === "mat-board"))).toHaveLength(1);
+    expect(board).toBeDefined();
   });
 
   it("cascades board rows when the subject is removed", () => {

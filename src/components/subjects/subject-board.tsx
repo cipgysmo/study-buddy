@@ -5,7 +5,17 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import type { BoardCard, BoardCardKind, BoardColumn } from "@/lib/board";
 
-const KINDS: BoardCardKind[] = ["task", "lesson", "chapter"];
+interface BoardMaterial {
+  id: string;
+  filename: string;
+  kind: string;
+  role: string;
+  status: string;
+}
+
+type DragItem = { type: "card"; id: string } | { type: "material"; id: string };
+
+const MANUAL_KINDS: BoardCardKind[] = ["task", "lesson", "chapter"];
 
 function cloneBoard(columns: BoardColumn[]): BoardColumn[] {
   return columns.map((column) => ({
@@ -14,22 +24,40 @@ function cloneBoard(columns: BoardColumn[]): BoardColumn[] {
   }));
 }
 
+function kindLabel(t: ReturnType<typeof useTranslations>, kind: BoardCardKind): string {
+  if (kind === "task") return t("cardKindTask");
+  if (kind === "lesson") return t("cardKindLesson");
+  if (kind === "chapter") return t("cardKindChapter");
+  return t("cardKindMaterial");
+}
+
 export function SubjectBoard({
   subjectId,
   initial,
+  materials,
 }: {
   subjectId: string;
   initial: BoardColumn[];
+  materials: BoardMaterial[];
 }) {
   const t = useTranslations("Subjects");
   const [columns, setColumns] = useState(initial);
   const [columnName, setColumnName] = useState("");
   const [cardDrafts, setCardDrafts] = useState<Record<string, string>>({});
   const [cardKinds, setCardKinds] = useState<Record<string, BoardCardKind>>({});
-  const [draggingCardId, setDraggingCardId] = useState<string | null>(null);
+  const [dragging, setDragging] = useState<DragItem | null>(null);
   const [dragOverColumnId, setDragOverColumnId] = useState<string | null>(null);
+  const [dragOverTray, setDragOverTray] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+
+  const materialsById = new Map(materials.map((material) => [material.id, material]));
+  const assignedMaterialIds = new Set(
+    columns.flatMap((column) =>
+      column.cards.filter((card) => card.material_id).map((card) => card.material_id as string)
+    )
+  );
+  const unassignedMaterials = materials.filter((material) => !assignedMaterialIds.has(material.id));
 
   async function persist(next: BoardColumn[]) {
     setBusy(true);
@@ -89,9 +117,39 @@ export function SubjectBoard({
       if (!r.ok) throw new Error(await r.text());
       const d = (await r.json()) as { card: BoardCard };
       setColumns((prev) =>
-        prev.map((column) => (column.id === columnId ? { ...column, cards: [...column.cards, d.card] } : column))
+        prev.map((column) =>
+          column.id === columnId ? { ...column, cards: [...column.cards, d.card] } : column
+        )
       );
       setCardDrafts((prev) => ({ ...prev, [columnId]: "" }));
+    } catch {
+      setError(t("boardSaveFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function assignMaterial(materialId: string, columnId: string) {
+    if (busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      const r = await fetch(`/api/board/columns/${columnId}/materials`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ materialId }),
+      });
+      if (!r.ok) throw new Error(await r.text());
+      const d = (await r.json()) as { card: BoardCard };
+      setColumns((prev) => {
+        const next = cloneBoard(prev);
+        for (const column of next) {
+          column.cards = column.cards.filter((card) => card.id !== d.card.id);
+        }
+        const target = next.find((column) => column.id === columnId);
+        if (target) target.cards.push(d.card);
+        return next;
+      });
     } catch {
       setError(t("boardSaveFailed"));
     } finally {
@@ -106,13 +164,17 @@ export function SubjectBoard({
     await persist(next);
   }
 
-  async function removeCard(cardId: string) {
+  async function removeCard(cardId: string, isMaterialCard: boolean) {
     const next = columns.map((column) => ({
       ...column,
       cards: column.cards.filter((card) => card.id !== cardId),
     }));
     setColumns(next);
-    await persist(next);
+    if (isMaterialCard) {
+      await fetch(`/api/board/cards/${cardId}`, { method: "DELETE" });
+    } else {
+      await persist(next);
+    }
   }
 
   function moveCard(cardId: string, targetColumnId: string, beforeCardId?: string) {
@@ -139,6 +201,23 @@ export function SubjectBoard({
 
     setColumns(next);
     void persist(next);
+  }
+
+  function handleDropOnColumn(columnId: string, beforeCardId?: string) {
+    setDragOverColumnId(null);
+    if (!dragging) return;
+    if (dragging.type === "material") {
+      void assignMaterial(dragging.id, columnId);
+    } else {
+      moveCard(dragging.id, columnId, beforeCardId);
+    }
+  }
+
+  function handleDropOnTray() {
+    setDragOverTray(false);
+    if (!dragging || dragging.type !== "card") return;
+    const card = columns.flatMap((column) => column.cards).find((x) => x.id === dragging.id);
+    if (card?.material_id) void removeCard(card.id, true);
   }
 
   return (
@@ -168,6 +247,69 @@ export function SubjectBoard({
       <p className="text-xs text-muted">{t("boardHint")}</p>
       {error && <p className="text-xs text-danger">{error}</p>}
 
+      {materials.length > 0 && (
+        <section
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOverTray(true);
+          }}
+          onDragLeave={() => setDragOverTray(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            handleDropOnTray();
+          }}
+          className={
+            "rounded-2xl border bg-card p-3 transition-colors " +
+            (dragOverTray ? "border-accent bg-accent/5" : "border-border")
+          }
+        >
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold">{t("materialsTray")}</h3>
+            <span className="text-xs text-muted">{t("dragMaterialHint")}</span>
+          </div>
+          {unassignedMaterials.length === 0 ? (
+            <p className="text-sm text-muted">—</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {unassignedMaterials.map((material) => (
+                <article
+                  key={material.id}
+                  draggable
+                  onDragStart={() => setDragging({ type: "material", id: material.id })}
+                  onDragEnd={() => {
+                    setDragging(null);
+                    setDragOverColumnId(null);
+                    setDragOverTray(false);
+                  }}
+                  className={
+                    "flex cursor-grab items-center gap-2 rounded-xl border border-border bg-background/60 p-2 active:cursor-grabbing " +
+                    (dragging?.type === "material" && dragging.id === material.id ? "opacity-50" : "")
+                  }
+                >
+                  {material.kind === "image" ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- same-origin API serves pre-sized thumbnails
+                    <img
+                      src={`/api/materials/${material.id}?thumb=1`}
+                      alt={material.filename}
+                      draggable={false}
+                      className="h-10 w-10 rounded-lg border border-border object-cover"
+                    />
+                  ) : (
+                    <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted/20 text-xs font-semibold uppercase">
+                      {material.kind.slice(0, 3)}
+                    </span>
+                  )}
+                  <span className="min-w-0">
+                    <span className="block max-w-48 truncate text-sm font-medium">{material.filename}</span>
+                    <span className="block text-xs text-muted">{kindLabel(t, "material")}</span>
+                  </span>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
       {columns.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center text-sm text-muted">
           {t("noBoardColumns")}
@@ -184,8 +326,7 @@ export function SubjectBoard({
               onDragLeave={() => setDragOverColumnId((id) => (id === column.id ? null : id))}
               onDrop={(e) => {
                 e.preventDefault();
-                setDragOverColumnId(null);
-                if (draggingCardId) moveCard(draggingCardId, column.id);
+                handleDropOnColumn(column.id);
               }}
               className={
                 "min-w-64 rounded-2xl border bg-card p-3 transition-colors " +
@@ -205,54 +346,68 @@ export function SubjectBoard({
               </div>
 
               <div className="space-y-2">
-                {column.cards.map((card) => (
-                  <article
-                    key={card.id}
-                    draggable
-                    onDragStart={() => setDraggingCardId(card.id)}
-                    onDragEnd={() => {
-                      setDraggingCardId(null);
-                      setDragOverColumnId(null);
-                    }}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setDragOverColumnId(null);
-                      if (draggingCardId) moveCard(draggingCardId, column.id, card.id);
-                    }}
-                    className={
-                      "cursor-grab rounded-xl border border-border bg-background/60 p-3 active:cursor-grabbing " +
-                      (draggingCardId === card.id ? "opacity-50" : "")
-                    }
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        {card.lesson_id ? (
-                          <Link
-                            href={`/lessons/${card.lesson_id}`}
-                            className="block text-sm font-medium text-accent hover:underline"
-                          >
-                            {card.title}
-                          </Link>
-                        ) : (
-                          <span className="block text-sm font-medium">{card.title}</span>
-                        )}
-                        <span className="mt-1 inline-block rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
-                          {t(`cardKind${card.kind.charAt(0).toUpperCase()}${card.kind.slice(1)}`)}
-                        </span>
+                {column.cards.map((card) => {
+                  const material = card.material_id ? materialsById.get(card.material_id) : undefined;
+                  return (
+                    <article
+                      key={card.id}
+                      draggable
+                      onDragStart={() => setDragging({ type: "card", id: card.id })}
+                      onDragEnd={() => {
+                        setDragging(null);
+                        setDragOverColumnId(null);
+                        setDragOverTray(false);
+                      }}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleDropOnColumn(column.id, card.id);
+                      }}
+                      className={
+                        "cursor-grab rounded-xl border border-border bg-background/60 p-3 active:cursor-grabbing " +
+                        (dragging?.type === "card" && dragging.id === card.id ? "opacity-50" : "")
+                      }
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex min-w-0 items-start gap-2">
+                          {material?.kind === "image" && card.material_id ? (
+                            // eslint-disable-next-line @next/next/no-img-element -- same-origin API serves pre-sized thumbnails
+                            <img
+                              src={`/api/materials/${card.material_id}?thumb=1`}
+                              alt={material.filename}
+                              draggable={false}
+                              className="h-10 w-10 shrink-0 rounded-lg border border-border object-cover"
+                            />
+                          ) : null}
+                          <div className="min-w-0">
+                            {card.lesson_id ? (
+                              <Link
+                                href={`/lessons/${card.lesson_id}`}
+                                className="block text-sm font-medium text-accent hover:underline"
+                              >
+                                {card.title}
+                              </Link>
+                            ) : (
+                              <span className="block text-sm font-medium">{card.title}</span>
+                            )}
+                            <span className="mt-1 inline-block rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                              {kindLabel(t, card.kind)}
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => void removeCard(card.id, Boolean(card.material_id))}
+                          aria-label={card.material_id ? t("unassign") : t("deleteCard")}
+                          title={card.material_id ? t("unassign") : t("deleteCard")}
+                          className="shrink-0 text-xs text-muted transition-colors hover:text-red-500"
+                        >
+                          ✕
+                        </button>
                       </div>
-                      <button
-                        onClick={() => void removeCard(card.id)}
-                        aria-label={t("deleteCard")}
-                        title={t("deleteCard")}
-                        className="shrink-0 text-xs text-muted transition-colors hover:text-red-500"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  </article>
-                ))}
+                    </article>
+                  );
+                })}
               </div>
 
               <div className="mt-3 flex gap-2">
@@ -270,13 +425,15 @@ export function SubjectBoard({
                 />
                 <select
                   value={cardKinds[column.id] ?? "task"}
-                  onChange={(e) => setCardKinds((prev) => ({ ...prev, [column.id]: e.target.value as BoardCardKind }))}
+                  onChange={(e) =>
+                    setCardKinds((prev) => ({ ...prev, [column.id]: e.target.value as BoardCardKind }))
+                  }
                   className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm"
                   aria-label={t("cardKind")}
                 >
-                  {KINDS.map((kind) => (
+                  {MANUAL_KINDS.map((kind) => (
                     <option key={kind} value={kind}>
-                      {t(`cardKind${kind.charAt(0).toUpperCase()}${kind.slice(1)}`)}
+                      {kindLabel(t, kind)}
                     </option>
                   ))}
                 </select>

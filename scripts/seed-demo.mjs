@@ -161,6 +161,23 @@ function ensureCard(columnId, title, kind, lessonId = null, chapterId = null) {
   return id;
 }
 
+function ensureMaterialCard(columnId, materialId) {
+  const row = db.prepare("SELECT id FROM board_cards WHERE material_id = ?").get(materialId);
+  if (row) return row.id;
+  const column = db.prepare("SELECT subject_id FROM board_columns WHERE id = ?").get(columnId);
+  const material = db.prepare("SELECT filename FROM materials WHERE id = ?").get(materialId);
+  const id = randomUUID();
+  const sort =
+    (db.prepare("SELECT COALESCE(MAX(sort_order), -1) AS n FROM board_cards WHERE column_id = ?").get(columnId)
+      .n ?? -1) + 1;
+  db.prepare(
+    `INSERT INTO board_cards
+      (id, subject_id, column_id, title, kind, material_id, sort_order)
+     VALUES (?, ?, ?, ?, 'material', ?, ?)`
+  ).run(id, column.subject_id, columnId, material.filename, materialId, sort);
+  return id;
+}
+
 function ensureFlashcard(subjectId, front, back) {
   const row = db
     .prepare("SELECT id FROM flashcards WHERE subject_id = ? AND front = ?")
@@ -316,6 +333,8 @@ ensureCard(lessonsCol, "Lineární rovnice", "lesson");
 ensureCard(chaptersCol, "Co je pravoúhlý trojúhelník", "chapter", lessonId, chapter1);
 ensureCard(chaptersCol, "Výpočet přepony", "chapter", lessonId, chapter2);
 ensureCard(doneCol, "Obsah obdélníka", "lesson", doneLessonId);
+ensureMaterialCard(lessonsCol, notesMaterial);
+ensureMaterialCard(chaptersCol, diagramMaterial);
 
 ensureFlashcard(mathId, "Pythagorova věta", "a² + b² = c²");
 ensureFlashcard(mathId, "Přepona", "nejdelší strana pravoúhlého trojúhelníku");

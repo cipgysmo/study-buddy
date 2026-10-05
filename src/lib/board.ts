@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { getDb } from "./db";
+import { getMaterial } from "./subjects";
 
-export type BoardCardKind = "task" | "lesson" | "chapter";
+export type BoardCardKind = "task" | "lesson" | "chapter" | "material";
 
 export interface BoardCard {
   id: string;
@@ -12,6 +13,7 @@ export interface BoardCard {
   kind: BoardCardKind;
   lesson_id: string | null;
   chapter_id: string | null;
+  material_id: string | null;
   sort_order: number;
   created_at: string;
 }
@@ -113,6 +115,39 @@ export function createBoardCard(
 export function deleteBoardCard(id: string): boolean {
   const info = getDb().prepare("DELETE FROM board_cards WHERE id = ?").run(id);
   return info.changes > 0;
+}
+
+export function getBoardCardByMaterial(materialId: string): BoardCard | null {
+  const row = getDb().prepare("SELECT * FROM board_cards WHERE material_id = ?").get(materialId) as
+    | BoardCard
+    | undefined;
+  return row ?? null;
+}
+
+export function assignMaterialToColumn(materialId: string, columnId: string): BoardCard | null {
+  const column = getBoardColumn(columnId);
+  const material = getMaterial(materialId);
+  if (!column || !material || material.subject_id !== column.subject_id) return null;
+
+  const existing = getBoardCardByMaterial(materialId);
+  if (existing) {
+    const sortOrder = nextSortOrder("board_cards", "column_id", columnId);
+    getDb()
+      .prepare("UPDATE board_cards SET column_id = ?, sort_order = ?, title = ? WHERE id = ?")
+      .run(columnId, sortOrder, material.filename, existing.id);
+    return getBoardCard(existing.id);
+  }
+
+  const id = randomUUID();
+  const sortOrder = nextSortOrder("board_cards", "column_id", columnId);
+  getDb()
+    .prepare(
+      `INSERT INTO board_cards
+        (id, subject_id, column_id, title, kind, material_id, sort_order)
+       VALUES (?, ?, ?, ?, 'material', ?, ?)`
+    )
+    .run(id, column.subject_id, columnId, material.filename, materialId, sortOrder);
+  return getBoardCard(id);
 }
 
 export function saveBoardOrder(subjectId: string, columns: BoardOrderInput[]): boolean {

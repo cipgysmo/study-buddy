@@ -61,12 +61,13 @@ export default async function SubjectDetailPage({
         <h2 className="text-lg font-semibold">{t("board")}</h2>
         <SubjectBoard
           subjectId={id}
-          initial={board.map((column) => ({
-            ...column,
-            cards: column.cards.map((card) => ({
-              ...card,
-              kind: card.kind === "lesson" || card.kind === "chapter" ? card.kind : "task",
-            })),
+          initial={board}
+          materials={materials.map((m) => ({
+            id: m.id,
+            filename: m.filename,
+            kind: m.kind,
+            role: m.role,
+            status: m.status,
           }))}
         />
       </section>
