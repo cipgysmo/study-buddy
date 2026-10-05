@@ -32,6 +32,12 @@ export function llmMaxConcurrency(): number {
   return Number.isFinite(v) && v > 0 ? Math.floor(v) : 2;
 }
 
+/** Hard timeout for a single upstream LLM request before it is retried. */
+export function llmRequestTimeoutMs(): number {
+  const v = Number(read("LLM_REQUEST_TIMEOUT_MS", "180000"));
+  return Number.isFinite(v) && v > 0 ? Math.floor(v) : 180000;
+}
+
 /** Where the SQLite DB + uploaded files live. */
 export function dataDir(): string {
   return read("DATA_DIR", path.join(process.cwd(), "data"));

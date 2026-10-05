@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface Topic {
   id: string;
@@ -47,8 +49,8 @@ export function TopicManager({
 
   return (
     <div className="space-y-3">
-      <div className="flex gap-2">
-        <input
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => {
@@ -58,15 +60,11 @@ export function TopicManager({
             }
           }}
           placeholder={t("topicPlaceholder")}
-          className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          className="flex-1 bg-background"
         />
-        <button
-          onClick={() => void add()}
-          disabled={busy || !name.trim()}
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground disabled:opacity-50"
-        >
+        <Button onClick={() => void add()} disabled={busy || !name.trim()}>
           {t("addTopic")}
-        </button>
+        </Button>
       </div>
       {topics.length === 0 ? (
         <p className="text-sm text-muted">{t("noTopics")}</p>
@@ -82,7 +80,7 @@ export function TopicManager({
                 onClick={() => void remove(topic.id)}
                 aria-label={t("deleteTopic")}
                 title={t("deleteTopic")}
-                className="text-muted transition-colors hover:text-red-500"
+                className="text-muted transition-colors hover:text-danger"
               >
                 ✕
               </button>

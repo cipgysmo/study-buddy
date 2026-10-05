@@ -2,8 +2,12 @@
 
 import { useCallback, useState } from "react";
 import { useTranslations } from "next-intl";
-import { SubjectSelect, type SubjectOption } from "@/components/ui/subject-select";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { GenerationScopePicker } from "@/components/ui/generation-scope-picker";
+import { NavIcon } from "@/components/shell/nav-icons";
+import { SubjectSelect, type SubjectOption } from "@/components/ui/subject-select";
 import { DeleteButton } from "@/components/subjects/delete-button";
 import { useJob } from "@/lib/use-jobs";
 
@@ -16,12 +20,14 @@ interface Card {
 export function FlashcardsApp({
   subjects,
   initialDue,
+  initialSubjectId = "",
 }: {
   subjects: SubjectOption[];
   initialDue: Card[];
+  initialSubjectId?: string;
 }) {
   const t = useTranslations("Flashcards");
-  const [subjectId, setSubjectId] = useState("");
+  const [subjectId, setSubjectId] = useState(initialSubjectId);
   const [topicIds, setTopicIds] = useState<string[]>([]);
   const [columnIds, setColumnIds] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
@@ -86,7 +92,7 @@ export function FlashcardsApp({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-card p-4">
+      <Card className="flex flex-wrap items-end gap-3 p-4">
         <SubjectSelect
           value={subjectId}
           onChange={(v) => {
@@ -98,6 +104,7 @@ export function FlashcardsApp({
           }}
           subjects={subjects}
           placeholder={t("selectSubject")}
+          className="min-w-52"
         />
         <input
           type="number"
@@ -105,17 +112,13 @@ export function FlashcardsApp({
           max={50}
           value={count}
           onChange={(e) => setCount(Number(e.target.value))}
-          className="w-20 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          className="w-20 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-ring"
         />
-        <button
-          onClick={generate}
-          disabled={busy || !subjectId}
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground disabled:opacity-50"
-        >
+        <Button onClick={generate} disabled={busy || !subjectId}>
           {busy ? t("generating") : t("generate")}
-        </button>
-        {error && <span className="text-sm text-red-500">{error}</span>}
-      </div>
+        </Button>
+        {error && <span className="text-sm text-danger">{error}</span>}
+      </Card>
 
       <GenerationScopePicker
         subjectId={subjectId}
@@ -132,11 +135,12 @@ export function FlashcardsApp({
           {due.length} {t("due")}
         </p>
         {!current ? (
-          <div className="rounded-2xl border border-dashed border-border bg-card p-10 text-center text-muted">
-            {t("noDue")}
-          </div>
+          <EmptyState
+            title={t("noDue")}
+            icon={<NavIcon name="flashcards" className="h-5 w-5" />}
+          />
         ) : (
-          <div className="rounded-2xl border border-border bg-card p-6">
+          <Card className="p-6">
             <div className="mb-2 flex items-start justify-between gap-3">
               <p className="min-h-[3rem] text-lg font-medium">{current.front}</p>
               <DeleteButton
@@ -150,30 +154,25 @@ export function FlashcardsApp({
             )}
             <div className="mt-6 flex flex-wrap gap-2">
               {!revealed ? (
-                <button
-                  onClick={() => setRevealed(true)}
-                  className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground"
-                >
-                  {t("showAnswer")}
-                </button>
+                <Button onClick={() => setRevealed(true)}>{t("showAnswer")}</Button>
               ) : (
                 <>
-                  <button onClick={() => review(1)} className="rounded-lg border border-border px-4 py-2 text-sm">
+                  <Button variant="secondary" onClick={() => review(1)}>
                     {t("again")}
-                  </button>
-                  <button onClick={() => review(2)} className="rounded-lg border border-border px-4 py-2 text-sm">
+                  </Button>
+                  <Button variant="secondary" onClick={() => review(2)}>
                     {t("hard")}
-                  </button>
-                  <button onClick={() => review(3)} className="rounded-lg border border-border px-4 py-2 text-sm">
+                  </Button>
+                  <Button variant="secondary" onClick={() => review(3)}>
                     {t("good")}
-                  </button>
-                  <button onClick={() => review(4)} className="rounded-lg border border-border px-4 py-2 text-sm">
+                  </Button>
+                  <Button variant="secondary" onClick={() => review(4)}>
                     {t("easy")}
-                  </button>
+                  </Button>
                 </>
               )}
             </div>
-          </div>
+          </Card>
         )}
       </div>
     </div>

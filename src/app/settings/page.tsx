@@ -4,6 +4,8 @@ import { LanguageSwitcher } from "@/components/settings/language-switcher";
 import { NameField } from "@/components/settings/name-field";
 import { SoundToggle } from "@/components/settings/sound-toggle";
 import { ThemeSwitcher } from "@/components/settings/theme-switcher";
+import { Card } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 import { getSetting } from "@/lib/db";
 import { getStudentName } from "@/lib/profile";
 import { resolveTheme } from "@/lib/theme";
@@ -17,36 +19,33 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-3xl font-semibold tracking-tight">{t("title")}</h1>
-        <p className="mt-1 text-muted">{t("subtitle")}</p>
-      </header>
+      <PageHeader title={t("title")} description={t("subtitle")} />
 
-      <section className="max-w-md space-y-3 rounded-2xl border border-border bg-card p-5">
+      <Card className="max-w-md space-y-3 p-5">
         <div>
           <h2 className="font-medium">{t("name")}</h2>
           <p className="mt-0.5 text-sm text-muted">{t("nameHint")}</p>
         </div>
         <NameField current={name} />
-      </section>
+      </Card>
 
-      <section className="max-w-md space-y-3 rounded-2xl border border-border bg-card p-5">
+      <Card className="max-w-md space-y-3 p-5">
         <div>
           <h2 className="font-medium">{t("language")}</h2>
           <p className="mt-0.5 text-sm text-muted">{t("languageHint")}</p>
         </div>
         <LanguageSwitcher current={locale} />
-      </section>
+      </Card>
 
-      <section className="max-w-md space-y-3 rounded-2xl border border-border bg-card p-5">
+      <Card className="max-w-md space-y-3 p-5">
         <div>
           <h2 className="font-medium">{t("appearance")}</h2>
           <p className="mt-0.5 text-sm text-muted">{t("appearanceHint")}</p>
         </div>
         <ThemeSwitcher current={theme} />
-      </section>
+      </Card>
 
-      <section className="max-w-md space-y-3 rounded-2xl border border-border bg-card p-5">
+      <Card className="max-w-md p-5">
         <div className="flex items-center justify-between gap-4">
           <div>
             <h2 className="font-medium">{t("sound")}</h2>
@@ -54,7 +53,7 @@ export default async function SettingsPage() {
           </div>
           <SoundToggle current={sound} />
         </div>
-      </section>
+      </Card>
 
       <CleanupSection />
     </div>

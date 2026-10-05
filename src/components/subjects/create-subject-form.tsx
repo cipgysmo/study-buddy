@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 export function CreateSubjectForm() {
   const t = useTranslations("Subjects");
@@ -28,20 +31,18 @@ export function CreateSubjectForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex gap-2">
-      <input
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder={t("namePlaceholder")}
-        className="flex-1 rounded-lg border border-border bg-card px-3 py-2 text-sm outline-none focus:border-accent"
-      />
-      <button
-        type="submit"
-        disabled={busy || !name.trim()}
-        className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-opacity disabled:opacity-50"
-      >
-        {t("add")}
-      </button>
-    </form>
+    <Card className="p-4">
+      <form onSubmit={onSubmit} className="flex flex-col gap-3 sm:flex-row">
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder={t("namePlaceholder")}
+          className="flex-1 bg-background"
+        />
+        <Button type="submit" disabled={busy || !name.trim()}>
+          {t("add")}
+        </Button>
+      </form>
+    </Card>
   );
 }

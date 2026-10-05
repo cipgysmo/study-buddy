@@ -7,16 +7,17 @@ type Variant = "primary" | "secondary" | "danger" | "ghost";
 type Size = "md" | "sm";
 
 const variantStyles: Record<Variant, string> = {
-  primary: "bg-accent text-accent-foreground transition-opacity hover:opacity-90",
+  primary:
+    "bg-accent text-accent-foreground shadow-soft transition hover:opacity-90 active:opacity-80",
   secondary:
-    "border border-border bg-card text-foreground transition-colors hover:bg-foreground/5",
-  danger: "text-muted transition-colors hover:bg-danger/10 hover:text-danger",
-  ghost: "text-accent transition-opacity hover:opacity-70",
+    "border border-border bg-card text-foreground shadow-soft transition hover:bg-foreground/5 active:bg-foreground/10",
+  danger: "text-muted transition hover:bg-danger/10 hover:text-danger active:bg-danger/15",
+  ghost: "text-accent transition hover:bg-accent/10 active:bg-accent/15",
 };
 
 const sizeStyles: Record<Size, string> = {
-  md: "px-4 py-2 text-sm",
-  sm: "px-2 py-1 text-xs",
+  md: "min-h-10 px-4 py-2 text-sm",
+  sm: "min-h-8 px-3 py-1.5 text-xs",
 };
 
 export interface ButtonProps
@@ -42,7 +43,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     <button
       ref={ref}
       disabled={disabled || loading}
-      className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg font-medium disabled:cursor-not-allowed disabled:opacity-50 ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
+      className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
       {...props}
     >
       {loading && <Spinner className="h-3.5 w-3.5" />}

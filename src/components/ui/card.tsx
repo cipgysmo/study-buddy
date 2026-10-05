@@ -6,7 +6,7 @@ export function Card({
   children: React.ReactNode;
 }) {
   return (
-    <div className={`rounded-2xl border border-border bg-card ${className}`}>
+    <div className={`rounded-2xl border border-border bg-card shadow-soft ${className}`}>
       {children}
     </div>
   );

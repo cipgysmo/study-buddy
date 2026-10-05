@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { SubjectSelect, type SubjectOption } from "@/components/ui/subject-select";
 
@@ -122,7 +123,7 @@ export function UploadMaterialForm({
   }, [pending, router]);
 
   return (
-    <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
+    <Card className="space-y-3 p-4">
       {!fixedSubject && (
         <div className="space-y-1">
           <label className="block text-xs font-medium text-muted">{t("uploadSubjectLabel")}</label>
@@ -182,6 +183,6 @@ export function UploadMaterialForm({
           onChange={(e) => onFiles(e.target.files)}
         />
       </label>
-    </div>
+    </Card>
   );
 }

@@ -3,6 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { NavIcon } from "@/components/shell/nav-icons";
 import { SubjectSelect, type SubjectOption } from "@/components/ui/subject-select";
 import { GenerationScopePicker } from "@/components/ui/generation-scope-picker";
 import { Diagram } from "@/components/ui/diagram";
@@ -10,6 +14,7 @@ import { useJob } from "@/lib/use-jobs";
 
 interface Exercise {
   id: string;
+  subject_id: string;
   prompt: string;
   solution_steps: string[];
   difficulty: string;
@@ -17,6 +22,7 @@ interface Exercise {
 }
 interface TrueFalseItem {
   id: string;
+  subject_id: string;
   statement: string;
   is_correct: boolean;
   explanation: string;
@@ -26,15 +32,17 @@ export function PracticeApp({
   exercises,
   items,
   subjects,
+  initialSubjectId = "",
 }: {
   exercises: Exercise[];
   items: TrueFalseItem[];
   subjects: SubjectOption[];
+  initialSubjectId?: string;
 }) {
   const t = useTranslations("Practice");
   const router = useRouter();
   const [tab, setTab] = useState<"exercises" | "truefalse">("exercises");
-  const [subjectId, setSubjectId] = useState("");
+  const [subjectId, setSubjectId] = useState(initialSubjectId);
   const [topicIds, setTopicIds] = useState<string[]>([]);
   const [columnIds, setColumnIds] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
@@ -88,7 +96,7 @@ export function PracticeApp({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-card p-4">
+      <Card className="flex flex-wrap items-end gap-3 p-4">
         <SubjectSelect
           value={subjectId}
           onChange={(v) => {
@@ -99,6 +107,7 @@ export function PracticeApp({
           }}
           subjects={subjects}
           placeholder={t("selectSubject")}
+          className="min-w-52"
         />
         <input
           type="number"
@@ -106,24 +115,20 @@ export function PracticeApp({
           max={20}
           value={count}
           onChange={(e) => setCount(Number(e.target.value))}
-          className="w-24 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          className="w-24 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-ring"
         />
-        <button
-          onClick={() => generate("exercises")}
-          disabled={busy || !subjectId}
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground disabled:opacity-50"
-        >
+        <Button onClick={() => generate("exercises")} disabled={busy || !subjectId}>
           {busy ? t("generating") : t("generateExercises")}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="secondary"
           onClick={() => generate("truefalse")}
           disabled={busy || !subjectId}
-          className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium disabled:opacity-50"
         >
           {t("generateTrueFalse")}
-        </button>
-        {error && <span className="text-sm text-red-500">{error}</span>}
-      </div>
+        </Button>
+        {error && <span className="text-sm text-danger">{error}</span>}
+      </Card>
 
       <GenerationScopePicker
         subjectId={subjectId}
@@ -135,12 +140,14 @@ export function PracticeApp({
         onKeywordsChange={setKeywords}
       />
 
-      <div className="flex gap-2">
+      <div className="inline-flex rounded-xl border border-border bg-card p-1 shadow-soft">
         <button
           onClick={() => setTab("exercises")}
           className={
-            "rounded-lg px-3 py-1.5 text-sm font-medium " +
-            (tab === "exercises" ? "bg-accent text-accent-foreground" : "border border-border")
+            "min-h-8 rounded-lg px-3 py-1.5 text-sm font-medium transition " +
+            (tab === "exercises"
+              ? "bg-accent/10 text-accent ring-1 ring-accent/20"
+              : "text-muted hover:text-foreground")
           }
         >
           {t("exercises")}
@@ -148,137 +155,150 @@ export function PracticeApp({
         <button
           onClick={() => setTab("truefalse")}
           className={
-            "rounded-lg px-3 py-1.5 text-sm font-medium " +
-            (tab === "truefalse" ? "bg-accent text-accent-foreground" : "border border-border")
+            "min-h-8 rounded-lg px-3 py-1.5 text-sm font-medium transition " +
+            (tab === "truefalse"
+              ? "bg-accent/10 text-accent ring-1 ring-accent/20"
+              : "text-muted hover:text-foreground")
           }
         >
           {t("trueFalse")}
         </button>
       </div>
 
-      {tab === "exercises" ? (
-        exercises.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border bg-card p-10 text-center text-muted">
-            {t("emptyExercises")}
-          </div>
+      {(() => {
+        const visibleExercises = subjectId
+          ? exercises.filter((exercise) => exercise.subject_id === subjectId)
+          : exercises;
+        const visibleItems = subjectId
+          ? items.filter((item) => item.subject_id === subjectId)
+          : items;
+
+        if (tab === "exercises") {
+          return visibleExercises.length === 0 ? (
+            <EmptyState
+              title={t("emptyExercises")}
+              icon={<NavIcon name="exercises" className="h-5 w-5" />}
+            />
+          ) : (
+            <div className="space-y-3">
+              {visibleExercises.map((ex) => (
+                <Card key={ex.id} className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="font-medium">{ex.prompt}</p>
+                    <button
+                      onClick={() => remove("exercises", ex.id)}
+                      className="shrink-0 text-xs text-muted transition hover:text-danger"
+                      title={t("deleteExercise")}
+                      aria-label={t("deleteExercise")}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div className="mt-2">
+                    <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs text-accent">
+                      {difficultyLabel(ex.difficulty)}
+                    </span>
+                  </div>
+                  {ex.diagram && (
+                    <div className="mt-3">
+                      <Diagram svg={ex.diagram} />
+                    </div>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-3 px-0"
+                    onClick={() => setRevealed((p) => ({ ...p, [ex.id]: !p[ex.id] }))}
+                  >
+                    {revealed[ex.id] ? t("hideSolution") : t("showSolution")}
+                  </Button>
+                  {revealed[ex.id] && (
+                    <div className="mt-3 rounded-xl bg-background p-3">
+                      <p className="mb-2 text-sm font-medium text-muted">{t("solution")}</p>
+                      <ol className="list-decimal space-y-1 pl-5 text-sm">
+                        {ex.solution_steps.map((s, i) => (
+                          <li key={i}>{s}</li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+                </Card>
+              ))}
+            </div>
+          );
+        }
+
+        return visibleItems.length === 0 ? (
+          <EmptyState
+            title={t("emptyTrueFalse")}
+            icon={<NavIcon name="quizzes" className="h-5 w-5" />}
+          />
         ) : (
           <div className="space-y-3">
-            {exercises.map((ex) => (
-              <div key={ex.id} className="rounded-2xl border border-border bg-card p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <p className="font-medium">{ex.prompt}</p>
-                  <button
-                    onClick={() => remove("exercises", ex.id)}
-                    className="shrink-0 text-xs text-muted hover:text-red-500"
-                    title={t("deleteExercise")}
-                    aria-label={t("deleteExercise")}
-                  >
-                    ✕
-                  </button>
-                </div>
-                <div className="mt-2">
-                  <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs text-accent">
-                    {difficultyLabel(ex.difficulty)}
-                  </span>
-                </div>
-                {ex.diagram && (
-                  <div className="mt-3">
-                    <Diagram svg={ex.diagram} />
-                  </div>
-                )}
-                <button
-                  onClick={() => setRevealed((p) => ({ ...p, [ex.id]: !p[ex.id] }))}
-                  className="mt-3 text-sm text-accent hover:underline"
-                >
-                  {revealed[ex.id] ? t("hideSolution") : t("showSolution")}
-                </button>
-                {revealed[ex.id] && (
-                  <div className="mt-3 rounded-xl bg-background p-3">
-                    <p className="mb-2 text-sm font-medium text-muted">{t("solution")}</p>
-                    <ol className="list-decimal space-y-1 pl-5 text-sm">
-                      {ex.solution_steps.map((s, i) => (
-                        <li key={i}>{s}</li>
-                      ))}
-                    </ol>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )
-      ) : items.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border bg-card p-10 text-center text-muted">
-          {t("emptyTrueFalse")}
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {items.map((item) => {
-            const answered = item.id in tfAnswers;
-            const correct = tfAnswers[item.id] === item.is_correct;
-            const btnClass = (value: boolean) => {
-              if (!answered) return "border-border hover:border-accent";
-              if (value === item.is_correct)
-                return "border-green-500 bg-green-500/10 text-green-600";
-              if (tfAnswers[item.id] === value)
-                return "border-red-500 bg-red-500/10 text-red-500";
-              return "border-border opacity-60";
-            };
-            return (
-              <div key={item.id} className="rounded-2xl border border-border bg-card p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <p className="font-medium">{item.statement}</p>
-                  <button
-                    onClick={() => remove("truefalse", item.id)}
-                    className="shrink-0 text-xs text-muted hover:text-red-500"
-                    title={t("deleteItem")}
-                    aria-label={t("deleteItem")}
-                  >
-                    ✕
-                  </button>
-                </div>
-                <div className="mt-3 flex gap-2">
-                  <button
-                    onClick={() => setTfAnswers((p) => ({ ...p, [item.id]: true }))}
-                    disabled={answered}
-                    className={
-                      "rounded-lg border px-4 py-1.5 text-sm font-medium disabled:opacity-70 " +
-                      btnClass(true)
-                    }
-                  >
-                    {t("true")}
-                  </button>
-                  <button
-                    onClick={() => setTfAnswers((p) => ({ ...p, [item.id]: false }))}
-                    disabled={answered}
-                    className={
-                      "rounded-lg border px-4 py-1.5 text-sm font-medium disabled:opacity-70 " +
-                      btnClass(false)
-                    }
-                  >
-                    {t("false")}
-                  </button>
-                </div>
-                {answered && (
-                  <div className="mt-3">
-                    <p
-                      className={
-                        "text-sm font-medium " + (correct ? "text-green-600" : "text-red-500")
-                      }
+            {visibleItems.map((item) => {
+              const answered = item.id in tfAnswers;
+              const correct = tfAnswers[item.id] === item.is_correct;
+              const btnClass = (value: boolean) => {
+                if (!answered) return "border-border hover:border-accent";
+                if (value === item.is_correct)
+                  return "border-success bg-success/10 text-success";
+                if (tfAnswers[item.id] === value) return "border-danger bg-danger/10 text-danger";
+                return "border-border opacity-60";
+              };
+              return (
+                <Card key={item.id} className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="font-medium">{item.statement}</p>
+                    <button
+                      onClick={() => remove("truefalse", item.id)}
+                      className="shrink-0 text-xs text-muted transition hover:text-danger"
+                      title={t("deleteItem")}
+                      aria-label={t("deleteItem")}
                     >
-                      {correct ? t("correct") : t("incorrect")}
-                    </p>
-                    {item.explanation && (
-                      <p className="mt-1 text-sm text-muted">
-                        <span className="font-medium">{t("explanation")}:</span> {item.explanation}
-                      </p>
-                    )}
+                      ✕
+                    </button>
                   </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+                  <div className="mt-3 flex gap-2">
+                    <Button
+                      variant="secondary"
+                      onClick={() => setTfAnswers((p) => ({ ...p, [item.id]: true }))}
+                      disabled={answered}
+                      className={btnClass(true)}
+                    >
+                      {t("true")}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      onClick={() => setTfAnswers((p) => ({ ...p, [item.id]: false }))}
+                      disabled={answered}
+                      className={btnClass(false)}
+                    >
+                      {t("false")}
+                    </Button>
+                  </div>
+                  {answered && (
+                    <div className="mt-3">
+                      <p
+                        className={
+                          "text-sm font-medium " + (correct ? "text-success" : "text-danger")
+                        }
+                      >
+                        {correct ? t("correct") : t("incorrect")}
+                      </p>
+                      {item.explanation && (
+                        <p className="mt-1 text-sm text-muted">
+                          <span className="font-medium">{t("explanation")}:</span>{" "}
+                          {item.explanation}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
+          </div>
+        );
+      })()}
     </div>
   );
 }

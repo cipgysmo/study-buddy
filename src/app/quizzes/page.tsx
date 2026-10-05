@@ -3,9 +3,18 @@ import { listQuizzes } from "@/lib/quizzes";
 import { listSubjects } from "@/lib/subjects";
 import { QuizzesApp } from "@/components/quizzes/quizzes-app";
 
-export default async function QuizzesPage() {
+export default async function QuizzesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ subject?: string }>;
+}) {
   const t = await getTranslations("Quizzes");
-  const quizzes = listQuizzes().map((q) => ({ id: q.id, title: q.title }));
+  const { subject } = await searchParams;
+  const quizzes = listQuizzes().map((q) => ({
+    id: q.id,
+    subject_id: q.subject_id,
+    title: q.title,
+  }));
   const subjects = listSubjects().map((s) => ({ id: s.id, name: s.name }));
 
   return (
@@ -14,7 +23,7 @@ export default async function QuizzesPage() {
         <h1 className="text-3xl font-semibold tracking-tight">{t("title")}</h1>
         <p className="mt-1 text-muted">{t("subtitle")}</p>
       </header>
-      <QuizzesApp quizzes={quizzes} subjects={subjects} />
+      <QuizzesApp quizzes={quizzes} subjects={subjects} initialSubjectId={subject ?? ""} />
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { MaterialIconButton } from "./material-icon-button";
 
 export function DeleteButton({
@@ -61,12 +62,8 @@ export function DeleteButton({
   }
 
   return (
-    <button
-      onClick={onDelete}
-      disabled={busy}
-      className="shrink-0 rounded-lg px-2 py-1 text-xs font-medium text-muted transition-colors hover:bg-danger/10 hover:text-danger disabled:opacity-50"
-    >
+    <Button variant="danger" size="sm" onClick={onDelete} disabled={busy}>
       {label}
-    </button>
+    </Button>
   );
 }

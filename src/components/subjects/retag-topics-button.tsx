@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
 import { useJob } from "@/lib/use-jobs";
 
 /**
@@ -41,15 +42,11 @@ export function RetagTopicsButton({ subjectId }: { subjectId: string }) {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <button
-        onClick={() => void retag()}
-        disabled={busy}
-        className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-accent hover:text-foreground disabled:opacity-50"
-      >
+      <Button variant="secondary" size="sm" onClick={() => void retag()} disabled={busy}>
         {busy ? t("retagging") : t("retagAll")}
-      </button>
+      </Button>
       <span className="text-xs text-muted">{t("retagHint")}</span>
-      {error && <span className="text-xs text-red-500">{error}</span>}
+      {error && <span className="text-xs text-danger">{error}</span>}
     </div>
   );
 }

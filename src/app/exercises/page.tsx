@@ -3,16 +3,23 @@ import { listExercises, listTrueFalse } from "@/lib/practice";
 import { listSubjects } from "@/lib/subjects";
 import { PracticeApp } from "@/components/practice/practice-app";
 
-export default async function ExercisesPage() {
+export default async function ExercisesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ subject?: string }>;
+}) {
   const t = await getTranslations("Practice");
-  const exercises = listExercises().map((e) => ({
+  const { subject } = await searchParams;
+  const exercises = listExercises(subject).map((e) => ({
     id: e.id,
+    subject_id: e.subject_id,
     prompt: e.prompt,
     solution_steps: e.solution_steps,
     difficulty: e.difficulty,
   }));
-  const items = listTrueFalse().map((i) => ({
+  const items = listTrueFalse(subject).map((i) => ({
     id: i.id,
+    subject_id: i.subject_id,
     statement: i.statement,
     is_correct: i.is_correct,
     explanation: i.explanation,
@@ -25,7 +32,12 @@ export default async function ExercisesPage() {
         <h1 className="text-3xl font-semibold tracking-tight">{t("title")}</h1>
         <p className="mt-1 text-muted">{t("subtitle")}</p>
       </header>
-      <PracticeApp exercises={exercises} items={items} subjects={subjects} />
+      <PracticeApp
+        exercises={exercises}
+        items={items}
+        subjects={subjects}
+        initialSubjectId={subject ?? ""}
+      />
     </div>
   );
 }

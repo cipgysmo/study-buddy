@@ -5,6 +5,7 @@ import {
   llmBusyTimeoutMs,
   llmMaxConcurrency,
   llmModel,
+  llmRequestTimeoutMs,
 } from "./env";
 import { extractJSON } from "./json";
 
@@ -16,6 +17,7 @@ function client(): OpenAI {
       baseURL: llmBaseUrl(),
       apiKey: llmApiKey(),
       maxRetries: 0,
+      timeout: llmRequestTimeoutMs(),
     });
   }
   return _client;
@@ -57,6 +59,30 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
     }
     signal?.addEventListener("abort", onAbort, { once: true });
   });
+}
+
+function combineSignals(signals: (AbortSignal | undefined)[]): AbortSignal | undefined {
+  const present = signals.filter((signal): signal is AbortSignal => Boolean(signal));
+  if (present.length === 0) return undefined;
+  if (present.length === 1) return present[0];
+
+  const controller = new AbortController();
+  for (const signal of present) {
+    if (signal.aborted) {
+      controller.abort(signal.reason);
+      break;
+    }
+    signal.addEventListener(
+      "abort",
+      () => controller.abort(signal.reason),
+      { once: true }
+    );
+  }
+  return controller.signal;
+}
+
+function requestSignal(signal?: AbortSignal): AbortSignal | undefined {
+  return combineSignals([signal, AbortSignal.timeout(llmRequestTimeoutMs())]);
 }
 
 async function acquireLlmSlot(signal?: AbortSignal): Promise<void> {
@@ -115,6 +141,9 @@ export function isRetryableLlmError(err: unknown): boolean {
     "network",
     "fetch failed",
     "timeout",
+    "timeouterror",
+    "aborted",
+    "aborterror",
   ].some((needle) => message.includes(needle));
 }
 
@@ -149,14 +178,16 @@ export async function withLlmCall<T>(fn: () => Promise<T>, signal?: AbortSignal)
 export async function chat(opts: ChatOptions): Promise<string> {
   const res = await withLlmCall(
     () =>
-      client().chat.completions.create({
-        model: llmModel(),
-        messages: opts.messages,
-        temperature: opts.temperature ?? 0.4,
-        ...(opts.maxTokens ? { max_tokens: opts.maxTokens } : {}),
-        ...(opts.json ? { response_format: { type: "json_object" as const } } : {}),
-        ...(opts.signal ? { signal: opts.signal } : {}),
-      }),
+      client().chat.completions.create(
+        {
+          model: llmModel(),
+          messages: opts.messages,
+          temperature: opts.temperature ?? 0.4,
+          ...(opts.maxTokens ? { max_tokens: opts.maxTokens } : {}),
+          ...(opts.json ? { response_format: { type: "json_object" as const } } : {}),
+        },
+        { signal: requestSignal(opts.signal) }
+      ),
     opts.signal
   );
   return res.choices[0]?.message?.content ?? "";
@@ -173,14 +204,16 @@ export async function* chatStream(opts: ChatOptions): AsyncGenerator<string> {
 
     let stream: Awaited<ReturnType<OpenAI["chat"]["completions"]["create"]>>;
     try {
-      stream = await client().chat.completions.create({
-        model: llmModel(),
-        messages: opts.messages,
-        temperature: opts.temperature ?? 0.4,
-        ...(opts.maxTokens ? { max_tokens: opts.maxTokens } : {}),
-        stream: true,
-        ...(opts.signal ? { signal: opts.signal } : {}),
-      });
+      stream = await client().chat.completions.create(
+        {
+          model: llmModel(),
+          messages: opts.messages,
+          temperature: opts.temperature ?? 0.4,
+          ...(opts.maxTokens ? { max_tokens: opts.maxTokens } : {}),
+          stream: true,
+        },
+        { signal: requestSignal(opts.signal) }
+      );
     } catch (err) {
       releaseLlmSlot();
       if (opts.signal?.aborted) throw err;
@@ -243,23 +276,26 @@ export interface VisionOptions {
 /** Non-streaming completion with an inline image (vision / OCR). */
 export async function chatVision(opts: VisionOptions): Promise<string> {
   const res = await withLlmCall(() =>
-    client().chat.completions.create({
-      model: llmModel(),
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: opts.prompt },
-            {
-              type: "image_url",
-              image_url: { url: `data:${opts.mimeType};base64,${opts.imageBase64}` },
-            },
-          ],
-        },
-      ],
-      temperature: opts.temperature ?? 0.2,
-      ...(opts.maxTokens ? { max_tokens: opts.maxTokens } : {}),
-    })
+    client().chat.completions.create(
+      {
+        model: llmModel(),
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: opts.prompt },
+              {
+                type: "image_url",
+                image_url: { url: `data:${opts.mimeType};base64,${opts.imageBase64}` },
+              },
+            ],
+          },
+        ],
+        temperature: opts.temperature ?? 0.2,
+        ...(opts.maxTokens ? { max_tokens: opts.maxTokens } : {}),
+      },
+      { signal: requestSignal() }
+    )
   );
   return res.choices[0]?.message?.content ?? "";
 }

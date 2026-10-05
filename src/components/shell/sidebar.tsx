@@ -42,12 +42,12 @@ export function Sidebar({
     href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
 
   return (
-    <aside className="h-full w-60 shrink-0 border-e border-border bg-card/60 backdrop-blur">
+    <aside className="h-full w-60 shrink-0 border-e border-border bg-card/70 backdrop-blur">
       <div className="flex h-full flex-col">
         <div className="px-5 py-5">
           <span className="text-lg font-semibold tracking-tight">Study Buddy</span>
         </div>
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-6">
+        <nav className="flex-1 space-y-1.5 overflow-y-auto px-3 pb-6">
           {NAV.map((item) => {
             const active = isActive(item.href);
             return (
@@ -57,13 +57,13 @@ export function Sidebar({
                 onClick={onNavigate}
                 aria-current={active ? "page" : undefined}
                 className={
-                  "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors " +
+                  "flex min-h-10 items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition " +
                   (active
-                    ? "bg-accent text-accent-foreground"
-                    : "text-foreground/80 hover:bg-foreground/5")
+                    ? "bg-accent/10 text-accent ring-1 ring-accent/20"
+                    : "text-foreground/80 hover:bg-foreground/5 hover:text-foreground")
                 }
               >
-                <NavIcon name={item.labelKey} />
+                <NavIcon name={item.labelKey} className="h-[18px] w-[18px]" />
                 {t(item.labelKey)}
               </Link>
             );

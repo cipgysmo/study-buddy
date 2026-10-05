@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { TopicPicker } from "@/components/ui/topic-picker";
 import { useJob } from "@/lib/use-jobs";
 
@@ -48,15 +50,11 @@ export function BuildLessonButton({ subjectId }: { subjectId: string }) {
   }
 
   return (
-    <div className="space-y-2 rounded-xl border border-border bg-card p-3">
+    <Card className="space-y-3 p-4">
       <div className="flex flex-wrap items-center gap-2">
-        <button
-          onClick={() => void build()}
-          disabled={busy}
-          className="rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-accent-foreground disabled:opacity-50"
-        >
+        <Button onClick={() => void build()} disabled={busy}>
           {busy ? t("building") : t("newLesson")}
-        </button>
+        </Button>
         <span className="text-xs text-muted">{t("buildHint")}</span>
         {error && <span className="text-xs text-danger">{error}</span>}
       </div>
@@ -64,6 +62,6 @@ export function BuildLessonButton({ subjectId }: { subjectId: string }) {
         <span className="text-xs text-muted">{t("topicsLabel")}</span>
         <TopicPicker subjectId={subjectId} selected={topicIds} onChange={setTopicIds} />
       </div>
-    </div>
+    </Card>
   );
 }

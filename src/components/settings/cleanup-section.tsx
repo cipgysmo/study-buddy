@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
 type CleanupType = "quizzes" | "mockExams" | "exercises" | "truefalse" | "flashcards";
@@ -66,7 +67,7 @@ export function CleanupSection() {
   }
 
   return (
-    <section className="max-w-md space-y-3 rounded-2xl border border-border bg-card p-5">
+    <Card className="max-w-md space-y-3 p-5">
       <div>
         <h2 className="font-medium">{t("cleanup")}</h2>
         <p className="mt-0.5 text-sm text-muted">{t("cleanupHint")}</p>
@@ -105,6 +106,6 @@ export function CleanupSection() {
 
       {message && <p className="text-sm text-muted">{message}</p>}
       {error && <p className="text-sm text-danger">{error}</p>}
-    </section>
+    </Card>
   );
 }
