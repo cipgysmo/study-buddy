@@ -20,10 +20,6 @@ to your local model over the LAN. No data leaves your network.
 
 ## Screenshots
 
-Dashboard with demo content:
-
-![Dashboard](docs/screenshots/dashboard.png)
-
 Subjects:
 
 ![Subjects](docs/screenshots/subjects.png)
