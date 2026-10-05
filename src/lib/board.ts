@@ -84,6 +84,17 @@ export function createBoardColumn(subjectId: string, name: string): BoardColumn 
   return { ...getBoardColumn(id)!, cards: [] };
 }
 
+export function resolveBoardColumn(subjectId: string, name: string): BoardColumn {
+  const trimmed = name.trim();
+  const existing = getDb()
+    .prepare(
+      "SELECT id, subject_id, name, sort_order, created_at FROM board_columns WHERE subject_id = ? AND lower(name) = lower(?)"
+    )
+    .get(subjectId, trimmed) as Omit<BoardColumn, "cards"> | undefined;
+  if (existing) return { ...existing, cards: [] };
+  return createBoardColumn(subjectId, trimmed);
+}
+
 export function renameBoardColumn(id: string, name: string): boolean {
   const info = getDb().prepare("UPDATE board_columns SET name = ? WHERE id = ?").run(name.trim(), id);
   return info.changes > 0;

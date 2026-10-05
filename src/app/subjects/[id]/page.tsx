@@ -59,7 +59,10 @@ export default async function SubjectDetailPage({
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">{t("materials")}</h2>
-        <UploadMaterialForm subjectId={id} />
+        <UploadMaterialForm
+          subjectId={id}
+          containers={board.map((column) => ({ id: column.id, name: column.name }))}
+        />
         <MaterialContainers
           subjectId={id}
           initial={board}

@@ -16,6 +16,7 @@ import {
   getBoardCardByMaterial,
   listBoard,
   renameBoardColumn,
+  resolveBoardColumn,
   saveBoardOrder,
 } from "@/lib/board";
 
@@ -98,6 +99,13 @@ describe("subject board", () => {
     expect(moved?.column_id).toBe(second.id);
     expect(listBoard(subjectId).flatMap((c) => c.cards.filter((c2) => c2.material_id === "mat-board"))).toHaveLength(1);
     expect(board).toBeDefined();
+  });
+
+  it("resolves a container by name, creating it only when missing", () => {
+    const created = resolveBoardColumn(subjectId, "Uploads");
+    const reused = resolveBoardColumn(subjectId, "uploads");
+    expect(created.id).toBe(reused.id);
+    expect(listBoard(subjectId).filter((c) => c.name === "Uploads")).toHaveLength(1);
   });
 
   it("cascades board rows when the subject is removed", () => {

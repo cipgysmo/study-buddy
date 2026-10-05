@@ -4,7 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
-export function UploadMaterialForm({ subjectId }: { subjectId: string }) {
+export function UploadMaterialForm({
+  subjectId,
+  containers = [],
+}: {
+  subjectId: string;
+  containers?: { id: string; name: string }[];
+}) {
   const t = useTranslations("Subjects");
   const tc = useTranslations("Common");
   const router = useRouter();
@@ -12,6 +18,7 @@ export function UploadMaterialForm({ subjectId }: { subjectId: string }) {
   const [uploading, setUploading] = useState(false);
   const [pending, setPending] = useState<string[]>([]);
   const [isExam, setIsExam] = useState(false);
+  const [containerName, setContainerName] = useState("");
 
   async function onFiles(files: FileList | null) {
     if (!files || files.length === 0 || uploading) return;
@@ -24,6 +31,8 @@ export function UploadMaterialForm({ subjectId }: { subjectId: string }) {
           const form = new FormData();
           form.append("file", file);
           if (isExam) form.append("role", "exam");
+          const container = containerName.trim();
+          if (container) form.append("containerName", container);
           const r = await fetch(`/api/subjects/${subjectId}/materials`, {
             method: "POST",
             body: form,
@@ -71,8 +80,28 @@ export function UploadMaterialForm({ subjectId }: { subjectId: string }) {
     };
   }, [pending, router]);
 
+  const containerListId = `containers-${subjectId}`;
+
   return (
     <div className="space-y-2">
+      <div className="space-y-1">
+        <label htmlFor={containerListId} className="block text-sm text-muted">
+          {t("uploadContainerLabel")}
+        </label>
+        <input
+          id={containerListId}
+          list={containerListId}
+          value={containerName}
+          onChange={(e) => setContainerName(e.target.value)}
+          placeholder={t("uploadContainerPlaceholder")}
+          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+        />
+        <datalist id={containerListId}>
+          {containers.map((container) => (
+            <option key={container.id} value={container.name} />
+          ))}
+        </datalist>
+      </div>
       <label className="flex w-fit cursor-pointer items-center gap-2 text-sm text-muted">
         <input
           type="checkbox"

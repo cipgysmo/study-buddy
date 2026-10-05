@@ -1,3 +1,4 @@
+import { assignMaterialToColumn, resolveBoardColumn } from "@/lib/board";
 import { enqueueJob } from "@/lib/jobs";
 import "@/lib/job-handlers";
 import { addMaterialPending, linkMaterialJob, listMaterials } from "@/lib/subjects";
@@ -31,5 +32,12 @@ export async function POST(req: Request, ctx: Ctx) {
   );
   const job = enqueueJob("ocr", { materialId: material.id });
   linkMaterialJob(material.id, job.id);
+
+  const containerName = String(form.get("containerName") ?? "").trim();
+  if (containerName) {
+    const column = resolveBoardColumn(id, containerName);
+    assignMaterialToColumn(material.id, column.id);
+  }
+
   return Response.json({ material, job }, { status: 201 });
 }

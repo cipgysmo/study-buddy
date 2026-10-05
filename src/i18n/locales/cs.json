@@ -91,6 +91,8 @@
     "materials": "Materiály",
     "noMaterials": "Žádné materiály. Nahrát PDF, fotky nebo text.",
     "upload": "Nahrát materiál",
+    "uploadContainerLabel": "Kontejner (volitelné)",
+    "uploadContainerPlaceholder": "Vyber nebo napiš název kontejneru",
     "chars": "znaků",
     "image": "obrázek",
     "deleteSubject": "Smazat předmět",

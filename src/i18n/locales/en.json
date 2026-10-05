@@ -91,6 +91,8 @@
     "materials": "Materials",
     "noMaterials": "No materials. Upload a PDF, photos, or text.",
     "upload": "Upload material",
+    "uploadContainerLabel": "Container (optional)",
+    "uploadContainerPlaceholder": "Pick or type a container name",
     "chars": "chars",
     "image": "image",
     "deleteSubject": "Delete subject",
