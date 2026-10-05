@@ -23,6 +23,7 @@ export function ExamPaperCard({
   parseStatus,
   parseError,
   questionCount,
+  onDeleted,
 }: {
   material: {
     id: string;
@@ -36,6 +37,7 @@ export function ExamPaperCard({
   parseStatus: "none" | "pending" | "running" | "done" | "failed";
   parseError: string | null;
   questionCount: number;
+  onDeleted?: () => void;
 }) {
   const t = useTranslations("Subjects");
   const tc = useTranslations("Common");
@@ -111,7 +113,11 @@ export function ExamPaperCard({
         </span>
         <span className="flex shrink-0 items-center gap-2">
           <MaterialStatus status={material.status} error={material.error} jobId={material.job_id} />
-          <DeleteButton href={`/api/materials/${material.id}`} label={t("deleteMaterial")} />
+          <DeleteButton
+            href={`/api/materials/${material.id}`}
+            label={t("deleteMaterial")}
+            onDeleted={onDeleted}
+          />
         </span>
       </div>
 

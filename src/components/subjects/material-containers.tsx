@@ -2,14 +2,28 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { DeleteButton } from "@/components/subjects/delete-button";
+import { ExamPaperCard } from "@/components/subjects/exam-paper-card";
+import { MaterialImage } from "@/components/subjects/material-image";
+import { MaterialStatus } from "@/components/subjects/material-status";
 import type { BoardCard, BoardColumn } from "@/lib/board";
 
-interface Material {
+interface MaterialItem {
   id: string;
   filename: string;
   kind: string;
   role: string;
-  status: string;
+  status: "processing" | "ready" | "failed";
+  error: string | null;
+  extracted_text: string | null;
+  job_id: string | null;
+  parse_job_id: string | null;
+  topicNames: string[];
+  exam?: {
+    parseStatus: "none" | "pending" | "running" | "done" | "failed";
+    parseError: string | null;
+    questionCount: number;
+  };
 }
 
 function materialColumns(columns: BoardColumn[]): BoardColumn[] {
@@ -22,14 +36,15 @@ function materialColumns(columns: BoardColumn[]): BoardColumn[] {
 export function MaterialContainers({
   subjectId,
   initial,
-  materials,
+  materials: initialMaterials,
 }: {
   subjectId: string;
   initial: BoardColumn[];
-  materials: Material[];
+  materials: MaterialItem[];
 }) {
   const t = useTranslations("Subjects");
   const [columns, setColumns] = useState(() => materialColumns(initial));
+  const [materials, setMaterials] = useState(initialMaterials);
   const [newName, setNewName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -39,7 +54,6 @@ export function MaterialContainers({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  const materialsById = new Map(materials.map((material) => [material.id, material]));
   const assignedMaterialIds = new Set(
     columns.flatMap((column) =>
       column.cards.filter((card) => card.material_id).map((card) => card.material_id as string)
@@ -49,6 +63,16 @@ export function MaterialContainers({
 
   function setErrorFromUnknown(err: unknown) {
     setError(err instanceof Error ? err.message : t("boardSaveFailed"));
+  }
+
+  function removeMaterialLocal(materialId: string) {
+    setMaterials((prev) => prev.filter((material) => material.id !== materialId));
+    setColumns((prev) =>
+      prev.map((column) => ({
+        ...column,
+        cards: column.cards.filter((card) => card.material_id !== materialId),
+      }))
+    );
   }
 
   async function addColumn() {
@@ -178,54 +202,107 @@ export function MaterialContainers({
     if (card) void unassignCard(card.id);
   }
 
-  function renderMaterialCard(material: Material, card?: BoardCard) {
-    const isAssigned = Boolean(card);
+  function renderMaterialCard(material: MaterialItem, card?: BoardCard) {
     return (
       <article
         key={material.id}
-        draggable
-        onDragStart={() => setDraggingMaterialId(material.id)}
-        onDragEnd={() => {
-          setDraggingMaterialId(null);
-          setDragOverColumnId(null);
-          setDragOverTray(false);
-        }}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          if (isAssigned && card) handleDropOnColumn(card.column_id);
+          if (card) handleDropOnColumn(card.column_id);
         }}
-        className={
-          "flex cursor-grab items-center gap-2 rounded-xl border border-border bg-background/60 p-2 active:cursor-grabbing " +
-          (draggingMaterialId === material.id ? "opacity-50" : "")
-        }
+        className="flex items-start gap-2 rounded-xl border border-border bg-background/60 p-2"
       >
-        {material.kind === "image" ? (
-          // eslint-disable-next-line @next/next/no-img-element -- same-origin API serves pre-sized thumbnails
-          <img
-            src={`/api/materials/${material.id}?thumb=1`}
-            alt={material.filename}
-            draggable={false}
-            className="h-10 w-10 shrink-0 rounded-lg border border-border object-cover"
-          />
-        ) : (
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/20 text-xs font-semibold uppercase">
-            {material.kind.slice(0, 3)}
-          </span>
-        )}
-        <span className="min-w-0 flex-1">
-          <span className="block max-w-56 truncate text-sm font-medium">{material.filename}</span>
-          <span className="block text-xs text-muted">
-            {material.status === "failed" ? t("failed") : material.status === "processing" ? t("processing") : t("ready")}
-          </span>
+        <span
+          draggable
+          onDragStart={() => setDraggingMaterialId(material.id)}
+          onDragEnd={() => {
+            setDraggingMaterialId(null);
+            setDragOverColumnId(null);
+            setDragOverTray(false);
+          }}
+          title={t("dragMaterialHint")}
+          className={
+            "mt-1 cursor-grab select-none text-muted active:cursor-grabbing " +
+            (draggingMaterialId === material.id ? "opacity-50" : "")
+          }
+        >
+          ⋮⋮
         </span>
-        {isAssigned && card && (
+
+        <div className="min-w-0 flex-1">
+          {material.role === "exam" && material.exam ? (
+            <ExamPaperCard
+              material={{
+                id: material.id,
+                filename: material.filename,
+                kind: material.kind,
+                status: material.status,
+                error: material.error,
+                job_id: material.job_id,
+                parse_job_id: material.parse_job_id,
+              }}
+              parseStatus={material.exam.parseStatus}
+              parseError={material.exam.parseError}
+              questionCount={material.exam.questionCount}
+              onDeleted={() => removeMaterialLocal(material.id)}
+            />
+          ) : (
+            <div className="flex min-w-0 items-center gap-3">
+              {material.kind === "image" ? (
+                <MaterialImage src={`/api/materials/${material.id}`} alt={material.filename} />
+              ) : (
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/20 text-xs font-semibold uppercase">
+                  {material.kind.slice(0, 3)}
+                </span>
+              )}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-medium">{material.filename}</span>
+                <span className="block truncate text-xs text-muted">
+                  {material.status === "failed" && material.error
+                    ? material.error
+                    : material.kind === "image"
+                      ? t("image")
+                      : material.extracted_text
+                        ? `${material.extracted_text.length} ${t("chars")}`
+                        : "—"}
+                </span>
+                {material.topicNames.length > 0 && (
+                  <span className="mt-1 flex flex-wrap gap-1">
+                    {material.topicNames.map((name) => (
+                      <span
+                        key={name}
+                        className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent"
+                      >
+                        {name}
+                      </span>
+                    ))}
+                  </span>
+                )}
+              </span>
+              <span className="flex shrink-0 items-center gap-2">
+                <MaterialStatus
+                  status={material.status}
+                  error={material.error}
+                  jobId={material.job_id}
+                />
+                <DeleteButton
+                  href={`/api/materials/${material.id}`}
+                  label={t("deleteMaterial")}
+                  onDeleted={() => removeMaterialLocal(material.id)}
+                />
+              </span>
+            </div>
+          )}
+        </div>
+
+        {card && (
           <button
             onClick={() => void unassignCard(card.id)}
             aria-label={t("unassign")}
             title={t("unassign")}
-            className="shrink-0 text-xs text-muted transition-colors hover:text-red-500"
+            className="mt-1 shrink-0 text-xs text-muted transition-colors hover:text-red-500"
           >
             ✕
           </button>
@@ -284,7 +361,7 @@ export function MaterialContainers({
         {unassignedMaterials.length === 0 ? (
           <p className="text-xs text-muted">—</p>
         ) : (
-          <div className="flex flex-wrap gap-2">
+          <div className="space-y-2">
             {unassignedMaterials.map((material) => renderMaterialCard(material))}
           </div>
         )}
@@ -354,9 +431,11 @@ export function MaterialContainers({
               {column.cards.length === 0 ? (
                 <p className="text-xs text-muted">—</p>
               ) : (
-                <div className="flex flex-wrap gap-2">
+                <div className="space-y-2">
                   {column.cards.map((card) => {
-                    const material = card.material_id ? materialsById.get(card.material_id) : undefined;
+                    const material = card.material_id
+                      ? materials.find((m) => m.id === card.material_id)
+                      : undefined;
                     return material ? renderMaterialCard(material, card) : null;
                   })}
                 </div>
