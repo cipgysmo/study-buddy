@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { listSubjects } from "@/lib/subjects";
 import { CreateSubjectForm } from "@/components/subjects/create-subject-form";
 import { DeleteButton } from "@/components/subjects/delete-button";
+import { UploadMaterialForm } from "@/components/subjects/upload-material-form";
 
 export default async function SubjectsPage() {
   const t = await getTranslations("Subjects");
@@ -16,6 +17,10 @@ export default async function SubjectsPage() {
       </header>
 
       <CreateSubjectForm />
+
+      <UploadMaterialForm
+        subjects={subjects.map((s) => ({ id: s.id, name: s.name }))}
+      />
 
       {subjects.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-card p-10 text-center text-muted">

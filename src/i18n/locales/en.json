@@ -93,6 +93,8 @@
     "materials": "Materials",
     "noMaterials": "No materials. Upload a PDF, photos, or text.",
     "upload": "Upload material",
+    "uploadSubjectLabel": "Subject",
+    "uploadSubjectPlaceholder": "Select a subject",
     "uploadContainerLabel": "Container (optional)",
     "uploadContainerPlaceholder": "Pick or type a container name",
     "keywordsLabel": "Keywords",

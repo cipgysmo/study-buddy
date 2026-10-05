@@ -93,6 +93,8 @@
     "materials": "Materiály",
     "noMaterials": "Žádné materiály. Nahrát PDF, fotky nebo text.",
     "upload": "Nahrát materiál",
+    "uploadSubjectLabel": "Předmět",
+    "uploadSubjectPlaceholder": "Vyber předmět",
     "uploadContainerLabel": "Kontejner (volitelné)",
     "uploadContainerPlaceholder": "Vyber nebo napiš název kontejneru",
     "keywordsLabel": "Klíčová slova",

@@ -4,25 +4,60 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
+import { SubjectSelect, type SubjectOption } from "@/components/ui/subject-select";
+
+interface ContainerOption {
+  id: string;
+  name: string;
+}
 
 export function UploadMaterialForm({
   subjectId,
+  subjects = [],
   containers = [],
 }: {
-  subjectId: string;
-  containers?: { id: string; name: string }[];
+  subjectId?: string;
+  subjects?: SubjectOption[];
+  containers?: ContainerOption[];
 }) {
   const t = useTranslations("Subjects");
   const tc = useTranslations("Common");
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+  const [selectedSubjectId, setSelectedSubjectId] = useState(subjectId ?? "");
   const [uploading, setUploading] = useState(false);
   const [pending, setPending] = useState<string[]>([]);
   const [isExam, setIsExam] = useState(false);
   const [containerName, setContainerName] = useState("");
+  const [fetchedContainers, setFetchedContainers] = useState<ContainerOption[]>([]);
+
+  const fixedSubject = Boolean(subjectId);
+  const loadedContainers = fixedSubject ? containers : fetchedContainers;
+  const containerListId = `containers-${selectedSubjectId || "new"}`;
+
+  useEffect(() => {
+    if (fixedSubject || !selectedSubjectId) return;
+    let cancelled = false;
+    fetch(`/api/subjects/${selectedSubjectId}/board`)
+      .then((r) => (r.ok ? r.json() : { columns: [] }))
+      .then((d) => {
+        if (cancelled) return;
+        const next = ((d.columns as ContainerOption[]) ?? []).map((column) => ({
+          id: column.id,
+          name: column.name,
+        }));
+        setFetchedContainers(next);
+      })
+      .catch(() => {
+        if (!cancelled) setFetchedContainers([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [fixedSubject, selectedSubjectId]);
 
   async function onFiles(files: FileList | null) {
-    if (!files || files.length === 0 || uploading) return;
+    if (!files || files.length === 0 || uploading || !selectedSubjectId) return;
     setUploading(true);
     const jobIds: string[] = [];
     try {
@@ -33,7 +68,7 @@ export function UploadMaterialForm({
           if (isExam) form.append("role", "exam");
           const container = containerName.trim();
           if (container) form.append("containerName", container);
-          const r = await fetch(`/api/subjects/${subjectId}/materials`, {
+          const r = await fetch(`/api/subjects/${selectedSubjectId}/materials`, {
             method: "POST",
             body: form,
           });
@@ -48,6 +83,13 @@ export function UploadMaterialForm({
       if (inputRef.current) inputRef.current.value = "";
     }
     router.refresh();
+    if (!fixedSubject) {
+      const r = await fetch(`/api/subjects/${selectedSubjectId}/board`);
+      if (r.ok) {
+        const d = (await r.json()) as { columns?: ContainerOption[] };
+        setFetchedContainers((d.columns ?? []).map((column) => ({ id: column.id, name: column.name })));
+      }
+    }
     if (jobIds.length > 0) setPending((prev) => [...prev, ...jobIds]);
   }
 
@@ -79,10 +121,23 @@ export function UploadMaterialForm({
     };
   }, [pending, router]);
 
-  const containerListId = `containers-${subjectId}`;
-
   return (
     <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
+      {!fixedSubject && (
+        <div className="space-y-1">
+          <label className="block text-xs font-medium text-muted">{t("uploadSubjectLabel")}</label>
+          <SubjectSelect
+            value={selectedSubjectId}
+            onChange={(v) => {
+              setSelectedSubjectId(v);
+              setContainerName("");
+              setFetchedContainers([]);
+            }}
+            subjects={subjects}
+            placeholder={t("uploadSubjectPlaceholder")}
+          />
+        </div>
+      )}
       <div className="space-y-1">
         <label htmlFor={containerListId} className="block text-xs font-medium text-muted">
           {t("uploadContainerLabel")}
@@ -94,9 +149,10 @@ export function UploadMaterialForm({
           onChange={(e) => setContainerName(e.target.value)}
           placeholder={t("uploadContainerPlaceholder")}
           className="bg-background"
+          disabled={!selectedSubjectId}
         />
         <datalist id={containerListId}>
-          {containers.map((container) => (
+          {loadedContainers.map((container) => (
             <option key={container.id} value={container.name} />
           ))}
         </datalist>
@@ -113,7 +169,7 @@ export function UploadMaterialForm({
       <label
         className={
           "flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-border bg-background px-4 py-8 text-sm text-muted transition-colors hover:border-accent hover:bg-accent/5 " +
-          (uploading ? "pointer-events-none opacity-60" : "")
+          (!selectedSubjectId || uploading ? "pointer-events-none opacity-60" : "")
         }
       >
         {uploading ? tc("loading") : t("upload")}
