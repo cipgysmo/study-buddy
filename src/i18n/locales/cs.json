@@ -192,7 +192,8 @@
     "hard": "Těžko",
     "good": "Dobře",
     "easy": "Snadno",
-    "empty": "Zatím žádné kartičky."
+    "empty": "Zatím žádné kartičky.",
+    "deleteCard": "Smazat kartičku"
   },
   "Quizzes": {
     "title": "Kvízy",
@@ -326,7 +327,19 @@
     "themeLight": "Světlý",
     "themeDark": "Tmavý",
     "sound": "Zvuky",
-    "soundHint": "Oslava se zvukem při dokončení kvízů a testů."
+    "soundHint": "Oslava se zvukem při dokončení kvízů a testů.",
+    "cleanup": "Čištění starého obsahu",
+    "cleanupHint": "Smaž staré kvízy, testy, cvičení, pravda/nepravdu a kartičky.",
+    "cleanupOlderThan": "Starší než",
+    "cleanupQuizzes": "Kvízy",
+    "cleanupMockExams": "Zkušební testy",
+    "cleanupExercises": "Cvičení",
+    "cleanupTruefalse": "Pravda/nepravda",
+    "cleanupFlashcards": "Kartičky",
+    "cleanupRun": "Smazat staré položky",
+    "cleanupRunning": "Mažu…",
+    "cleanupConfirm": "Opravdu smazat staré položky? Tuto akci nelze vrátit.",
+    "cleanupNothing": "Nic starého ke smazání."
   },
   "MockExams": {
     "title": "Zkušební testy",
@@ -338,7 +351,8 @@
     "duration": "Délka (minuty)",
     "minutes": "min",
     "empty": "Zatím žádné zkušební testy.",
-    "back": "Zpět na testy"
+    "back": "Zpět na testy",
+    "deleteExam": "Smazat test"
   },
   "Login": {
     "title": "Study Buddy",

@@ -1,4 +1,5 @@
 import { getLocale, getTranslations } from "next-intl/server";
+import { CleanupSection } from "@/components/settings/cleanup-section";
 import { LanguageSwitcher } from "@/components/settings/language-switcher";
 import { NameField } from "@/components/settings/name-field";
 import { SoundToggle } from "@/components/settings/sound-toggle";
@@ -54,6 +55,8 @@ export default async function SettingsPage() {
           <SoundToggle current={sound} />
         </div>
       </section>
+
+      <CleanupSection />
     </div>
   );
 }

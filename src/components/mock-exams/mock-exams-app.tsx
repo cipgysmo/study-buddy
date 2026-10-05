@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { SubjectSelect, type SubjectOption } from "@/components/ui/subject-select";
 import { GenerationScopePicker } from "@/components/ui/generation-scope-picker";
+import { DeleteButton } from "@/components/subjects/delete-button";
 import { useJob } from "@/lib/use-jobs";
 import { QuizRunner, type RunnerQuestion } from "@/components/quizzes/quiz-runner";
 
@@ -155,15 +156,18 @@ export function MockExamsApp({
         <ul className="grid gap-3 sm:grid-cols-2">
           {exams.map((exam) => (
             <li key={exam.id} className="rounded-2xl border border-border bg-card p-4">
-              <button
-                onClick={() => void start(exam)}
-                className="flex w-full items-center justify-between gap-3 text-left font-medium hover:text-accent"
-              >
-                <span className="min-w-0 truncate">{exam.title}</span>
-                <span className="shrink-0 rounded-full bg-foreground/5 px-2 py-0.5 text-xs font-medium text-muted">
-                  {exam.duration_min} {t("minutes")}
-                </span>
-              </button>
+              <div className="flex items-center justify-between gap-3">
+                <button
+                  onClick={() => void start(exam)}
+                  className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left font-medium hover:text-accent"
+                >
+                  <span className="min-w-0 truncate">{exam.title}</span>
+                  <span className="shrink-0 rounded-full bg-foreground/5 px-2 py-0.5 text-xs font-medium text-muted">
+                    {exam.duration_min} {t("minutes")}
+                  </span>
+                </button>
+                <DeleteButton href={`/api/quizzes/${exam.id}`} label={t("deleteExam")} />
+              </div>
             </li>
           ))}
         </ul>

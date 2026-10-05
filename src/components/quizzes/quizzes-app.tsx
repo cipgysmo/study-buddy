@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { SubjectSelect, type SubjectOption } from "@/components/ui/subject-select";
 import { GenerationScopePicker } from "@/components/ui/generation-scope-picker";
+import { DeleteButton } from "@/components/subjects/delete-button";
 import { useJob } from "@/lib/use-jobs";
 import { QuizRunner, type RunnerQuestion } from "./quiz-runner";
 
@@ -134,9 +135,12 @@ export function QuizzesApp({
         <ul className="grid gap-3 sm:grid-cols-2">
           {quizzes.map((q) => (
             <li key={q.id} className="rounded-2xl border border-border bg-card p-4">
-              <button onClick={() => loadQuiz(q.id)} className="font-medium hover:text-accent">
-                {q.title}
-              </button>
+              <div className="flex items-center justify-between gap-3">
+                <button onClick={() => loadQuiz(q.id)} className="min-w-0 truncate font-medium hover:text-accent">
+                  {q.title}
+                </button>
+                <DeleteButton href={`/api/quizzes/${q.id}`} label={t("deleteQuiz")} />
+              </div>
             </li>
           ))}
         </ul>

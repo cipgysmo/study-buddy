@@ -192,7 +192,8 @@
     "hard": "Hard",
     "good": "Good",
     "easy": "Easy",
-    "empty": "No cards yet."
+    "empty": "No cards yet.",
+    "deleteCard": "Delete card"
   },
   "Quizzes": {
     "title": "Quizzes",
@@ -326,7 +327,19 @@
     "themeLight": "Light",
     "themeDark": "Dark",
     "sound": "Sounds",
-    "soundHint": "Celebrate quiz and exam results with sound."
+    "soundHint": "Celebrate quiz and exam results with sound.",
+    "cleanup": "Clean up old content",
+    "cleanupHint": "Delete old quizzes, mock exams, exercises, true/false items, and flashcards.",
+    "cleanupOlderThan": "Older than",
+    "cleanupQuizzes": "Quizzes",
+    "cleanupMockExams": "Mock exams",
+    "cleanupExercises": "Exercises",
+    "cleanupTruefalse": "True/false",
+    "cleanupFlashcards": "Flashcards",
+    "cleanupRun": "Delete old items",
+    "cleanupRunning": "Deleting…",
+    "cleanupConfirm": "Delete old items? This cannot be undone.",
+    "cleanupNothing": "Nothing old to delete."
   },
   "MockExams": {
     "title": "Mock Exams",
@@ -338,7 +351,8 @@
     "duration": "Duration (minutes)",
     "minutes": "min",
     "empty": "No mock exams yet.",
-    "back": "Back to mock exams"
+    "back": "Back to mock exams",
+    "deleteExam": "Delete exam"
   },
   "Login": {
     "title": "Study Buddy",

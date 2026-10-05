@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { useTranslations } from "next-intl";
 import { SubjectSelect, type SubjectOption } from "@/components/ui/subject-select";
 import { GenerationScopePicker } from "@/components/ui/generation-scope-picker";
+import { DeleteButton } from "@/components/subjects/delete-button";
 import { useJob } from "@/lib/use-jobs";
 
 interface Card {
@@ -136,7 +137,14 @@ export function FlashcardsApp({
           </div>
         ) : (
           <div className="rounded-2xl border border-border bg-card p-6">
-            <p className="min-h-[3rem] text-lg font-medium">{current.front}</p>
+            <div className="mb-2 flex items-start justify-between gap-3">
+              <p className="min-h-[3rem] text-lg font-medium">{current.front}</p>
+              <DeleteButton
+                href={`/api/flashcards/${current.id}`}
+                label={t("deleteCard")}
+                onDeleted={() => setDue((prev) => prev.slice(1))}
+              />
+            </div>
             {revealed && (
               <p className="mt-4 rounded-xl bg-foreground/5 p-4 text-sm">{current.back}</p>
             )}
