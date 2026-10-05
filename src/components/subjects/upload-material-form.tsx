@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { Input } from "@/components/ui/input";
 
 export function UploadMaterialForm({
   subjectId,
@@ -25,7 +26,6 @@ export function UploadMaterialForm({
     setUploading(true);
     const jobIds: string[] = [];
     try {
-      // Uploads are independent; the server processes them one at a time in a queue.
       await Promise.all(
         Array.from(files).map(async (file) => {
           const form = new FormData();
@@ -51,7 +51,6 @@ export function UploadMaterialForm({
     if (jobIds.length > 0) setPending((prev) => [...prev, ...jobIds]);
   }
 
-  // Re-render the page once the background jobs for these uploads finish.
   useEffect(() => {
     if (pending.length === 0) return;
     let stop = false;
@@ -83,18 +82,18 @@ export function UploadMaterialForm({
   const containerListId = `containers-${subjectId}`;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
       <div className="space-y-1">
-        <label htmlFor={containerListId} className="block text-sm text-muted">
+        <label htmlFor={containerListId} className="block text-xs font-medium text-muted">
           {t("uploadContainerLabel")}
         </label>
-        <input
+        <Input
           id={containerListId}
           list={containerListId}
           value={containerName}
           onChange={(e) => setContainerName(e.target.value)}
           placeholder={t("uploadContainerPlaceholder")}
-          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          className="bg-background"
         />
         <datalist id={containerListId}>
           {containers.map((container) => (
@@ -113,7 +112,7 @@ export function UploadMaterialForm({
       </label>
       <label
         className={
-          "flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-border bg-card px-4 py-6 text-sm text-muted transition-colors hover:border-accent " +
+          "flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-border bg-background px-4 py-8 text-sm text-muted transition-colors hover:border-accent hover:bg-accent/5 " +
           (uploading ? "pointer-events-none opacity-60" : "")
         }
       >

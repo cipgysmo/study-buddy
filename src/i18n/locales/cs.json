@@ -82,6 +82,8 @@
     "cardKindChapter": "Kapitola",
     "cardKindMaterial": "Materiál",
     "materialsTray": "Nerazdělené materiály",
+    "dropMaterialsHere": "Přetáhni materiály sem",
+    "emptyContainer": "Prázdný kontejner",
     "dragMaterialHint": "Přetáhni materiál do kontejneru.",
     "renameCategory": "Přejmenovat kontejner",
     "unassign": "Vyřadit z kontejneru",

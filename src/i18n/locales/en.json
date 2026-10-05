@@ -82,6 +82,8 @@
     "cardKindChapter": "Chapter",
     "cardKindMaterial": "Material",
     "materialsTray": "Unsorted materials",
+    "dropMaterialsHere": "Drop materials here",
+    "emptyContainer": "Empty container",
     "dragMaterialHint": "Drag a material into a container.",
     "renameCategory": "Rename container",
     "unassign": "Remove from container",

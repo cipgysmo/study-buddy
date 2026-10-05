@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { DeleteButton } from "@/components/subjects/delete-button";
 import { ExamPaperCard } from "@/components/subjects/exam-paper-card";
+import { MaterialIconButton } from "@/components/subjects/material-icon-button";
 import { MaterialImage } from "@/components/subjects/material-image";
 import { MaterialStatus } from "@/components/subjects/material-status";
 import type { BoardCard, BoardColumn } from "@/lib/board";
@@ -33,6 +36,83 @@ function materialColumns(columns: BoardColumn[]): BoardColumn[] {
   }));
 }
 
+function wellClass(active: boolean) {
+  return (
+    "rounded-xl border p-3 transition-colors " +
+    (active ? "border-accent bg-accent/5 ring-1 ring-accent/30" : "border-border bg-background")
+  );
+}
+
+function GripIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <circle cx="9" cy="5" r="1.5" />
+      <circle cx="15" cy="5" r="1.5" />
+      <circle cx="9" cy="12" r="1.5" />
+      <circle cx="15" cy="12" r="1.5" />
+      <circle cx="9" cy="19" r="1.5" />
+      <circle cx="15" cy="19" r="1.5" />
+    </svg>
+  );
+}
+
+function PencilIcon() {
+  return (
+    <svg
+      className="h-4 w-4"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg
+      className="h-4 w-4"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M3 6h18" />
+      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+    </svg>
+  );
+}
+
+function XIcon() {
+  return (
+    <svg
+      className="h-4 w-4"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </svg>
+  );
+}
+
 export function MaterialContainers({
   subjectId,
   initial,
@@ -53,6 +133,8 @@ export function MaterialContainers({
   const [dragOverTray, setDragOverTray] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const trayDragDepth = useRef(0);
+  const columnDragDepth = useRef<Record<string, number>>({});
 
   const assignedMaterialIds = new Set(
     columns.flatMap((column) =>
@@ -202,6 +284,49 @@ export function MaterialContainers({
     if (card) void unassignCard(card.id);
   }
 
+  function resetDragState() {
+    setDraggingMaterialId(null);
+    setDragOverColumnId(null);
+    setDragOverTray(false);
+    trayDragDepth.current = 0;
+    columnDragDepth.current = {};
+  }
+
+  function handleTrayDragEnter(e: React.DragEvent<HTMLElement>) {
+    e.preventDefault();
+    trayDragDepth.current += 1;
+    setDragOverTray(true);
+  }
+
+  function handleTrayDragLeave() {
+    trayDragDepth.current = Math.max(0, trayDragDepth.current - 1);
+    if (trayDragDepth.current === 0) setDragOverTray(false);
+  }
+
+  function handleTrayDrop(e: React.DragEvent<HTMLElement>) {
+    e.preventDefault();
+    trayDragDepth.current = 0;
+    handleDropOnTray();
+  }
+
+  function handleColumnDragEnter(columnId: string, e: React.DragEvent<HTMLElement>) {
+    e.preventDefault();
+    columnDragDepth.current[columnId] = (columnDragDepth.current[columnId] ?? 0) + 1;
+    setDragOverColumnId(columnId);
+  }
+
+  function handleColumnDragLeave(columnId: string) {
+    const next = Math.max(0, (columnDragDepth.current[columnId] ?? 0) - 1);
+    columnDragDepth.current[columnId] = next;
+    if (next === 0) setDragOverColumnId((id) => (id === columnId ? null : id));
+  }
+
+  function handleColumnDrop(columnId: string, e: React.DragEvent<HTMLElement>) {
+    e.preventDefault();
+    columnDragDepth.current[columnId] = 0;
+    handleDropOnColumn(columnId);
+  }
+
   function renderMaterialCard(material: MaterialItem, card?: BoardCard) {
     return (
       <article
@@ -212,238 +337,220 @@ export function MaterialContainers({
           e.stopPropagation();
           if (card) handleDropOnColumn(card.column_id);
         }}
-        className="flex items-start gap-3 rounded-xl border border-border bg-background/60 p-3"
+        className={
+          "rounded-lg border border-border bg-card p-3 transition-colors hover:border-foreground/15 " +
+          (draggingMaterialId === material.id ? "opacity-40 ring-1 ring-accent/40" : "")
+        }
       >
-        <span
-          draggable
-          onDragStart={() => setDraggingMaterialId(material.id)}
-          onDragEnd={() => {
-            setDraggingMaterialId(null);
-            setDragOverColumnId(null);
-            setDragOverTray(false);
-          }}
-          title={t("dragMaterialHint")}
-          className={
-            "mt-1 cursor-grab select-none text-muted active:cursor-grabbing " +
-            (draggingMaterialId === material.id ? "opacity-50" : "")
-          }
-        >
-          ⋮⋮
-        </span>
+        <div className="flex items-center gap-3">
+          <span
+            draggable
+            onDragStart={() => setDraggingMaterialId(material.id)}
+            onDragEnd={resetDragState}
+            title={t("dragMaterialHint")}
+            className="flex h-7 w-7 shrink-0 cursor-grab items-center justify-center rounded-md text-muted transition-colors hover:bg-foreground/5 hover:text-foreground active:cursor-grabbing"
+          >
+            <GripIcon />
+          </span>
 
-        <div className="min-w-0 flex-1">
-          {material.role === "exam" && material.exam ? (
-            <ExamPaperCard
-              material={{
-                id: material.id,
-                filename: material.filename,
-                kind: material.kind,
-                status: material.status,
-                error: material.error,
-                job_id: material.job_id,
-                parse_job_id: material.parse_job_id,
-              }}
-              parseStatus={material.exam.parseStatus}
-              parseError={material.exam.parseError}
-              questionCount={material.exam.questionCount}
+          {material.kind === "image" ? (
+            <MaterialImage src={`/api/materials/${material.id}`} alt={material.filename} />
+          ) : (
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-border bg-foreground/5 text-[10px] font-semibold uppercase tracking-wide text-muted">
+              {material.kind.slice(0, 3)}
+            </span>
+          )}
+
+          <div className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-medium">{material.filename}</span>
+            <span className="mt-0.5 block truncate text-xs text-muted">
+              {material.status === "failed" && material.error
+                ? material.error
+                : material.kind === "image"
+                  ? t("image")
+                  : material.extracted_text
+                    ? `${material.extracted_text.length} ${t("chars")}`
+                    : "—"}
+            </span>
+            {material.topicNames.length > 0 && (
+              <span className="mt-1.5 flex flex-wrap gap-1">
+                {material.topicNames.map((name) => (
+                  <span
+                    key={name}
+                    className="rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent"
+                  >
+                    {name}
+                  </span>
+                ))}
+              </span>
+            )}
+          </div>
+
+          <div className="flex shrink-0 items-center gap-1">
+            <MaterialStatus status={material.status} error={material.error} jobId={material.job_id} />
+            {card && (
+              <MaterialIconButton
+                onClick={() => void unassignCard(card.id)}
+                aria-label={t("unassign")}
+                title={t("unassign")}
+              >
+                <XIcon />
+              </MaterialIconButton>
+            )}
+            <DeleteButton
+              icon
+              href={`/api/materials/${material.id}`}
+              label={t("deleteMaterial")}
               onDeleted={() => removeMaterialLocal(material.id)}
             />
-          ) : (
-            <div className="flex min-w-0 items-center gap-3">
-              {material.kind === "image" ? (
-                <MaterialImage src={`/api/materials/${material.id}`} alt={material.filename} />
-              ) : (
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/20 text-xs font-semibold uppercase">
-                  {material.kind.slice(0, 3)}
-                </span>
-              )}
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-medium">{material.filename}</span>
-                <span className="block truncate text-xs text-muted">
-                  {material.status === "failed" && material.error
-                    ? material.error
-                    : material.kind === "image"
-                      ? t("image")
-                      : material.extracted_text
-                        ? `${material.extracted_text.length} ${t("chars")}`
-                        : "—"}
-                </span>
-                {material.topicNames.length > 0 && (
-                  <span className="mt-1 flex flex-wrap gap-1">
-                    {material.topicNames.map((name) => (
-                      <span
-                        key={name}
-                        className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent"
-                      >
-                        {name}
-                      </span>
-                    ))}
-                  </span>
-                )}
-              </span>
-              <span className="flex shrink-0 items-center gap-2">
-                <MaterialStatus
-                  status={material.status}
-                  error={material.error}
-                  jobId={material.job_id}
-                />
-                <DeleteButton
-                  href={`/api/materials/${material.id}`}
-                  label={t("deleteMaterial")}
-                  onDeleted={() => removeMaterialLocal(material.id)}
-                />
-              </span>
-            </div>
-          )}
+          </div>
         </div>
 
-        {card && (
-          <button
-            onClick={() => void unassignCard(card.id)}
-            aria-label={t("unassign")}
-            title={t("unassign")}
-            className="mt-1 shrink-0 text-xs text-muted transition-colors hover:text-red-500"
-          >
-            ✕
-          </button>
+        {material.role === "exam" && material.exam && (
+          <ExamPaperCard
+            material={{
+              id: material.id,
+              status: material.status,
+              parse_job_id: material.parse_job_id,
+            }}
+            parseStatus={material.exam.parseStatus}
+            parseError={material.exam.parseError}
+            questionCount={material.exam.questionCount}
+          />
         )}
       </article>
     );
   }
 
   return (
-    <div className="w-full space-y-3 rounded-2xl border border-border bg-card p-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold">{t("board")}</h3>
-        <span className="text-xs text-muted">{t("dragMaterialHint")}</span>
+    <div className="w-full rounded-2xl border border-border bg-card">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold tracking-tight">{t("board")}</h3>
+          <p className="mt-0.5 text-xs text-muted">{t("dragMaterialHint")}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                void addColumn();
+              }
+            }}
+            placeholder={t("columnPlaceholder")}
+            className="w-56 bg-background"
+          />
+          <Button onClick={() => void addColumn()} disabled={busy || !newName.trim()}>
+            {t("addColumn")}
+          </Button>
+        </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <input
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              void addColumn();
-            }
-          }}
-          placeholder={t("columnPlaceholder")}
-          className="min-w-56 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm"
-        />
-        <button
-          onClick={() => void addColumn()}
-          disabled={busy || !newName.trim()}
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground disabled:opacity-50"
+      <div className="space-y-3 p-4">
+        {error && <p className="text-xs text-danger">{error}</p>}
+
+        <section
+          onDragEnter={handleTrayDragEnter}
+          onDragOver={(e) => e.preventDefault()}
+          onDragLeave={handleTrayDragLeave}
+          onDrop={handleTrayDrop}
+          className={wellClass(dragOverTray)}
         >
-          {t("addColumn")}
-        </button>
-      </div>
+          <div className="mb-2 flex items-center gap-2 px-1">
+            <h4 className="min-w-0 flex-1 truncate text-sm font-semibold">{t("materialsTray")}</h4>
+            <span className="rounded-full bg-foreground/5 px-2 py-0.5 text-xs font-medium text-muted tabular-nums">
+              {unassignedMaterials.length}
+            </span>
+          </div>
+          {unassignedMaterials.length === 0 ? (
+            <div className="flex items-center justify-center rounded-lg border border-dashed border-border px-3 py-4 text-xs text-muted">
+              {t("dropMaterialsHere")}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {unassignedMaterials.map((material) => renderMaterialCard(material))}
+            </div>
+          )}
+        </section>
 
-      {error && <p className="text-xs text-danger">{error}</p>}
-
-      <section
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragOverTray(true);
-        }}
-        onDragLeave={() => setDragOverTray(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          handleDropOnTray();
-        }}
-        className={
-          "w-full rounded-xl border p-3 transition-colors " +
-          (dragOverTray ? "border-accent bg-accent/5" : "border-border")
-        }
-      >
-        <h4 className="mb-2 text-xs font-semibold text-muted">{t("materialsTray")}</h4>
-        {unassignedMaterials.length === 0 ? (
-          <p className="text-xs text-muted">—</p>
+        {columns.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-xs text-muted">
+            {t("noBoardColumns")}
+          </div>
         ) : (
-          <div className="space-y-2">
-            {unassignedMaterials.map((material) => renderMaterialCard(material))}
+          <div className="w-full space-y-2">
+            {columns.map((column) => (
+              <section
+                key={column.id}
+                onDragEnter={(e) => handleColumnDragEnter(column.id, e)}
+                onDragOver={(e) => e.preventDefault()}
+                onDragLeave={() => handleColumnDragLeave(column.id)}
+                onDrop={(e) => handleColumnDrop(column.id, e)}
+                className={wellClass(dragOverColumnId === column.id)}
+              >
+                <div className="mb-2 flex items-center gap-2 px-1">
+                  {editingId === column.id ? (
+                    <Input
+                      autoFocus
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          void saveRename(column.id);
+                        }
+                        if (e.key === "Escape") {
+                          e.preventDefault();
+                          setEditingId(null);
+                        }
+                      }}
+                      onBlur={() => void saveRename(column.id)}
+                      className="max-w-xs bg-card"
+                    />
+                  ) : (
+                    <h4 className="min-w-0 flex-1 truncate text-sm font-semibold">{column.name}</h4>
+                  )}
+                  <span className="rounded-full bg-foreground/5 px-2 py-0.5 text-xs font-medium text-muted tabular-nums">
+                    {column.cards.length}
+                  </span>
+                  <MaterialIconButton
+                    onClick={() => startRename(column)}
+                    aria-label={t("renameCategory")}
+                    title={t("renameCategory")}
+                  >
+                    <PencilIcon />
+                  </MaterialIconButton>
+                  <MaterialIconButton
+                    variant="danger"
+                    onClick={() => void deleteColumn(column.id)}
+                    aria-label={t("deleteColumn")}
+                    title={t("deleteColumn")}
+                  >
+                    <TrashIcon />
+                  </MaterialIconButton>
+                </div>
+
+                {column.cards.length === 0 ? (
+                  <div className="flex items-center justify-center rounded-lg border border-dashed border-border px-3 py-4 text-xs text-muted">
+                    {t("emptyContainer")}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {column.cards.map((card) => {
+                      const material = card.material_id
+                        ? materials.find((m) => m.id === card.material_id)
+                        : undefined;
+                      return material ? renderMaterialCard(material, card) : null;
+                    })}
+                  </div>
+                )}
+              </section>
+            ))}
           </div>
         )}
-      </section>
-
-      {columns.length === 0 ? (
-        <p className="text-xs text-muted">{t("noBoardColumns")}</p>
-      ) : (
-        <div className="w-full space-y-2">
-          {columns.map((column) => (
-            <section
-              key={column.id}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDragOverColumnId(column.id);
-              }}
-              onDragLeave={() => setDragOverColumnId((id) => (id === column.id ? null : id))}
-              onDrop={(e) => {
-                e.preventDefault();
-                handleDropOnColumn(column.id);
-              }}
-              className={
-                "w-full rounded-xl border p-3 transition-colors " +
-                (dragOverColumnId === column.id ? "border-accent bg-accent/5" : "border-border")
-              }
-            >
-              <div className="mb-2 flex items-center gap-2">
-                {editingId === column.id ? (
-                  <input
-                    autoFocus
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        void saveRename(column.id);
-                      }
-                      if (e.key === "Escape") {
-                        e.preventDefault();
-                        setEditingId(null);
-                      }
-                    }}
-                    onBlur={() => void saveRename(column.id)}
-                    className="min-w-0 flex-1 rounded-lg border border-border bg-background px-2 py-1 text-sm font-semibold"
-                  />
-                ) : (
-                  <h4 className="min-w-0 flex-1 truncate text-sm font-semibold">{column.name}</h4>
-                )}
-                <button
-                  onClick={() => startRename(column)}
-                  aria-label={t("renameCategory")}
-                  title={t("renameCategory")}
-                  className="shrink-0 text-xs text-muted transition-colors hover:text-accent"
-                >
-                  ✎
-                </button>
-                <button
-                  onClick={() => void deleteColumn(column.id)}
-                  aria-label={t("deleteColumn")}
-                  title={t("deleteColumn")}
-                  className="shrink-0 text-xs text-muted transition-colors hover:text-red-500"
-                >
-                  ✕
-                </button>
-              </div>
-
-              {column.cards.length === 0 ? (
-                <p className="text-xs text-muted">—</p>
-              ) : (
-                <div className="space-y-2">
-                  {column.cards.map((card) => {
-                    const material = card.material_id
-                      ? materials.find((m) => m.id === card.material_id)
-                      : undefined;
-                    return material ? renderMaterialCard(material, card) : null;
-                  })}
-                </div>
-              )}
-            </section>
-          ))}
-        </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -3,10 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
 import { Diagram } from "@/components/ui/diagram";
-import { MaterialImage } from "@/components/subjects/material-image";
-import { MaterialStatus } from "@/components/subjects/material-status";
-import { DeleteButton } from "@/components/subjects/delete-button";
 import { useJob } from "@/lib/use-jobs";
 
 interface ExamQuestion {
@@ -23,21 +21,15 @@ export function ExamPaperCard({
   parseStatus,
   parseError,
   questionCount,
-  onDeleted,
 }: {
   material: {
     id: string;
-    filename: string;
-    kind: string;
     status: "processing" | "ready" | "failed";
-    error: string | null;
-    job_id: string | null;
     parse_job_id: string | null;
   };
   parseStatus: "none" | "pending" | "running" | "done" | "failed";
   parseError: string | null;
   questionCount: number;
-  onDeleted?: () => void;
 }) {
   const t = useTranslations("Subjects");
   const tc = useTranslations("Common");
@@ -53,7 +45,6 @@ export function ExamPaperCard({
     setJobId(null);
     setGenerating(false);
     if (settled.status === "done") {
-      // The new timed exam appears in the mock exams list.
       router.push("/mock-exams");
     } else {
       setGenError(settled.error ?? "error");
@@ -100,70 +91,43 @@ export function ExamPaperCard({
   const parsing = parseStatus === "pending" || parseStatus === "running";
 
   return (
-    <div className="rounded-xl border border-border bg-card px-4 py-3">
-      <div className="flex items-center justify-between gap-3">
-        <span className="flex min-w-0 items-center gap-3">
-          {material.kind === "image" && (
-            <MaterialImage src={`/api/materials/${material.id}`} alt={material.filename} />
-          )}
-          <span className="min-w-0">
-            <span className="block truncate text-sm font-medium">{material.filename}</span>
-            <span className="block truncate text-xs text-muted">{t("examPaper")}</span>
-          </span>
-        </span>
-        <span className="flex shrink-0 items-center gap-2">
-          <MaterialStatus status={material.status} error={material.error} jobId={material.job_id} />
-          <DeleteButton
-            href={`/api/materials/${material.id}`}
-            label={t("deleteMaterial")}
-            onDeleted={onDeleted}
-          />
-        </span>
-      </div>
-
-      <div className="mt-3 flex flex-wrap items-center gap-2">
+    <div className="mt-3 space-y-2 border-t border-border pt-3">
+      <div className="flex flex-wrap items-center gap-2">
         {parsing ? (
-          <span className="text-sm text-muted">{t("parsingQuestions")}</span>
+          <span className="text-xs text-muted">{t("parsingQuestions")}</span>
         ) : parseStatus === "failed" ? (
-          <span className="flex items-center gap-2 text-sm text-danger">
+          <span className="flex flex-wrap items-center gap-2 text-xs text-danger">
             {parseError ?? t("parseFailed")}
-            <button onClick={() => void retryParse()} className="text-accent hover:underline">
+            <Button variant="ghost" size="sm" onClick={() => void retryParse()}>
               {tc("retry")}
-            </button>
+            </Button>
           </span>
         ) : questionCount > 0 ? (
-          <span className="text-sm text-muted">{t("questionCount", { count: questionCount })}</span>
+          <span className="text-xs text-muted">{t("questionCount", { count: questionCount })}</span>
         ) : material.status === "ready" ? (
-          <span className="text-sm text-muted">{t("noQuestions")}</span>
+          <span className="text-xs text-muted">{t("noQuestions")}</span>
         ) : null}
 
         {questionCount > 0 && (
           <>
-            <button
-              onClick={() => void toggleQuestions()}
-              className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:border-accent"
-            >
+            <Button variant="secondary" size="sm" onClick={() => void toggleQuestions()}>
               {showQuestions ? t("hideQuestions") : t("viewQuestions")}
-            </button>
-            <button
-              onClick={() => void generateSimilar()}
-              disabled={generating}
-              className="rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-accent-foreground disabled:opacity-50"
-            >
+            </Button>
+            <Button variant="primary" size="sm" disabled={generating} onClick={() => void generateSimilar()}>
               {generating ? tc("processing") : t("generateSimilar")}
-            </button>
+            </Button>
           </>
         )}
-        {genError && <span className="text-sm text-red-500">{genError}</span>}
+        {genError && <span className="text-xs text-danger">{genError}</span>}
       </div>
 
       {showQuestions && questions && (
-        <div className="mt-3 space-y-3 border-t border-border pt-3">
+        <div className="space-y-2 border-t border-border pt-3">
           {questions.length === 0 ? (
-            <p className="text-sm text-muted">{t("noQuestions")}</p>
+            <p className="text-xs text-muted">{t("noQuestions")}</p>
           ) : (
             questions.map((q, i) => (
-              <div key={q.id} className="rounded-xl bg-background p-3">
+              <div key={q.id} className="rounded-lg border border-border bg-background p-3">
                 <p className="text-sm font-medium">
                   {i + 1}. {q.prompt}
                 </p>
@@ -181,14 +145,16 @@ export function ExamPaperCard({
                     ))}
                   </ul>
                 )}
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mt-2"
                   onClick={() => setRevealed((p) => ({ ...p, [q.id]: !p[q.id] }))}
-                  className="mt-2 text-sm text-accent hover:underline"
                 >
                   {revealed[q.id] ? t("hideAnswer") : t("showAnswer")}
-                </button>
+                </Button>
                 {revealed[q.id] && (
-                  <div className="mt-2 rounded-lg bg-foreground/5 p-3 text-sm">
+                  <div className="mt-2 rounded-lg border border-border bg-background p-3 text-sm">
                     {q.answer && (
                       <p>
                         <span className="font-medium">{t("answer")}:</span> {q.answer}

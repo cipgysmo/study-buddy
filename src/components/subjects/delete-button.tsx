@@ -2,15 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { MaterialIconButton } from "./material-icon-button";
 
 export function DeleteButton({
   href,
   label,
   onDeleted,
+  icon = false,
 }: {
   href: string;
   label: string;
   onDeleted?: () => void;
+  icon?: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -28,11 +31,40 @@ export function DeleteButton({
     }
   }
 
+  if (icon) {
+    return (
+      <MaterialIconButton
+        variant="danger"
+        onClick={onDelete}
+        disabled={busy}
+        aria-label={label}
+        title={label}
+      >
+        <svg
+          className="h-4 w-4"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M3 6h18" />
+          <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+          <path d="M10 11v6" />
+          <path d="M14 11v6" />
+        </svg>
+      </MaterialIconButton>
+    );
+  }
+
   return (
     <button
       onClick={onDelete}
       disabled={busy}
-      className="shrink-0 rounded-lg px-2 py-1 text-xs font-medium text-muted transition-colors hover:bg-red-500/10 hover:text-red-500 disabled:opacity-50"
+      className="shrink-0 rounded-lg px-2 py-1 text-xs font-medium text-muted transition-colors hover:bg-danger/10 hover:text-danger disabled:opacity-50"
     >
       {label}
     </button>
