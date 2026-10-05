@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { getDb } from "./db";
-import { getMaterial } from "./subjects";
+import { getMaterial, getSubject } from "./subjects";
 
 export type BoardCardKind = "task" | "lesson" | "chapter" | "material";
 
@@ -98,6 +98,29 @@ export function resolveBoardColumn(subjectId: string, name: string): BoardColumn
 export function renameBoardColumn(id: string, name: string): boolean {
   const info = getDb().prepare("UPDATE board_columns SET name = ? WHERE id = ?").run(name.trim(), id);
   return info.changes > 0;
+}
+
+export function moveBoardColumnToSubject(columnId: string, subjectId: string): boolean {
+  const column = getBoardColumn(columnId);
+  if (!column || !getSubject(subjectId)) return false;
+  if (column.subject_id === subjectId) return true;
+
+  const db = getDb();
+  const run = db.transaction(() => {
+    const materialIds = db
+      .prepare(
+        "SELECT material_id FROM board_cards WHERE column_id = ? AND material_id IS NOT NULL"
+      )
+      .all(columnId) as { material_id: string }[];
+
+    db.prepare("UPDATE board_columns SET subject_id = ? WHERE id = ?").run(subjectId, columnId);
+    db.prepare("UPDATE board_cards SET subject_id = ? WHERE column_id = ?").run(subjectId, columnId);
+    const updateMaterial = db.prepare("UPDATE materials SET subject_id = ? WHERE id = ?");
+    for (const row of materialIds) updateMaterial.run(subjectId, row.material_id);
+  });
+
+  run();
+  return true;
 }
 
 export function deleteBoardColumn(id: string): boolean {

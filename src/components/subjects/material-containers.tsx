@@ -95,6 +95,24 @@ function TrashIcon() {
   );
 }
 
+function MoveIcon() {
+  return (
+    <svg
+      className="h-4 w-4"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M5 12h14" />
+      <path d="m12 5 7 7-7 7" />
+    </svg>
+  );
+}
+
 function XIcon() {
   return (
     <svg
@@ -115,10 +133,12 @@ function XIcon() {
 
 export function MaterialContainers({
   subjectId,
+  subjects = [],
   initial,
   materials: initialMaterials,
 }: {
   subjectId: string;
+  subjects?: { id: string; name: string }[];
   initial: BoardColumn[];
   materials: MaterialItem[];
 }) {
@@ -128,6 +148,7 @@ export function MaterialContainers({
   const [newName, setNewName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const [movingColumnId, setMovingColumnId] = useState<string | null>(null);
   const [draggingMaterialId, setDraggingMaterialId] = useState<string | null>(null);
   const [dragOverColumnId, setDragOverColumnId] = useState<string | null>(null);
   const [dragOverTray, setDragOverTray] = useState(false);
@@ -198,6 +219,27 @@ export function MaterialContainers({
       if (!r.ok) throw new Error(await r.text());
       setColumns((prev) => prev.map((column) => (column.id === columnId ? { ...column, name } : column)));
       setEditingId(null);
+    } catch (err) {
+      setErrorFromUnknown(err);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function moveColumn(columnId: string, targetSubjectId: string) {
+    if (!targetSubjectId || busy) return;
+    if (!window.confirm(t("moveContainerConfirm"))) return;
+    setBusy(true);
+    setError("");
+    try {
+      const r = await fetch(`/api/board/columns/${columnId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subjectId: targetSubjectId }),
+      });
+      if (!r.ok) throw new Error(await r.text());
+      setColumns((prev) => prev.filter((column) => column.id !== columnId));
+      setMovingColumnId(null);
     } catch (err) {
       setErrorFromUnknown(err);
     } finally {
@@ -522,6 +564,40 @@ export function MaterialContainers({
                   >
                     <PencilIcon />
                   </MaterialIconButton>
+                  {subjects.length > 1 &&
+                    (movingColumnId === column.id ? (
+                      <select
+                        autoFocus
+                        value=""
+                        onChange={(e) => {
+                          const target = e.target.value;
+                          if (!target) {
+                            setMovingColumnId(null);
+                            return;
+                          }
+                          void moveColumn(column.id, target);
+                        }}
+                        onBlur={() => setMovingColumnId(null)}
+                        className="rounded-lg border border-border bg-background px-2 py-1 text-xs"
+                      >
+                        <option value="">{t("moveContainerTo")}</option>
+                        {subjects
+                          .filter((s) => s.id !== subjectId)
+                          .map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {s.name}
+                            </option>
+                          ))}
+                      </select>
+                    ) : (
+                      <MaterialIconButton
+                        onClick={() => setMovingColumnId(column.id)}
+                        aria-label={t("moveContainer")}
+                        title={t("moveContainer")}
+                      >
+                        <MoveIcon />
+                      </MaterialIconButton>
+                    ))}
                   <MaterialIconButton
                     variant="danger"
                     onClick={() => void deleteColumn(column.id)}

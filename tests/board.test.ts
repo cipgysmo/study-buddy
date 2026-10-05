@@ -15,6 +15,7 @@ import {
   deleteBoardColumn,
   getBoardCardByMaterial,
   listBoard,
+  moveBoardColumnToSubject,
   renameBoardColumn,
   resolveBoardColumn,
   saveBoardOrder,
@@ -106,6 +107,22 @@ describe("subject board", () => {
     const reused = resolveBoardColumn(subjectId, "uploads");
     expect(created.id).toBe(reused.id);
     expect(listBoard(subjectId).filter((c) => c.name === "Uploads")).toHaveLength(1);
+  });
+
+  it("moves a container and its materials to another subject", () => {
+    const db = getDb();
+    db.prepare("INSERT INTO subjects (id, name) VALUES (?, ?)").run("subj-board-3", "Physics");
+    db.prepare(
+      "INSERT INTO materials (id, subject_id, filename, stored_path, mime, kind, size, status, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    ).run("mat-move", subjectId, "notes.pdf", "/tmp/notes.pdf", "application/pdf", "text", 10, "ready", "notes");
+
+    const column = createBoardColumn(subjectId, "Move me");
+    assignMaterialToColumn("mat-move", column.id);
+
+    expect(moveBoardColumnToSubject(column.id, "subj-board-3")).toBe(true);
+    expect(listBoard(subjectId).some((c) => c.id === column.id)).toBe(false);
+    expect(listBoard("subj-board-3").some((c) => c.id === column.id)).toBe(true);
+    expect((db.prepare("SELECT subject_id FROM materials WHERE id = ?").get("mat-move") as { subject_id: string }).subject_id).toBe("subj-board-3");
   });
 
   it("cascades board rows when the subject is removed", () => {

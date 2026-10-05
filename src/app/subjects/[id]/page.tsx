@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { getSubject, listMaterials } from "@/lib/subjects";
+import { getSubject, listMaterials, listSubjects } from "@/lib/subjects";
 import { listTopics, materialTopicNames } from "@/lib/topics";
 import { listBoard } from "@/lib/board";
 import { getJob } from "@/lib/jobs";
@@ -21,6 +21,7 @@ export default async function SubjectDetailPage({
   const { id } = await params;
   const subject = getSubject(id);
   if (!subject) notFound();
+  const subjects = listSubjects().map((s) => ({ id: s.id, name: s.name }));
   const materials = listMaterials(id);
   const topics = listTopics(id);
   const board = listBoard(id);
@@ -85,6 +86,7 @@ export default async function SubjectDetailPage({
         <MaterialContainers
           key={materialItems.map((m) => m.id).join(",")}
           subjectId={id}
+          subjects={subjects}
           initial={board}
           materials={materialItems}
         />
