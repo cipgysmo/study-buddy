@@ -10,6 +10,7 @@ import { NavIcon } from "@/components/shell/nav-icons";
 import { SubjectSelect, type SubjectOption } from "@/components/ui/subject-select";
 import { GenerationScopePicker } from "@/components/ui/generation-scope-picker";
 import { DeleteButton } from "@/components/subjects/delete-button";
+import type { GenerationDifficulty } from "@/lib/generation";
 import { useJob } from "@/lib/use-jobs";
 import { QuizRunner, type RunnerQuestion } from "./quiz-runner";
 
@@ -34,6 +35,7 @@ export function QuizzesApp({
   const [topicIds, setTopicIds] = useState<string[]>([]);
   const [columnIds, setColumnIds] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
+  const [difficulty, setDifficulty] = useState<GenerationDifficulty>("medium");
   const [count, setCount] = useState(5);
   const [busy, setBusy] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
@@ -67,7 +69,7 @@ export function QuizzesApp({
       const r = await fetch("/api/quizzes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subjectId, count, topicIds, columnIds, keywords }),
+        body: JSON.stringify({ subjectId, count, topicIds, columnIds, keywords, difficulty }),
       });
       const d = (await r.json()) as { job?: { id: string }; error?: string };
       if (!r.ok || !d.job) throw new Error(d.error || "error");
@@ -129,6 +131,8 @@ export function QuizzesApp({
         onColumnIdsChange={setColumnIds}
         keywords={keywords}
         onKeywordsChange={setKeywords}
+        difficulty={difficulty}
+        onDifficultyChange={setDifficulty}
       />
 
       {(() => {

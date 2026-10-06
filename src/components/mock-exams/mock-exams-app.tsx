@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { SubjectSelect, type SubjectOption } from "@/components/ui/subject-select";
 import { GenerationScopePicker } from "@/components/ui/generation-scope-picker";
 import { DeleteButton } from "@/components/subjects/delete-button";
+import type { GenerationDifficulty } from "@/lib/generation";
 import { useJob } from "@/lib/use-jobs";
 import { QuizRunner, type RunnerQuestion } from "@/components/quizzes/quiz-runner";
 
@@ -28,6 +29,7 @@ export function MockExamsApp({
   const [topicIds, setTopicIds] = useState<string[]>([]);
   const [columnIds, setColumnIds] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
+  const [difficulty, setDifficulty] = useState<GenerationDifficulty>("medium");
   const [count, setCount] = useState(10);
   const [duration, setDuration] = useState(30);
   const [busy, setBusy] = useState(false);
@@ -63,6 +65,7 @@ export function MockExamsApp({
           topicIds,
           columnIds,
           keywords,
+          difficulty,
         }),
       });
       const d = (await r.json()) as { job?: { id: string }; error?: string };
@@ -146,6 +149,8 @@ export function MockExamsApp({
         onColumnIdsChange={setColumnIds}
         keywords={keywords}
         onKeywordsChange={setKeywords}
+        difficulty={difficulty}
+        onDifficultyChange={setDifficulty}
       />
 
       {exams.length === 0 ? (

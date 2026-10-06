@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { LANGUAGES } from "@/i18n/languages";
-import { buildSubjectContext, type SubjectContextOptions } from "./context";
+import { buildSubjectContext } from "./context";
 import { getDb } from "./db";
+import type { GenerationOptions } from "./generation";
 import { resolveLocale } from "./locale";
 import { chatJSON } from "./llm";
 import { exerciseGeneratorPrompt, type ExerciseDraft } from "./prompts/exercises";
@@ -64,7 +65,7 @@ export async function generateExercises(
   subjectId: string,
   count: number,
   topicIds?: string[],
-  opts: SubjectContextOptions = {}
+  opts: GenerationOptions = {}
 ): Promise<Exercise[]> {
   const subject = getSubject(subjectId);
   if (!subject) throw new Error("subject_not_found");
@@ -83,6 +84,7 @@ export async function generateExercises(
           context,
           topics: topicNames(topicIds ?? []),
           keywords: opts.keywords,
+          difficulty: opts.difficulty,
         }),
       },
     ],
@@ -100,7 +102,14 @@ export async function generateExercises(
       ? ex.solution_steps.filter((s) => typeof s === "string" && s.trim())
       : [];
     const diagram = typeof ex.diagram === "string" && ex.diagram.trim() ? ex.diagram.trim() : null;
-    insert.run(id, subjectId, ex.prompt, JSON.stringify(steps), ex.difficulty ?? "medium", diagram);
+    insert.run(
+      id,
+      subjectId,
+      ex.prompt,
+      JSON.stringify(steps),
+      opts.difficulty ?? ex.difficulty ?? "medium",
+      diagram
+    );
     const saved = getExercise(id);
     if (saved) created.push(saved);
   }
@@ -131,7 +140,7 @@ export async function generateTrueFalse(
   subjectId: string,
   count: number,
   topicIds?: string[],
-  opts: SubjectContextOptions = {}
+  opts: GenerationOptions = {}
 ): Promise<TrueFalseItem[]> {
   const subject = getSubject(subjectId);
   if (!subject) throw new Error("subject_not_found");
@@ -150,6 +159,7 @@ export async function generateTrueFalse(
           context,
           topics: topicNames(topicIds ?? []),
           keywords: opts.keywords,
+          difficulty: opts.difficulty,
         }),
       },
     ],

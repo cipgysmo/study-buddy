@@ -1,3 +1,4 @@
+import { cleanDifficulty } from "@/lib/generation";
 import { enqueueJob } from "@/lib/jobs";
 import "@/lib/job-handlers";
 import { listQuizzes } from "@/lib/quizzes";
@@ -18,6 +19,7 @@ export async function POST(req: Request) {
     topicIds?: string[];
     columnIds?: string[];
     keywords?: string[];
+    difficulty?: string;
   } = {};
   try {
     body = await req.json();
@@ -33,6 +35,7 @@ export async function POST(req: Request) {
   const topicIds = cleanStringArray(body.topicIds);
   const columnIds = cleanStringArray(body.columnIds);
   const keywords = cleanStringArray(body.keywords);
+  const difficulty = cleanDifficulty(body.difficulty);
   const job = enqueueJob("quiz", {
     subjectId: body.subjectId,
     count,
@@ -41,6 +44,7 @@ export async function POST(req: Request) {
     topicIds,
     columnIds,
     keywords,
+    difficulty,
   });
   return Response.json({ job }, { status: 202 });
 }

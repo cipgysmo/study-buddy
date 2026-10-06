@@ -1,4 +1,5 @@
 import { listFlashcards } from "@/lib/flashcards";
+import { cleanDifficulty } from "@/lib/generation";
 import { enqueueJob } from "@/lib/jobs";
 import "@/lib/job-handlers";
 import { cleanStringArray } from "@/lib/request-utils";
@@ -18,6 +19,7 @@ export async function POST(req: Request) {
     topicIds?: string[];
     columnIds?: string[];
     keywords?: string[];
+    difficulty?: string;
   } = {};
   try {
     body = await req.json();
@@ -29,6 +31,14 @@ export async function POST(req: Request) {
   const topicIds = cleanStringArray(body.topicIds);
   const columnIds = cleanStringArray(body.columnIds);
   const keywords = cleanStringArray(body.keywords);
-  const job = enqueueJob("flashcards", { subjectId: body.subjectId, count, topicIds, columnIds, keywords });
+  const difficulty = cleanDifficulty(body.difficulty);
+  const job = enqueueJob("flashcards", {
+    subjectId: body.subjectId,
+    count,
+    topicIds,
+    columnIds,
+    keywords,
+    difficulty,
+  });
   return Response.json({ job }, { status: 202 });
 }

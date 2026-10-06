@@ -2,8 +2,10 @@
 
 import { useTranslations } from "next-intl";
 import { ContainerPicker } from "@/components/ui/container-picker";
+import { DifficultyPicker } from "@/components/ui/difficulty-picker";
 import { KeywordPicker } from "@/components/ui/keyword-picker";
 import { TopicPicker } from "@/components/ui/topic-picker";
+import type { GenerationDifficulty } from "@/lib/generation";
 
 export function GenerationScopePicker({
   subjectId,
@@ -13,6 +15,8 @@ export function GenerationScopePicker({
   onColumnIdsChange,
   keywords,
   onKeywordsChange,
+  difficulty,
+  onDifficultyChange,
 }: {
   subjectId: string;
   topicIds: string[];
@@ -21,6 +25,8 @@ export function GenerationScopePicker({
   onColumnIdsChange: (ids: string[]) => void;
   keywords: string[];
   onKeywordsChange: (keywords: string[]) => void;
+  difficulty?: GenerationDifficulty;
+  onDifficultyChange?: (difficulty: GenerationDifficulty) => void;
 }) {
   const t = useTranslations("Subjects");
 
@@ -40,6 +46,12 @@ export function GenerationScopePicker({
         <span className="text-xs font-semibold text-muted">{t("keywordsLabel")}</span>
         <KeywordPicker value={keywords} onChange={onKeywordsChange} />
       </div>
+      {difficulty && onDifficultyChange && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold text-muted">{t("difficultyLabel")}</span>
+          <DifficultyPicker value={difficulty} onChange={onDifficultyChange} />
+        </div>
+      )}
     </div>
   );
 }

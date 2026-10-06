@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { LANGUAGES } from "@/i18n/languages";
-import { buildSubjectContext, type SubjectContextOptions } from "./context";
+import { buildSubjectContext } from "./context";
 import { getDb } from "./db";
+import type { GenerationOptions } from "./generation";
 import { resolveLocale } from "./locale";
 import { chatJSON } from "./llm";
 import { quizGeneratorPrompt, type QuizDraft } from "./prompts/quiz";
@@ -85,7 +86,7 @@ export async function generateQuiz(
   title?: string,
   durationMin?: number,
   topicIds?: string[],
-  opts: SubjectContextOptions = {}
+  opts: GenerationOptions = {}
 ): Promise<Quiz> {
   const subject = getSubject(subjectId);
   if (!subject) throw new Error("subject_not_found");
@@ -104,6 +105,7 @@ export async function generateQuiz(
           context,
           topics: topicNames(topicIds ?? []),
           keywords: opts.keywords,
+          difficulty: opts.difficulty,
         }),
       },
     ],

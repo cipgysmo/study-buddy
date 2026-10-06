@@ -1,3 +1,4 @@
+import type { GenerationDifficulty } from "../generation";
 import { DIAGRAM_INSTRUCTION } from "./diagram";
 
 export interface ExerciseDraft {
@@ -16,6 +17,7 @@ export function exerciseGeneratorPrompt(opts: {
   context: string;
   topics?: string[];
   keywords?: string[];
+  difficulty?: GenerationDifficulty;
 }): string {
   const lines = [
     "/no_think",
@@ -24,8 +26,9 @@ export function exerciseGeneratorPrompt(opts: {
   ];
   if (opts.topics?.length) lines.push(`Focus on these topics: ${opts.topics.join(", ")}.`);
   if (opts.keywords?.length) lines.push(`Prioritize these keywords: ${opts.keywords.join(", ")}.`);
+  if (opts.difficulty) lines.push(`Target difficulty: ${opts.difficulty}.`);
   lines.push(
-    `Create exactly ${opts.count} exercises. Each has a prompt (the task for the student), a step-by-step solution (an array of short steps that lead to the answer), and a difficulty ("easy", "medium", or "hard").`,
+    `Create exactly ${opts.count} exercises. Each has a prompt (the task for the student), a step-by-step solution (an array of short steps that lead to the answer), and a difficulty ("easy", "medium", "hard", or "expert").`,
     DIAGRAM_INSTRUCTION,
     `Return ONLY a JSON object: {"exercises": [{"prompt": string, "solution_steps": [string], "difficulty": string, "diagram": string}]}. "diagram" is optional.`,
     "",

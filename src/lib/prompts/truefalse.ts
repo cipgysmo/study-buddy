@@ -1,3 +1,5 @@
+import type { GenerationDifficulty } from "../generation";
+
 export interface TrueFalseDraft {
   items: {
     statement: string;
@@ -13,6 +15,7 @@ export function trueFalseGeneratorPrompt(opts: {
   context: string;
   topics?: string[];
   keywords?: string[];
+  difficulty?: GenerationDifficulty;
 }): string {
   const lines = [
     "/no_think",
@@ -21,6 +24,7 @@ export function trueFalseGeneratorPrompt(opts: {
   ];
   if (opts.topics?.length) lines.push(`Focus on these topics: ${opts.topics.join(", ")}.`);
   if (opts.keywords?.length) lines.push(`Prioritize these keywords: ${opts.keywords.join(", ")}.`);
+  if (opts.difficulty) lines.push(`Target difficulty: ${opts.difficulty}.`);
   lines.push(
     `Create exactly ${opts.count} statements. Each has a statement, whether it is true (is_correct) or false, and a clear 2-4 sentence explanation of why. Mix true and false statements.`,
     `Return ONLY a JSON object: {"items": [{"statement": string, "is_correct": boolean, "explanation": string}]}.`,

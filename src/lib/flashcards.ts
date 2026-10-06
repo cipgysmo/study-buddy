@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { fsrs, Rating, type CardInput, type Grade } from "ts-fsrs";
 import { LANGUAGES } from "@/i18n/languages";
-import { buildSubjectContext, type SubjectContextOptions } from "./context";
+import { buildSubjectContext } from "./context";
 import { getDb } from "./db";
+import type { GenerationOptions } from "./generation";
 import { resolveLocale } from "./locale";
 import { chatJSON } from "./llm";
 import { flashcardGeneratorPrompt, type FlashcardDraft } from "./prompts/flashcards";
@@ -66,7 +67,7 @@ export async function generateFlashcards(
   subjectId: string,
   count: number,
   topicIds?: string[],
-  opts: SubjectContextOptions = {}
+  opts: GenerationOptions = {}
 ): Promise<Flashcard[]> {
   const subject = getSubject(subjectId);
   if (!subject) throw new Error("subject_not_found");
@@ -85,6 +86,7 @@ export async function generateFlashcards(
           context,
           topics: topicNames(topicIds ?? []),
           keywords: opts.keywords,
+          difficulty: opts.difficulty,
         }),
       },
     ],
