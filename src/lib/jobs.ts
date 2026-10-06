@@ -14,7 +14,7 @@ export type JobType =
   | "retag"
   | "lesson";
 
-export type JobStatus = "pending" | "running" | "done" | "failed";
+export type JobStatus = "pending" | "running" | "done" | "failed" | "cancelled";
 
 export interface Job {
   id: string;
@@ -60,6 +60,18 @@ export function listActiveJobs(): Job[] {
   return getDb()
     .prepare("SELECT * FROM jobs WHERE status IN ('pending', 'running') ORDER BY created_at ASC")
     .all() as Job[];
+}
+
+/** Mark an active job as cancelled. Running handlers may still finish, but their result is ignored. */
+export function cancelJob(id: string): Job | null {
+  const job = getJob(id);
+  if (!job || (job.status !== "pending" && job.status !== "running")) return null;
+  getDb()
+    .prepare(
+      "UPDATE jobs SET status = 'cancelled', error = 'cancelled', finished_at = datetime('now') WHERE id = ?"
+    )
+    .run(id);
+  return getJob(id);
 }
 
 /** Re-queue a failed job. Returns null when the job is missing or not in a failed state. */
@@ -109,12 +121,12 @@ async function pump(): Promise<void> {
         if (!handler) throw new Error(`no_handler:${next.type}`);
         const result = await handler({ id: next.id, payload: JSON.parse(next.payload) });
         db.prepare(
-          "UPDATE jobs SET status = 'done', result = ?, finished_at = datetime('now') WHERE id = ?"
+          "UPDATE jobs SET status = 'done', result = ?, finished_at = datetime('now') WHERE id = ? AND status = 'running'"
         ).run(result, next.id);
       } catch (e) {
         const message = e instanceof Error ? e.message : String(e);
         db.prepare(
-          "UPDATE jobs SET status = 'failed', error = ?, finished_at = datetime('now') WHERE id = ?"
+          "UPDATE jobs SET status = 'failed', error = ?, finished_at = datetime('now') WHERE id = ? AND status = 'running'"
         ).run(message, next.id);
       }
     }

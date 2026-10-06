@@ -32,7 +32,7 @@ export function FlashcardsApp({
   const [topicIds, setTopicIds] = useState<string[]>([]);
   const [columnIds, setColumnIds] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
-  const [difficulty, setDifficulty] = useState<GenerationDifficulty>("medium");
+  const [difficulty, setDifficulty] = useState<GenerationDifficulty>("balanced");
   const [count, setCount] = useState(10);
   const [busy, setBusy] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);

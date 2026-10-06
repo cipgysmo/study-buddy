@@ -22,8 +22,8 @@ export function llmApiKey(): string {
 
 /** How long to wait/retry when the local LLM is busy or temporarily unavailable. */
 export function llmBusyTimeoutMs(): number {
-  const v = Number(read("LLM_BUSY_TIMEOUT_MS", "300000"));
-  return Number.isFinite(v) && v > 0 ? Math.floor(v) : 300000;
+  const v = Number(read("LLM_BUSY_TIMEOUT_MS", "600000"));
+  return Number.isFinite(v) && v > 0 ? Math.floor(v) : 600000;
 }
 
 /** Local LLM concurrency cap used by the in-process request queue. */
@@ -34,8 +34,8 @@ export function llmMaxConcurrency(): number {
 
 /** Hard timeout for a single upstream LLM request before it is retried. */
 export function llmRequestTimeoutMs(): number {
-  const v = Number(read("LLM_REQUEST_TIMEOUT_MS", "180000"));
-  return Number.isFinite(v) && v > 0 ? Math.floor(v) : 180000;
+  const v = Number(read("LLM_REQUEST_TIMEOUT_MS", "360000"));
+  return Number.isFinite(v) && v > 0 ? Math.floor(v) : 360000;
 }
 
 /** Where the SQLite DB + uploaded files live. */

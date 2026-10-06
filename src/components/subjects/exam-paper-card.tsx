@@ -27,7 +27,7 @@ export function ExamPaperCard({
     status: "processing" | "ready" | "failed";
     parse_job_id: string | null;
   };
-  parseStatus: "none" | "pending" | "running" | "done" | "failed";
+  parseStatus: "none" | "pending" | "running" | "done" | "failed" | "cancelled";
   parseError: string | null;
   questionCount: number;
 }) {
@@ -95,7 +95,7 @@ export function ExamPaperCard({
       <div className="flex flex-wrap items-center gap-2">
         {parsing ? (
           <span className="text-xs text-muted">{t("parsingQuestions")}</span>
-        ) : parseStatus === "failed" ? (
+        ) : parseStatus === "failed" || parseStatus === "cancelled" ? (
           <span className="flex flex-wrap items-center gap-2 text-xs text-danger">
             {parseError ?? t("parseFailed")}
             <Button variant="ghost" size="sm" onClick={() => void retryParse()}>

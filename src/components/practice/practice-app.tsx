@@ -41,13 +41,14 @@ export function PracticeApp({
   initialSubjectId?: string;
 }) {
   const t = useTranslations("Practice");
+  const ts = useTranslations("Subjects");
   const router = useRouter();
   const [tab, setTab] = useState<"exercises" | "truefalse">("exercises");
   const [subjectId, setSubjectId] = useState(initialSubjectId);
   const [topicIds, setTopicIds] = useState<string[]>([]);
   const [columnIds, setColumnIds] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
-  const [difficulty, setDifficulty] = useState<GenerationDifficulty>("medium");
+  const [difficulty, setDifficulty] = useState<GenerationDifficulty>("balanced");
   const [count, setCount] = useState(5);
   const [busy, setBusy] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
@@ -91,9 +92,11 @@ export function PracticeApp({
   }
 
   function difficultyLabel(d: string) {
-    if (d === "easy") return t("easy");
-    if (d === "hard") return t("hard");
-    return t("medium");
+    if (d === "balanced") return ts("difficultyBalanced");
+    if (d === "easy") return ts("difficultyNoob");
+    if (d === "hard") return ts("difficultyPro");
+    if (d === "expert") return ts("difficultyHacker");
+    return ts("difficultyPedestrian");
   }
 
   return (

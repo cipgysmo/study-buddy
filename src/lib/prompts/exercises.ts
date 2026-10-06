@@ -28,7 +28,7 @@ export function exerciseGeneratorPrompt(opts: {
   if (opts.keywords?.length) lines.push(`Prioritize these keywords: ${opts.keywords.join(", ")}.`);
   if (opts.difficulty) lines.push(`Target difficulty: ${opts.difficulty}.`);
   lines.push(
-    `Create exactly ${opts.count} exercises. Each has a prompt (the task for the student), a step-by-step solution (an array of short steps that lead to the answer), and a difficulty ("easy", "medium", "hard", or "expert").`,
+    `Create exactly ${opts.count} exercises. Each has a prompt (the task for the student), a step-by-step solution (an array of short steps that lead to the answer), and a difficulty ("balanced", "easy", "medium", "hard", or "expert").`,
     DIAGRAM_INSTRUCTION,
     `Return ONLY a JSON object: {"exercises": [{"prompt": string, "solution_steps": [string], "difficulty": string, "diagram": string}]}. "diagram" is optional.`,
     "",

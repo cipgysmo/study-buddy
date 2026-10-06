@@ -29,7 +29,7 @@ export function MockExamsApp({
   const [topicIds, setTopicIds] = useState<string[]>([]);
   const [columnIds, setColumnIds] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
-  const [difficulty, setDifficulty] = useState<GenerationDifficulty>("medium");
+  const [difficulty, setDifficulty] = useState<GenerationDifficulty>("balanced");
   const [count, setCount] = useState(10);
   const [duration, setDuration] = useState(30);
   const [busy, setBusy] = useState(false);

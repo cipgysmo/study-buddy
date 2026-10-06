@@ -23,7 +23,7 @@ interface MaterialItem {
   parse_job_id: string | null;
   topicNames: string[];
   exam?: {
-    parseStatus: "none" | "pending" | "running" | "done" | "failed";
+    parseStatus: "none" | "pending" | "running" | "done" | "failed" | "cancelled";
     parseError: string | null;
     questionCount: number;
   };

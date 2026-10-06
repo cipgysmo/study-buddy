@@ -34,7 +34,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </button>
         <span className="font-semibold tracking-tight">Study Buddy</span>
         <span className="ml-auto">
-          <JobsIndicator />
+          <JobsIndicator variant="badge" />
         </span>
       </header>
 

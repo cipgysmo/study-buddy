@@ -34,7 +34,21 @@
     "llmOffline": "LLM offline",
     "explain": "Vysvětlit",
     "hideExplanation": "Skrýt vysvětlení",
-    "error": "Chyba"
+    "error": "Chyba",
+    "cancelJob": "Zrušit úlohu"
+  },
+  "Jobs": {
+    "ocr": "OCR",
+    "scan": "Sken",
+    "flashcards": "Kartičky",
+    "quiz": "Kvíz",
+    "plan": "Studijní plán",
+    "exercises": "Cvičení",
+    "truefalse": "Pravda/nepravda",
+    "parseExam": "Rozklad testu",
+    "similarExam": "Podobný test",
+    "retag": "Přeznačkování",
+    "lesson": "Lekce"
   },
   "Dashboard": {
     "title": "Přehled",
@@ -127,10 +141,11 @@
     "keywordPlaceholder": "Např. derivace, vektor (oddělené čárkou)",
     "removeKeyword": "Odebrat klíčové slovo",
     "difficultyLabel": "Obtížnost",
-    "difficultyEasy": "Snadná",
-    "difficultyMedium": "Střední",
-    "difficultyHard": "Těžká",
-    "difficultyExpert": "Expertní",
+    "difficultyBalanced": "Vyvážená",
+    "difficultyNoob": "Noob",
+    "difficultyPedestrian": "Pedestrian",
+    "difficultyPro": "Pro",
+    "difficultyHacker": "Hacker",
     "chars": "znaků",
     "image": "obrázek",
     "deleteSubject": "Smazat předmět",

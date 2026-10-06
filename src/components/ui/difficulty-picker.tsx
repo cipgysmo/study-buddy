@@ -3,7 +3,15 @@
 import { useTranslations } from "next-intl";
 import type { GenerationDifficulty } from "@/lib/generation";
 
-const DIFFICULTIES: GenerationDifficulty[] = ["easy", "medium", "hard", "expert"];
+const DIFFICULTIES: GenerationDifficulty[] = ["balanced", "easy", "medium", "hard", "expert"];
+
+const LABEL_KEYS: Record<GenerationDifficulty, string> = {
+  balanced: "difficultyBalanced",
+  easy: "difficultyNoob",
+  medium: "difficultyPedestrian",
+  hard: "difficultyPro",
+  expert: "difficultyHacker",
+};
 
 export function DifficultyPicker({
   value,
@@ -28,7 +36,7 @@ export function DifficultyPicker({
               : "text-muted hover:text-foreground")
           }
         >
-          {t(`difficulty${difficulty.charAt(0).toUpperCase()}${difficulty.slice(1)}`)}
+          {t(LABEL_KEYS[difficulty])}
         </button>
       ))}
     </div>

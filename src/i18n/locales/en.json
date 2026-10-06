@@ -34,7 +34,21 @@
     "llmOffline": "LLM offline",
     "explain": "Explain",
     "hideExplanation": "Hide explanation",
-    "error": "Error"
+    "error": "Error",
+    "cancelJob": "Cancel job"
+  },
+  "Jobs": {
+    "ocr": "OCR",
+    "scan": "Scan",
+    "flashcards": "Flashcards",
+    "quiz": "Quiz",
+    "plan": "Study plan",
+    "exercises": "Exercises",
+    "truefalse": "True/false",
+    "parseExam": "Exam parsing",
+    "similarExam": "Similar exam",
+    "retag": "Re-tagging",
+    "lesson": "Lesson"
   },
   "Dashboard": {
     "title": "Overview",
@@ -127,10 +141,11 @@
     "keywordPlaceholder": "e.g. derivatives, vectors (comma separated)",
     "removeKeyword": "Remove keyword",
     "difficultyLabel": "Difficulty",
-    "difficultyEasy": "Easy",
-    "difficultyMedium": "Medium",
-    "difficultyHard": "Hard",
-    "difficultyExpert": "Expert",
+    "difficultyBalanced": "Balanced",
+    "difficultyNoob": "Noob",
+    "difficultyPedestrian": "Pedestrian",
+    "difficultyPro": "Pro",
+    "difficultyHacker": "Hacker",
     "chars": "chars",
     "image": "image",
     "deleteSubject": "Delete subject",
