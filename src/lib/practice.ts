@@ -33,6 +33,14 @@ export interface TrueFalseItem {
 type ExerciseRow = Omit<Exercise, "solution_steps"> & { solution_steps: string };
 type TrueFalseRow = Omit<TrueFalseItem, "is_correct"> & { is_correct: number };
 
+function shuffleArray<T>(items: T[]): T[] {
+  for (let i = items.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [items[i], items[j]] = [items[j], items[i]];
+  }
+  return items;
+}
+
 function parseExercise(row: ExerciseRow): Exercise {
   return { ...row, solution_steps: JSON.parse(row.solution_steps) as string[] };
 }
@@ -119,9 +127,11 @@ export async function generateExercises(
 export function listTrueFalse(subjectId?: string): TrueFalseItem[] {
   const rows = subjectId
     ? (getDb()
-        .prepare("SELECT * FROM truefalse WHERE subject_id = ? ORDER BY created_at DESC")
+        .prepare("SELECT * FROM truefalse WHERE subject_id = ? ORDER BY created_at DESC, rowid DESC")
         .all(subjectId) as TrueFalseRow[])
-    : (getDb().prepare("SELECT * FROM truefalse ORDER BY created_at DESC").all() as TrueFalseRow[]);
+    : (getDb()
+        .prepare("SELECT * FROM truefalse ORDER BY created_at DESC, rowid DESC")
+        .all() as TrueFalseRow[]);
   return rows.map(parseTrueFalse);
 }
 
@@ -170,7 +180,8 @@ export async function generateTrueFalse(
     "INSERT INTO truefalse (id, subject_id, statement, is_correct, explanation) VALUES (?, ?, ?, ?, ?)"
   );
   const created: TrueFalseItem[] = [];
-  for (const item of (draft.items ?? []).slice(0, count)) {
+  const items = shuffleArray((draft.items ?? []).slice(0, count));
+  for (const item of items) {
     if (!item.statement) continue;
     const id = randomUUID();
     insert.run(id, subjectId, item.statement, item.is_correct ? 1 : 0, item.explanation ?? "");

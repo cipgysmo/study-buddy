@@ -26,7 +26,7 @@ export function trueFalseGeneratorPrompt(opts: {
   if (opts.keywords?.length) lines.push(`Prioritize these keywords: ${opts.keywords.join(", ")}.`);
   if (opts.difficulty) lines.push(`Target difficulty: ${opts.difficulty}.`);
   lines.push(
-    `Create exactly ${opts.count} statements. Each has a statement, whether it is true (is_correct) or false, and a clear 2-4 sentence explanation of why. Mix true and false statements.`,
+    `Create exactly ${opts.count} statements. Each has a statement, whether it is true (is_correct) or false, and a clear 2-4 sentence explanation of why. Mix true and false statements. Randomize which statements are true and which are false. Do not alternate true/false, and do not create any predictable position pattern.`,
     `Return ONLY a JSON object: {"items": [{"statement": string, "is_correct": boolean, "explanation": string}]}.`,
     "",
     "<notes>",
