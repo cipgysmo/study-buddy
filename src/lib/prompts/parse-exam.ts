@@ -1,3 +1,5 @@
+import { DIAGRAM_INSTRUCTION } from "./diagram";
+
 export interface ParsedQuestion {
   prompt: string;
   options?: string[];
@@ -28,7 +30,7 @@ export function parseExamPrompt(opts: {
     '- "options": ONLY if the question is multiple choice, the list of answer options. Omit this field otherwise.',
     '- "answer": the correct answer, or a concise model solution.',
     '- "explanation": a clear 2-4 sentence explanation of why the answer is correct.',
-    '- "diagram": OPTIONAL. If the question refers to a figure, a complete standalone SVG (viewBox="0 0 400 300", stroke="currentColor" fill="none" for shapes, fill="currentColor" font-size="14" for labels) showing ONLY the given information. Never include the answer or the value the question asks to find in the diagram.',
+    `- "diagram": OPTIONAL. ${DIAGRAM_INSTRUCTION}`,
     `Return ONLY a JSON object: {"questions": [{"prompt": string, "options": [string], "answer": string, "explanation": string, "diagram": string}]}.`,
     "",
     "<exam>",

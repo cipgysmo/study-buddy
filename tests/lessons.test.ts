@@ -22,7 +22,8 @@ vi.mock("@/lib/llm", () => ({
     }
     return {
       explanation: "A fraction is part of a whole, e.g. $\\frac{1}{2}$.",
-      diagram: '<svg xmlns="http://www.w3.org/2000/svg"><circle r="5"/></svg>',
+      diagram:
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><circle r="5"/></svg>',
       check: {
         question: "Which is a fraction?",
         options: ["1/2", "cat", "run"],

@@ -5,6 +5,8 @@
  * small and the reader can show chapters as they are written.
  */
 
+import { DIAGRAM_INSTRUCTION } from "./diagram";
+
 export interface OutlineChapter {
   title: string;
   summary: string;
@@ -34,8 +36,7 @@ export interface FigureOption {
   label: string;
 }
 
-const SVG_RULE =
-  'A "diagram" must be a complete standalone SVG: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"> using stroke="currentColor" fill="none" for shapes and fill="currentColor" font-size="14" for text labels. Keep it simple and accurate. Omit the field when no figure helps.';
+const SVG_RULE = DIAGRAM_INSTRUCTION;
 
 export function lessonOutlinePrompt(opts: {
   language: string;

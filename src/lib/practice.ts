@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { LANGUAGES } from "@/i18n/languages";
 import { buildSubjectContext } from "./context";
 import { getDb } from "./db";
+import { cleanDiagramSvg } from "./diagram";
 import type { GenerationOptions } from "./generation";
 import { resolveLocale } from "./locale";
 import { chatJSON } from "./llm";
@@ -109,7 +110,7 @@ export async function generateExercises(
     const steps = Array.isArray(ex.solution_steps)
       ? ex.solution_steps.filter((s) => typeof s === "string" && s.trim())
       : [];
-    const diagram = typeof ex.diagram === "string" && ex.diagram.trim() ? ex.diagram.trim() : null;
+    const diagram = cleanDiagramSvg(ex.diagram);
     insert.run(
       id,
       subjectId,

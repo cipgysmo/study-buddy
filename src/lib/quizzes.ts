@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { LANGUAGES } from "@/i18n/languages";
 import { buildSubjectContext } from "./context";
 import { getDb } from "./db";
+import { cleanDiagramSvg } from "./diagram";
 import type { GenerationOptions } from "./generation";
 import { resolveLocale } from "./locale";
 import { chatJSON } from "./llm";
@@ -143,7 +144,7 @@ export function insertQuiz(
   for (const q of questions) {
     if (!q.prompt || !Array.isArray(q.options) || q.options.length < 2) continue;
     const correctIndex = Math.max(0, Math.min(q.options.length - 1, q.correct_index ?? 0));
-    const diagram = typeof q.diagram === "string" && q.diagram.trim() ? q.diagram.trim() : null;
+    const diagram = cleanDiagramSvg(q.diagram);
     insertQ.run(randomUUID(), id, q.prompt, JSON.stringify(q.options), correctIndex, q.explanation ?? "", diagram, order);
     order++;
   }

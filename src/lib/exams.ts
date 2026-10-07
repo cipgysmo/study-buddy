@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { LANGUAGES } from "@/i18n/languages";
 import { getDb } from "./db";
+import { cleanDiagramSvg } from "./diagram";
 import { resolveLocale } from "./locale";
 import { chatJSON } from "./llm";
 import { insertQuiz, type Quiz } from "./quizzes";
@@ -88,7 +89,7 @@ export async function parseExam(materialId: string): Promise<number> {
       options,
       q.answer?.trim() || null,
       q.explanation?.trim() || null,
-      typeof q.diagram === "string" && q.diagram.trim() ? q.diagram.trim() : null,
+      cleanDiagramSvg(q.diagram),
       order
     );
     order++;

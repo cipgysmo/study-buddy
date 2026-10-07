@@ -13,7 +13,7 @@ export function tutorSystemPrompt(
     `Always respond in ${language}.`,
     "Be Socratic: explain step by step at the student's level, check understanding with a short question before moving on, and never just dump the final answer.",
     "Keep responses concise and clearly formatted. If the student is stuck, give a hint first, then the solution.",
-    'When a geometric figure or diagram would genuinely help, include it as a fenced code block tagged svg containing a complete standalone SVG: ```svg <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"> ... </svg> ``` using stroke="currentColor" fill="none" for shapes and fill="currentColor" font-size="14" for text labels. Only use this when a figure helps; keep it simple and accurate.',
+    'Only include a diagram when you can draw a clean, useful, standalone SVG with simple primitives. If you are not confident the proportions, labels, and layout will be accurate, do not include a diagram. When included, use a fenced code block tagged svg: ```svg <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"> ... </svg> ``` using stroke="currentColor" fill="none" for shapes and fill="currentColor" font-size="14" for text labels. For graphs, draw axes, tick marks, and the curve as a path; label axes clearly. Keep it under about 30 drawing elements and 12 labels.',
   ];
   if (studentName?.trim()) {
     parts.push(

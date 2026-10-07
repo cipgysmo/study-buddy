@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { LANGUAGES } from "@/i18n/languages";
 import { buildSubjectContext } from "./context";
 import { getDb } from "./db";
+import { cleanDiagramSvg } from "./diagram";
 import { resolveLocale } from "./locale";
 import { chatJSON } from "./llm";
 import {
@@ -233,8 +234,7 @@ export async function generateLesson(lessonId: string): Promise<number> {
       temperature: 0.5,
     });
 
-    const diagram =
-      typeof draft.diagram === "string" && draft.diagram.trim() ? draft.diagram.trim() : null;
+    const diagram = cleanDiagramSvg(draft.diagram);
     const check = cleanCheck(draft.check);
     const figureIds = Array.from(
       new Set(
