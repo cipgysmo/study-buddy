@@ -40,6 +40,7 @@ export function ExamPaperCard({
   const [generating, setGenerating] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
   const [genError, setGenError] = useState("");
+  const [customPrompt, setCustomPrompt] = useState("");
 
   useJob(jobId, (settled) => {
     setJobId(null);
@@ -71,7 +72,7 @@ export function ExamPaperCard({
       const r = await fetch(`/api/materials/${material.id}/similar-exam`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ customPrompt }),
       });
       const d = (await r.json()) as { job?: { id: string }; error?: string };
       if (!r.ok || !d.job) throw new Error(d.error || "error");
@@ -92,6 +93,22 @@ export function ExamPaperCard({
 
   return (
     <div className="mt-3 space-y-2 border-t border-border pt-3">
+      {questionCount > 0 && (
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-muted" htmlFor={`similar-exam-request-${material.id}`}>
+            {t("similarExamRequestLabel")}
+          </label>
+          <textarea
+            id={`similar-exam-request-${material.id}`}
+            value={customPrompt}
+            onChange={(e) => setCustomPrompt(e.target.value)}
+            placeholder={t("similarExamRequestPlaceholder")}
+            maxLength={2000}
+            rows={2}
+            className="w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-ring"
+          />
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-2">
         {parsing ? (
           <span className="text-xs text-muted">{t("parsingQuestions")}</span>

@@ -17,6 +17,8 @@ export function GenerationScopePicker({
   onKeywordsChange,
   difficulty,
   onDifficultyChange,
+  customPrompt,
+  onCustomPromptChange,
 }: {
   subjectId: string;
   topicIds: string[];
@@ -27,6 +29,8 @@ export function GenerationScopePicker({
   onKeywordsChange: (keywords: string[]) => void;
   difficulty?: GenerationDifficulty;
   onDifficultyChange?: (difficulty: GenerationDifficulty) => void;
+  customPrompt?: string;
+  onCustomPromptChange?: (customPrompt: string) => void;
 }) {
   const t = useTranslations("Subjects");
 
@@ -50,6 +54,22 @@ export function GenerationScopePicker({
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-semibold text-muted">{t("difficultyLabel")}</span>
           <DifficultyPicker value={difficulty} onChange={onDifficultyChange} />
+        </div>
+      )}
+      {onCustomPromptChange && (
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-muted" htmlFor="generation-custom-prompt">
+            {t("customPromptLabel")}
+          </label>
+          <textarea
+            id="generation-custom-prompt"
+            value={customPrompt ?? ""}
+            onChange={(e) => onCustomPromptChange(e.target.value)}
+            placeholder={t("customPromptPlaceholder")}
+            maxLength={2000}
+            rows={3}
+            className="w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-ring"
+          />
         </div>
       )}
     </div>

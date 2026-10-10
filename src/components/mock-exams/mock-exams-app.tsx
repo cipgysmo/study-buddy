@@ -29,6 +29,7 @@ export function MockExamsApp({
   const [topicIds, setTopicIds] = useState<string[]>([]);
   const [columnIds, setColumnIds] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
+  const [customPrompt, setCustomPrompt] = useState("");
   const [difficulty, setDifficulty] = useState<GenerationDifficulty>("balanced");
   const [count, setCount] = useState(10);
   const [duration, setDuration] = useState(30);
@@ -66,6 +67,7 @@ export function MockExamsApp({
           columnIds,
           keywords,
           difficulty,
+          customPrompt,
         }),
       });
       const d = (await r.json()) as { job?: { id: string }; error?: string };
@@ -109,6 +111,7 @@ export function MockExamsApp({
             setTopicIds([]);
             setColumnIds([]);
             setKeywords([]);
+            setCustomPrompt("");
           }}
           subjects={subjects}
           placeholder={t("selectSubject")}
@@ -151,6 +154,8 @@ export function MockExamsApp({
         onKeywordsChange={setKeywords}
         difficulty={difficulty}
         onDifficultyChange={setDifficulty}
+        customPrompt={customPrompt}
+        onCustomPromptChange={setCustomPrompt}
       />
 
       {exams.length === 0 ? (

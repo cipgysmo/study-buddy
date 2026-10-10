@@ -44,6 +44,7 @@ export default async function SubjectDetailPage({
       extracted_text: m.extracted_text,
       job_id: m.job_id,
       parse_job_id: m.parse_job_id,
+      created_at: m.created_at,
       topicNames: topicTags.get(m.id) ?? [],
       exam:
         m.role === "exam"

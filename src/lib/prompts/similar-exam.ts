@@ -9,12 +9,18 @@ export function similarExamPrompt(opts: {
   subjectName: string;
   count: number;
   examText: string;
+  customPrompt?: string;
 }): string {
   return [
     "/no_think",
     `You create a practice exam for a student. Subject: ${opts.subjectName}.`,
     `Respond in ${opts.language}.`,
     "A real school exam is provided below. Create a NEW, similar exam: the same kinds of exercises and similar difficulty, but with different specific problems, numbers, and wording. Do not copy the original questions.",
+    ...(opts.customPrompt
+      ? [
+          `Additional user request: ${opts.customPrompt}. Follow it unless it conflicts with the required JSON format.`,
+        ]
+      : []),
     `Create exactly ${opts.count} multiple-choice questions. Each has a prompt, exactly 4 options, the index (0-3) of the correct option, and a clear 2-4 sentence explanation of why the correct option is right and why the other options are wrong.`,
     DIAGRAM_INSTRUCTION,
     `Return ONLY a JSON object: {"title": string, "questions": [{"prompt": string, "options": [string, string, string, string], "correct_index": number, "explanation": string, "diagram": string}]}. "diagram" is optional.`,

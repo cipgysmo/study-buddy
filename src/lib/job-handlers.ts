@@ -10,7 +10,7 @@ import { addMaterialWithText, getMaterial, linkMaterialParseJob, listMaterials, 
 import { autoTagMaterialTopics } from "./topics";
 import { generateSimilarExam, parseExam } from "./exams";
 import { generateLesson } from "./lessons";
-import { cleanDifficulty } from "./generation";
+import { cleanCustomPrompt, cleanDifficulty } from "./generation";
 import { cleanStringArray } from "./request-utils";
 
 function str(v: unknown): string {
@@ -64,7 +64,8 @@ registerJobHandler("similarExam", async ({ payload }) => {
   const quiz = await generateSimilarExam(
     str(payload.materialId),
     num(payload.count, 10),
-    durationMin
+    durationMin,
+    cleanCustomPrompt(payload.customPrompt)
   );
   return quiz.id;
 });
@@ -99,6 +100,7 @@ registerJobHandler("flashcards", async ({ payload }) => {
     columnIds: cleanStringArray(payload.columnIds),
     keywords: cleanStringArray(payload.keywords),
     difficulty: cleanDifficulty(payload.difficulty),
+    customPrompt: cleanCustomPrompt(payload.customPrompt),
   });
   return null;
 });
@@ -118,6 +120,7 @@ registerJobHandler("quiz", async ({ payload }) => {
       columnIds: cleanStringArray(payload.columnIds),
       keywords: cleanStringArray(payload.keywords),
       difficulty: cleanDifficulty(payload.difficulty),
+      customPrompt: cleanCustomPrompt(payload.customPrompt),
     }
   );
   return null;
@@ -141,6 +144,7 @@ registerJobHandler("exercises", async ({ payload }) => {
     columnIds: cleanStringArray(payload.columnIds),
     keywords: cleanStringArray(payload.keywords),
     difficulty: cleanDifficulty(payload.difficulty),
+    customPrompt: cleanCustomPrompt(payload.customPrompt),
   });
   return null;
 });
@@ -150,6 +154,7 @@ registerJobHandler("truefalse", async ({ payload }) => {
     columnIds: cleanStringArray(payload.columnIds),
     keywords: cleanStringArray(payload.keywords),
     difficulty: cleanDifficulty(payload.difficulty),
+    customPrompt: cleanCustomPrompt(payload.customPrompt),
   });
   return null;
 });

@@ -35,6 +35,7 @@ export function QuizzesApp({
   const [topicIds, setTopicIds] = useState<string[]>([]);
   const [columnIds, setColumnIds] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
+  const [customPrompt, setCustomPrompt] = useState("");
   const [difficulty, setDifficulty] = useState<GenerationDifficulty>("balanced");
   const [count, setCount] = useState(5);
   const [busy, setBusy] = useState(false);
@@ -69,7 +70,15 @@ export function QuizzesApp({
       const r = await fetch("/api/quizzes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subjectId, count, topicIds, columnIds, keywords, difficulty }),
+        body: JSON.stringify({
+          subjectId,
+          count,
+          topicIds,
+          columnIds,
+          keywords,
+          difficulty,
+          customPrompt,
+        }),
       });
       const d = (await r.json()) as { job?: { id: string }; error?: string };
       if (!r.ok || !d.job) throw new Error(d.error || "error");
@@ -104,6 +113,7 @@ export function QuizzesApp({
             setTopicIds([]);
             setColumnIds([]);
             setKeywords([]);
+            setCustomPrompt("");
           }}
           subjects={subjects}
           placeholder={t("selectSubject")}
@@ -133,6 +143,8 @@ export function QuizzesApp({
         onKeywordsChange={setKeywords}
         difficulty={difficulty}
         onDifficultyChange={setDifficulty}
+        customPrompt={customPrompt}
+        onCustomPromptChange={setCustomPrompt}
       />
 
       {(() => {

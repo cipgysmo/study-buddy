@@ -101,7 +101,8 @@ export async function parseExam(materialId: string): Promise<number> {
 export async function generateSimilarExam(
   materialId: string,
   count: number,
-  durationMin: number
+  durationMin: number,
+  customPrompt?: string
 ): Promise<Quiz> {
   const m = getMaterial(materialId);
   if (!m) throw new Error("material_not_found");
@@ -120,6 +121,7 @@ export async function generateSimilarExam(
           subjectName: subject.name,
           count,
           examText: m.extracted_text,
+          customPrompt,
         }),
       },
     ],

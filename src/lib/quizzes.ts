@@ -107,6 +107,7 @@ export async function generateQuiz(
           topics: topicNames(topicIds ?? []),
           keywords: opts.keywords,
           difficulty: opts.difficulty,
+          customPrompt: opts.customPrompt,
         }),
       },
     ],

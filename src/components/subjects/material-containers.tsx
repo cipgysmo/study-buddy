@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DeleteButton } from "@/components/subjects/delete-button";
@@ -10,6 +10,7 @@ import { MaterialIconButton } from "@/components/subjects/material-icon-button";
 import { MaterialImage } from "@/components/subjects/material-image";
 import { MaterialStatus } from "@/components/subjects/material-status";
 import type { BoardCard, BoardColumn } from "@/lib/board";
+import { formatDate } from "@/lib/format";
 
 interface MaterialItem {
   id: string;
@@ -21,6 +22,7 @@ interface MaterialItem {
   extracted_text: string | null;
   job_id: string | null;
   parse_job_id: string | null;
+  created_at: string;
   topicNames: string[];
   exam?: {
     parseStatus: "none" | "pending" | "running" | "done" | "failed" | "cancelled";
@@ -143,6 +145,7 @@ export function MaterialContainers({
   materials: MaterialItem[];
 }) {
   const t = useTranslations("Subjects");
+  const locale = useLocale();
   const [columns, setColumns] = useState(() => materialColumns(initial));
   const [materials, setMaterials] = useState(initialMaterials);
   const [newName, setNewName] = useState("");
@@ -405,6 +408,9 @@ export function MaterialContainers({
 
           <div className="min-w-0 flex-1">
             <span className="block truncate text-sm font-medium">{material.filename}</span>
+            <span className="mt-0.5 block truncate text-xs text-muted">
+              {t("addedOn", { date: formatDate(material.created_at, locale) })}
+            </span>
             <span className="mt-0.5 block truncate text-xs text-muted">
               {material.status === "failed" && material.error
                 ? material.error

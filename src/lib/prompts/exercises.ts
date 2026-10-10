@@ -18,6 +18,7 @@ export function exerciseGeneratorPrompt(opts: {
   topics?: string[];
   keywords?: string[];
   difficulty?: GenerationDifficulty;
+  customPrompt?: string;
 }): string {
   const lines = [
     "/no_think",
@@ -27,6 +28,10 @@ export function exerciseGeneratorPrompt(opts: {
   if (opts.topics?.length) lines.push(`Focus on these topics: ${opts.topics.join(", ")}.`);
   if (opts.keywords?.length) lines.push(`Prioritize these keywords: ${opts.keywords.join(", ")}.`);
   if (opts.difficulty) lines.push(`Target difficulty: ${opts.difficulty}.`);
+  if (opts.customPrompt)
+    lines.push(
+      `Additional user request: ${opts.customPrompt}. Follow it unless it conflicts with the required JSON format.`
+    );
   lines.push(
     `Create exactly ${opts.count} exercises. Each has a prompt (the task for the student), a step-by-step solution (an array of short steps that lead to the answer), and a difficulty ("balanced", "easy", "medium", "hard", or "expert").`,
     DIAGRAM_INSTRUCTION,

@@ -1,5 +1,5 @@
 import { listFlashcards } from "@/lib/flashcards";
-import { cleanDifficulty } from "@/lib/generation";
+import { cleanCustomPrompt, cleanDifficulty } from "@/lib/generation";
 import { enqueueJob } from "@/lib/jobs";
 import "@/lib/job-handlers";
 import { cleanStringArray } from "@/lib/request-utils";
@@ -20,6 +20,7 @@ export async function POST(req: Request) {
     columnIds?: string[];
     keywords?: string[];
     difficulty?: string;
+    customPrompt?: string;
   } = {};
   try {
     body = await req.json();
@@ -32,6 +33,7 @@ export async function POST(req: Request) {
   const columnIds = cleanStringArray(body.columnIds);
   const keywords = cleanStringArray(body.keywords);
   const difficulty = cleanDifficulty(body.difficulty);
+  const customPrompt = cleanCustomPrompt(body.customPrompt);
   const job = enqueueJob("flashcards", {
     subjectId: body.subjectId,
     count,
@@ -39,6 +41,7 @@ export async function POST(req: Request) {
     columnIds,
     keywords,
     difficulty,
+    customPrompt,
   });
   return Response.json({ job }, { status: 202 });
 }
