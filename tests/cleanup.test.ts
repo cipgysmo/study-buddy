@@ -48,6 +48,9 @@ beforeAll(() => {
     1,
     "2025-01-01 10:00:00"
   );
+  db.prepare(
+    "INSERT INTO typed_exercises (id, subject_id, prompt, expected_answer, created_at) VALUES (?, ?, ?, ?, ?)"
+  ).run("old-typed", "subj-cleanup", "Old typed", "answer", "2025-01-01 10:00:00");
   db.prepare("INSERT INTO flashcards (id, subject_id, front, back, due_at, created_at) VALUES (?, ?, ?, ?, ?, ?)").run(
     "old-card",
     "subj-cleanup",
@@ -69,6 +72,7 @@ describe("cleanupOldContent", () => {
       "mockExams",
       "exercises",
       "truefalse",
+      "typed",
       "flashcards",
     ]);
 
@@ -77,6 +81,7 @@ describe("cleanupOldContent", () => {
       mockExams: 1,
       exercises: 1,
       truefalse: 1,
+      typed: 1,
       flashcards: 1,
     });
 

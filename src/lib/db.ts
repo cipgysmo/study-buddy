@@ -355,6 +355,35 @@ const MIGRATIONS: { version: number; sql: string }[] = [
         WHERE material_id IS NOT NULL;
     `,
   },
+  {
+    version: 18,
+    sql: `
+      CREATE TABLE IF NOT EXISTS typed_exercises (
+        id               TEXT PRIMARY KEY,
+        subject_id       TEXT NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+        prompt           TEXT NOT NULL,
+        expected_answer  TEXT NOT NULL,
+        accepted_answers TEXT NOT NULL DEFAULT '[]',
+        grading_mode     TEXT NOT NULL DEFAULT 'flexible',
+        explanation      TEXT NOT NULL DEFAULT '',
+        difficulty       TEXT NOT NULL DEFAULT 'medium',
+        created_at       TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_typed_exercises_subject ON typed_exercises(subject_id);
+
+      CREATE TABLE IF NOT EXISTS typed_attempts (
+        id           TEXT PRIMARY KEY,
+        exercise_id  TEXT NOT NULL REFERENCES typed_exercises(id) ON DELETE CASCADE,
+        answer       TEXT NOT NULL,
+        correct      INTEGER NOT NULL,
+        score        INTEGER NOT NULL DEFAULT 0,
+        feedback     TEXT NOT NULL DEFAULT '',
+        grading_mode TEXT NOT NULL,
+        created_at   TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_typed_attempts_exercise ON typed_attempts(exercise_id);
+    `,
+  },
 ];
 
 export function getDb(): Database.Database {

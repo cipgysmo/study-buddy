@@ -8,6 +8,7 @@ const allowedTypes = new Set<CleanupType>([
   "mockExams",
   "exercises",
   "truefalse",
+  "typed",
   "flashcards",
 ]);
 

@@ -1,12 +1,19 @@
 import { getDb } from "./db";
 
-export type CleanupType = "quizzes" | "mockExams" | "exercises" | "truefalse" | "flashcards";
+export type CleanupType =
+  | "quizzes"
+  | "mockExams"
+  | "exercises"
+  | "truefalse"
+  | "typed"
+  | "flashcards";
 
 export interface CleanupCounts {
   quizzes: number;
   mockExams: number;
   exercises: number;
   truefalse: number;
+  typed: number;
   flashcards: number;
 }
 
@@ -17,6 +24,7 @@ export function cleanupOldContent(olderThan: string, types: CleanupType[]): Clea
     mockExams: 0,
     exercises: 0,
     truefalse: 0,
+    typed: 0,
     flashcards: 0,
   };
 
@@ -46,6 +54,12 @@ export function cleanupOldContent(olderThan: string, types: CleanupType[]): Clea
     if (types.includes("truefalse")) {
       counts.truefalse = count("SELECT COUNT(*) n FROM truefalse WHERE date(created_at) < date(?)");
       db.prepare("DELETE FROM truefalse WHERE date(created_at) < date(?)").run(olderThan);
+    }
+    if (types.includes("typed")) {
+      counts.typed = count(
+        "SELECT COUNT(*) n FROM typed_exercises WHERE date(created_at) < date(?)"
+      );
+      db.prepare("DELETE FROM typed_exercises WHERE date(created_at) < date(?)").run(olderThan);
     }
     if (types.includes("flashcards")) {
       counts.flashcards = count("SELECT COUNT(*) n FROM flashcards WHERE date(created_at) < date(?)");

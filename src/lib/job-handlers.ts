@@ -6,6 +6,7 @@ import { generateFlashcards } from "./flashcards";
 import { generateQuiz } from "./quizzes";
 import { createPlan } from "./plans";
 import { generateExercises, generateTrueFalse } from "./practice";
+import { generateTypedExercises } from "./typed-exercises";
 import { addMaterialWithText, getMaterial, linkMaterialParseJob, listMaterials, processMaterial } from "./subjects";
 import { autoTagMaterialTopics } from "./topics";
 import { generateSimilarExam, parseExam } from "./exams";
@@ -151,6 +152,16 @@ registerJobHandler("exercises", async ({ payload }) => {
 
 registerJobHandler("truefalse", async ({ payload }) => {
   await generateTrueFalse(str(payload.subjectId), num(payload.count, 5), topicIdArray(payload.topicIds), {
+    columnIds: cleanStringArray(payload.columnIds),
+    keywords: cleanStringArray(payload.keywords),
+    difficulty: cleanDifficulty(payload.difficulty),
+    customPrompt: cleanCustomPrompt(payload.customPrompt),
+  });
+  return null;
+});
+
+registerJobHandler("typedexercises", async ({ payload }) => {
+  await generateTypedExercises(str(payload.subjectId), num(payload.count, 5), topicIdArray(payload.topicIds), {
     columnIds: cleanStringArray(payload.columnIds),
     keywords: cleanStringArray(payload.keywords),
     difficulty: cleanDifficulty(payload.difficulty),

@@ -28,22 +28,39 @@ interface TrueFalseItem {
   is_correct: boolean;
   explanation: string;
 }
+interface TypedExercise {
+  id: string;
+  subject_id: string;
+  prompt: string;
+  expected_answer: string;
+  accepted_answers: string[];
+  grading_mode: "exact" | "flexible" | "creative";
+  explanation: string;
+  difficulty: string;
+}
+interface GradeResult {
+  correct: boolean;
+  score: number;
+  feedback: string;
+}
 
 export function PracticeApp({
   exercises,
   items,
+  typedExercises,
   subjects,
   initialSubjectId = "",
 }: {
   exercises: Exercise[];
   items: TrueFalseItem[];
+  typedExercises: TypedExercise[];
   subjects: SubjectOption[];
   initialSubjectId?: string;
 }) {
   const t = useTranslations("Practice");
   const ts = useTranslations("Subjects");
   const router = useRouter();
-  const [tab, setTab] = useState<"exercises" | "truefalse">("exercises");
+  const [tab, setTab] = useState<"exercises" | "truefalse" | "typed">("exercises");
   const [subjectId, setSubjectId] = useState(initialSubjectId);
   const [topicIds, setTopicIds] = useState<string[]>([]);
   const [columnIds, setColumnIds] = useState<string[]>([]);
@@ -56,6 +73,9 @@ export function PracticeApp({
   const [error, setError] = useState("");
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
   const [tfAnswers, setTfAnswers] = useState<Record<string, boolean>>({});
+  const [typedAnswers, setTypedAnswers] = useState<Record<string, string>>({});
+  const [typedResults, setTypedResults] = useState<Record<string, GradeResult>>({});
+  const [gradingId, setGradingId] = useState<string | null>(null);
   useJob(jobId, (settled) => {
     if (settled.status === "done") {
       setJobId(null);
@@ -68,7 +88,7 @@ export function PracticeApp({
     }
   });
 
-  async function generate(kind: "exercises" | "truefalse") {
+  async function generate(kind: "exercises" | "truefalse" | "typedexercises") {
     if (!subjectId || busy) return;
     setBusy(true);
     setError("");
@@ -95,9 +115,35 @@ export function PracticeApp({
     }
   }
 
-  async function remove(kind: "exercises" | "truefalse", id: string) {
+  async function remove(kind: "exercises" | "truefalse" | "typedexercises", id: string) {
     await fetch(`/api/${kind}/${id}`, { method: "DELETE" });
     router.refresh();
+  }
+
+  async function gradeTyped(id: string) {
+    if (gradingId) return;
+    setGradingId(id);
+    setError("");
+    try {
+      const r = await fetch(`/api/typedexercises/${id}/grade`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answer: typedAnswers[id] ?? "" }),
+      });
+      const d = (await r.json()) as GradeResult & { error?: string };
+      if (!r.ok || d.error) throw new Error(d.error || "error");
+      setTypedResults((prev) => ({ ...prev, [id]: d }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setGradingId(null);
+    }
+  }
+
+  function gradingModeLabel(mode: TypedExercise["grading_mode"]) {
+    if (mode === "exact") return t("modeExact");
+    if (mode === "creative") return t("modeCreative");
+    return t("modeFlexible");
   }
 
   function difficultyLabel(d: string) {
@@ -142,6 +188,13 @@ export function PracticeApp({
         >
           {t("generateTrueFalse")}
         </Button>
+        <Button
+          variant="secondary"
+          onClick={() => generate("typedexercises")}
+          disabled={busy || !subjectId}
+        >
+          {t("generateTyped")}
+        </Button>
         {error && <span className="text-sm text-danger">{error}</span>}
       </Card>
 
@@ -182,6 +235,17 @@ export function PracticeApp({
         >
           {t("trueFalse")}
         </button>
+        <button
+          onClick={() => setTab("typed")}
+          className={
+            "min-h-8 rounded-lg px-3 py-1.5 text-sm font-medium transition " +
+            (tab === "typed"
+              ? "bg-accent/10 text-accent ring-1 ring-accent/20"
+              : "text-muted hover:text-foreground")
+          }
+        >
+          {t("typed")}
+        </button>
       </div>
 
       {(() => {
@@ -191,6 +255,87 @@ export function PracticeApp({
         const visibleItems = subjectId
           ? items.filter((item) => item.subject_id === subjectId)
           : items;
+        const visibleTyped = subjectId
+          ? typedExercises.filter((exercise) => exercise.subject_id === subjectId)
+          : typedExercises;
+
+        if (tab === "typed") {
+          return visibleTyped.length === 0 ? (
+            <EmptyState
+              title={t("emptyTyped")}
+              icon={<NavIcon name="exercises" className="h-5 w-5" />}
+            />
+          ) : (
+            <div className="space-y-3">
+              {visibleTyped.map((ex, index) => {
+                const result = typedResults[ex.id];
+                return (
+                  <Card key={ex.id} className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="font-medium">
+                        <span className="mr-2 text-muted">{index + 1}.</span>
+                        {ex.prompt}
+                      </p>
+                      <button
+                        onClick={() => remove("typedexercises", ex.id)}
+                        className="shrink-0 text-xs text-muted transition hover:text-danger"
+                        title={t("deleteTyped")}
+                        aria-label={t("deleteTyped")}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs text-accent">
+                        {difficultyLabel(ex.difficulty)}
+                      </span>
+                      <span className="rounded-full bg-foreground/5 px-2 py-0.5 text-xs text-muted">
+                        {gradingModeLabel(ex.grading_mode)}
+                      </span>
+                    </div>
+                    <div className="mt-3 space-y-2">
+                      <label className="block text-xs font-semibold text-muted" htmlFor={`typed-${ex.id}`}>
+                        {t("yourAnswer")}
+                      </label>
+                      <textarea
+                        id={`typed-${ex.id}`}
+                        value={typedAnswers[ex.id] ?? ""}
+                        onChange={(e) => setTypedAnswers((prev) => ({ ...prev, [ex.id]: e.target.value }))}
+                        placeholder={t("typedAnswerPlaceholder")}
+                        rows={3}
+                        className="w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-ring"
+                      />
+                      <Button
+                        size="sm"
+                        onClick={() => void gradeTyped(ex.id)}
+                        disabled={gradingId === ex.id || !typedAnswers[ex.id]?.trim()}
+                      >
+                        {gradingId === ex.id ? t("checking") : t("checkAnswer")}
+                      </Button>
+                    </div>
+                    {result && (
+                      <div className="mt-3 rounded-xl bg-background p-3">
+                        <p
+                          className={
+                            "text-sm font-medium " + (result.correct ? "text-success" : "text-danger")
+                          }
+                        >
+                          {result.correct ? t("correct") : t("incorrect")}
+                        </p>
+                        <p className="mt-1 text-sm text-muted">{t("score", { score: result.score })}</p>
+                        {result.feedback && (
+                          <p className="mt-1 text-sm">
+                            <span className="font-medium">{t("explanation")}:</span> {result.feedback}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </Card>
+                );
+              })}
+            </div>
+          );
+        }
 
         if (tab === "exercises") {
           return visibleExercises.length === 0 ? (
@@ -200,10 +345,13 @@ export function PracticeApp({
             />
           ) : (
             <div className="space-y-3">
-              {visibleExercises.map((ex) => (
+              {visibleExercises.map((ex, index) => (
                 <Card key={ex.id} className="p-4">
                   <div className="flex items-start justify-between gap-3">
-                    <p className="font-medium">{ex.prompt}</p>
+                    <p className="font-medium">
+                      <span className="mr-2 text-muted">{index + 1}.</span>
+                      {ex.prompt}
+                    </p>
                     <button
                       onClick={() => remove("exercises", ex.id)}
                       className="shrink-0 text-xs text-muted transition hover:text-danger"
@@ -254,7 +402,7 @@ export function PracticeApp({
           />
         ) : (
           <div className="space-y-3">
-            {visibleItems.map((item) => {
+            {visibleItems.map((item, index) => {
               const answered = item.id in tfAnswers;
               const correct = tfAnswers[item.id] === item.is_correct;
               const btnClass = (value: boolean) => {
@@ -267,7 +415,10 @@ export function PracticeApp({
               return (
                 <Card key={item.id} className="p-4">
                   <div className="flex items-start justify-between gap-3">
-                    <p className="font-medium">{item.statement}</p>
+                    <p className="font-medium">
+                      <span className="mr-2 text-muted">{index + 1}.</span>
+                      {item.statement}
+                    </p>
                     <button
                       onClick={() => remove("truefalse", item.id)}
                       className="shrink-0 text-xs text-muted transition hover:text-danger"

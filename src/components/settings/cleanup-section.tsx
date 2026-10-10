@@ -7,9 +7,22 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
-type CleanupType = "quizzes" | "mockExams" | "exercises" | "truefalse" | "flashcards";
+type CleanupType =
+  | "quizzes"
+  | "mockExams"
+  | "exercises"
+  | "truefalse"
+  | "typed"
+  | "flashcards";
 
-const typeKeys: CleanupType[] = ["quizzes", "mockExams", "exercises", "truefalse", "flashcards"];
+const typeKeys: CleanupType[] = [
+  "quizzes",
+  "mockExams",
+  "exercises",
+  "truefalse",
+  "typed",
+  "flashcards",
+];
 
 function defaultOlderThan(): string {
   const d = new Date();
@@ -26,6 +39,7 @@ export function CleanupSection() {
     mockExams: true,
     exercises: true,
     truefalse: true,
+    typed: true,
     flashcards: true,
   });
   const [busy, setBusy] = useState(false);

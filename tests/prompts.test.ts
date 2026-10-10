@@ -4,6 +4,7 @@ import { flashcardGeneratorPrompt } from "@/lib/prompts/flashcards";
 import { quizGeneratorPrompt } from "@/lib/prompts/quiz";
 import { similarExamPrompt } from "@/lib/prompts/similar-exam";
 import { trueFalseGeneratorPrompt } from "@/lib/prompts/truefalse";
+import { typedExerciseGeneratorPrompt } from "@/lib/prompts/typed-exercises";
 
 describe("generation prompts", () => {
   it("includes the user's custom request", () => {
@@ -42,6 +43,13 @@ describe("generation prompts", () => {
         subjectName: "Math",
         count: 2,
         examText: "exam",
+        customPrompt: request,
+      }),
+      typedExerciseGeneratorPrompt({
+        language: "English",
+        subjectName: "Math",
+        count: 2,
+        context: "notes",
         customPrompt: request,
       }),
     ];
