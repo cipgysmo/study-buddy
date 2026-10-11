@@ -25,6 +25,7 @@ const NAV: NavItem[] = [
   { href: "/mock-exams", labelKey: "mockExams" },
   { href: "/scan", labelKey: "scan" },
   { href: "/progress", labelKey: "progress" },
+  { href: "/admin", labelKey: "admin" },
   { href: "/settings", labelKey: "settings" },
 ];
 

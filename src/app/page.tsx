@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { AssignmentCompleteButton } from "@/components/dashboard/assignment-complete-button";
 import { NavIcon } from "@/components/shell/nav-icons";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/ui/stat-card";
+import { assignmentHref, listAssignments } from "@/lib/assignments";
 import { dueFlashcards } from "@/lib/flashcards";
 import { listActiveJobs } from "@/lib/jobs";
 import { getProgress } from "@/lib/progress";
@@ -11,7 +13,9 @@ import { listSubjects } from "@/lib/subjects";
 
 export default async function DashboardPage() {
   const t = await getTranslations("Dashboard");
+  const ta = await getTranslations("Admin");
   const subjects = listSubjects();
+  const assignments = listAssignments({ status: "todo" });
   const due = dueFlashcards();
   const activeJobs = listActiveJobs();
   const { streak } = getProgress();
@@ -101,6 +105,40 @@ export default async function DashboardPage() {
           </Link>
         </div>
       </section>
+
+      {assignments.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-sm font-medium text-muted">{t("assignments")}</h2>
+            <span className="text-xs text-muted">{t("assignmentsHint")}</span>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {assignments.slice(0, 6).map((a) => (
+              <div key={a.id} className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-medium">{a.title}</p>
+                    <p className="mt-1 text-xs text-muted">
+                      {a.student_name ?? ta("allStudents")} · {ta(`type${a.type.charAt(0).toUpperCase()}${a.type.slice(1)}`)}
+                      {a.due_at ? ` · ${a.due_at}` : ""}
+                    </p>
+                    {a.description && <p className="mt-2 text-sm text-muted">{a.description}</p>}
+                  </div>
+                  <div className="flex shrink-0 flex-col gap-2">
+                    <Link
+                      href={assignmentHref(a)}
+                      className="inline-flex min-h-8 items-center justify-center rounded-lg border border-border bg-background px-3 text-xs font-medium transition hover:border-accent hover:text-accent"
+                    >
+                      {t("openAssignment")}
+                    </Link>
+                    <AssignmentCompleteButton id={a.id} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {subjects.length > 0 && (
         <section className="space-y-3">

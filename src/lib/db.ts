@@ -384,6 +384,54 @@ const MIGRATIONS: { version: number; sql: string }[] = [
       CREATE INDEX IF NOT EXISTS idx_typed_attempts_exercise ON typed_attempts(exercise_id);
     `,
   },
+  {
+    version: 19,
+    sql: `
+      CREATE TABLE IF NOT EXISTS students (
+        id         TEXT PRIMARY KEY,
+        name       TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS assignments (
+        id           TEXT PRIMARY KEY,
+        student_id   TEXT REFERENCES students(id) ON DELETE CASCADE,
+        subject_id   TEXT REFERENCES subjects(id) ON DELETE SET NULL,
+        type         TEXT NOT NULL DEFAULT 'custom',
+        title        TEXT NOT NULL,
+        description  TEXT NOT NULL DEFAULT '',
+        target_id    TEXT,
+        due_at       TEXT,
+        status       TEXT NOT NULL DEFAULT 'todo',
+        sort_order   INTEGER NOT NULL DEFAULT 0,
+        created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+        completed_at TEXT
+      );
+      CREATE INDEX IF NOT EXISTS idx_assignments_student ON assignments(student_id);
+      CREATE INDEX IF NOT EXISTS idx_assignments_status ON assignments(status);
+
+      CREATE TABLE IF NOT EXISTS assignment_templates (
+        id          TEXT PRIMARY KEY,
+        name        TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS assignment_template_items (
+        id              TEXT PRIMARY KEY,
+        template_id     TEXT NOT NULL REFERENCES assignment_templates(id) ON DELETE CASCADE,
+        type            TEXT NOT NULL DEFAULT 'custom',
+        title           TEXT NOT NULL,
+        description     TEXT NOT NULL DEFAULT '',
+        subject_id      TEXT REFERENCES subjects(id) ON DELETE SET NULL,
+        target_id       TEXT,
+        due_offset_days INTEGER NOT NULL DEFAULT 0,
+        sort_order      INTEGER NOT NULL DEFAULT 0
+      );
+      CREATE INDEX IF NOT EXISTS idx_assignment_template_items_template
+        ON assignment_template_items(template_id);
+    `,
+  },
 ];
 
 export function getDb(): Database.Database {
