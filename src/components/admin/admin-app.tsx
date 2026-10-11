@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { ModelSettingsSection } from "@/components/admin/model-settings-section";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import type { Assignment, AssignmentTemplate, Student } from "@/lib/assignments";
 
-type Tab = "assignments" | "templates" | "students" | "security";
+type Tab = "assignments" | "templates" | "students" | "models" | "security";
 type AssignmentType = Assignment["type"];
 
 interface SubjectOption {
@@ -88,6 +89,7 @@ export function AdminApp({
   quizzes,
   assignments: initialAssignments,
   templates: initialTemplates,
+  llmSettings,
 }: {
   adminPasswordEnabled: boolean;
   students: Student[];
@@ -96,6 +98,20 @@ export function AdminApp({
   quizzes: QuizOption[];
   assignments: Assignment[];
   templates: AssignmentTemplate[];
+  llmSettings: {
+    languageEnabled: boolean;
+    baseUrl: string;
+    model: string;
+    apiKeySet: boolean;
+    visionEnabled: boolean;
+    visionBaseUrl: string;
+    visionModel: string;
+    visionApiKeySet: boolean;
+    effectiveBaseUrl: string;
+    effectiveModel: string;
+    effectiveVisionBaseUrl: string;
+    effectiveVisionModel: string;
+  };
 }) {
   const t = useTranslations("Admin");
   const router = useRouter();
@@ -286,6 +302,7 @@ export function AdminApp({
     { id: "assignments", label: t("assignments") },
     { id: "templates", label: t("templates") },
     { id: "students", label: t("students") },
+    { id: "models", label: t("modelSettings") },
     { id: "security", label: t("security") },
   ];
 
@@ -612,6 +629,8 @@ export function AdminApp({
           )}
         </Card>
       )}
+
+      {tab === "models" && <ModelSettingsSection current={llmSettings} />}
 
       {tab === "security" && (
         <Card className="max-w-xl space-y-3 p-5">

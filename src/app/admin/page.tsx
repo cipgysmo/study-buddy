@@ -3,6 +3,7 @@ import { AdminApp } from "@/components/admin/admin-app";
 import { PageHeader } from "@/components/ui/page-header";
 import { adminPasswordEnabled } from "@/lib/admin-auth";
 import { listAssignments, listStudents, listTemplates } from "@/lib/assignments";
+import { getLlmSettings } from "@/lib/llm-settings";
 import { listLessons } from "@/lib/lessons";
 import { listQuizzes } from "@/lib/quizzes";
 import { listSubjects } from "@/lib/subjects";
@@ -15,6 +16,7 @@ export default async function AdminPage() {
   const quizzes = listQuizzes();
   const assignments = listAssignments();
   const templates = listTemplates();
+  const llmSettings = getLlmSettings();
 
   return (
     <div className="space-y-6">
@@ -32,6 +34,7 @@ export default async function AdminPage() {
         }))}
         assignments={assignments}
         templates={templates}
+        llmSettings={llmSettings}
       />
     </div>
   );

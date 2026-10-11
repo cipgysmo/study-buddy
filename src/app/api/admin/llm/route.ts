@@ -8,11 +8,16 @@ export async function GET() {
 
 export async function POST(req: Request) {
   let body: {
+    languageEnabled?: boolean;
     baseUrl?: string;
     model?: string;
-    visionModel?: string;
     apiKey?: string;
     clearApiKey?: boolean;
+    visionEnabled?: boolean;
+    visionBaseUrl?: string;
+    visionModel?: string;
+    visionApiKey?: string;
+    clearVisionApiKey?: boolean;
   } = {};
   try {
     body = await req.json();

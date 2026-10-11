@@ -1,23 +1,38 @@
 import OpenAI from "openai";
 import { llmBusyTimeoutMs, llmMaxConcurrency, llmRequestTimeoutMs } from "./env";
 import { extractJSON } from "./json";
-import { llmApiKey, llmBaseUrl, llmModel, llmVisionModel } from "./llm-settings";
+import {
+  llmApiKey,
+  llmBaseUrl,
+  llmModel,
+  visionApiKey,
+  visionBaseUrl,
+  visionModel,
+} from "./llm-settings";
 
-let _client: OpenAI | null = null;
-let _clientKey = "";
+const clients = new Map<string, OpenAI>();
 
-function client(): OpenAI {
-  const key = `${llmBaseUrl()}|${llmApiKey()}|${llmRequestTimeoutMs()}`;
-  if (!_client || _clientKey !== key) {
-    _client = new OpenAI({
-      baseURL: llmBaseUrl(),
-      apiKey: llmApiKey(),
+function makeClient(baseUrl: string, apiKey: string): OpenAI {
+  const key = `${baseUrl}|${apiKey}|${llmRequestTimeoutMs()}`;
+  let client = clients.get(key);
+  if (!client) {
+    client = new OpenAI({
+      baseURL: baseUrl,
+      apiKey,
       maxRetries: 0,
       timeout: llmRequestTimeoutMs(),
     });
-    _clientKey = key;
+    clients.set(key, client);
   }
-  return _client;
+  return client;
+}
+
+function client(): OpenAI {
+  return makeClient(llmBaseUrl(), llmApiKey());
+}
+
+function visionClient(): OpenAI {
+  return makeClient(visionBaseUrl(), visionApiKey());
 }
 
 export type ChatMessage = OpenAI.Chat.ChatCompletionMessageParam;
@@ -274,9 +289,9 @@ export interface VisionOptions {
 /** Non-streaming completion with an inline image (vision / OCR). */
 export async function chatVision(opts: VisionOptions): Promise<string> {
   const res = await withLlmCall(() =>
-    client().chat.completions.create(
+    visionClient().chat.completions.create(
       {
-        model: opts.model?.trim() || llmVisionModel(),
+        model: opts.model?.trim() || visionModel(),
         messages: [
           {
             role: "user",

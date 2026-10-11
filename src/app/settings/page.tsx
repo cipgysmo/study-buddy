@@ -1,14 +1,12 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { CleanupSection } from "@/components/settings/cleanup-section";
 import { LanguageSwitcher } from "@/components/settings/language-switcher";
-import { LlmSettingsSection } from "@/components/settings/llm-settings-section";
 import { NameField } from "@/components/settings/name-field";
 import { SoundToggle } from "@/components/settings/sound-toggle";
 import { ThemeSwitcher } from "@/components/settings/theme-switcher";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { getSetting } from "@/lib/db";
-import { getLlmSettings } from "@/lib/llm-settings";
 import { getStudentName } from "@/lib/profile";
 import { resolveTheme } from "@/lib/theme";
 
@@ -18,7 +16,6 @@ export default async function SettingsPage() {
   const theme = await resolveTheme();
   const name = getStudentName();
   const sound = (getSetting("sound") ?? "on") as "on" | "off";
-  const llmSettings = getLlmSettings();
 
   return (
     <div className="space-y-6">
@@ -57,8 +54,6 @@ export default async function SettingsPage() {
           <SoundToggle current={sound} />
         </div>
       </Card>
-
-      <LlmSettingsSection current={llmSettings} />
 
       <CleanupSection />
     </div>
