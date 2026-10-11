@@ -1,24 +1,21 @@
 import OpenAI from "openai";
-import {
-  llmApiKey,
-  llmBaseUrl,
-  llmBusyTimeoutMs,
-  llmMaxConcurrency,
-  llmModel,
-  llmRequestTimeoutMs,
-} from "./env";
+import { llmBusyTimeoutMs, llmMaxConcurrency, llmRequestTimeoutMs } from "./env";
 import { extractJSON } from "./json";
+import { llmApiKey, llmBaseUrl, llmModel, llmVisionModel } from "./llm-settings";
 
 let _client: OpenAI | null = null;
+let _clientKey = "";
 
 function client(): OpenAI {
-  if (!_client) {
+  const key = `${llmBaseUrl()}|${llmApiKey()}|${llmRequestTimeoutMs()}`;
+  if (!_client || _clientKey !== key) {
     _client = new OpenAI({
       baseURL: llmBaseUrl(),
       apiKey: llmApiKey(),
       maxRetries: 0,
       timeout: llmRequestTimeoutMs(),
     });
+    _clientKey = key;
   }
   return _client;
 }
@@ -271,6 +268,7 @@ export interface VisionOptions {
   prompt: string;
   temperature?: number;
   maxTokens?: number;
+  model?: string;
 }
 
 /** Non-streaming completion with an inline image (vision / OCR). */
@@ -278,7 +276,7 @@ export async function chatVision(opts: VisionOptions): Promise<string> {
   const res = await withLlmCall(() =>
     client().chat.completions.create(
       {
-        model: llmModel(),
+        model: opts.model?.trim() || llmVisionModel(),
         messages: [
           {
             role: "user",

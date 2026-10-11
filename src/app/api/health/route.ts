@@ -1,4 +1,4 @@
-import { llmModel } from "@/lib/env";
+import { llmModel } from "@/lib/llm-settings";
 import { listModels } from "@/lib/llm";
 
 export const dynamic = "force-dynamic";
