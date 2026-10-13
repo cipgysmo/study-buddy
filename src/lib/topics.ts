@@ -3,7 +3,7 @@ import { LANGUAGES } from "@/i18n/languages";
 import { getDb } from "./db";
 import { chatJSON } from "./llm";
 import { resolveLocale } from "./locale";
-import { getMaterial } from "./subjects";
+import { getMaterial, getMaterialText } from "./subjects";
 import { extractTopicsPrompt, type ExtractResult } from "./prompts/classify";
 
 export interface Topic {
@@ -112,7 +112,7 @@ export function resolveTopicIds(subjectId: string, names: string[]): string[] {
  */
 export async function autoTagMaterialTopics(materialId: string): Promise<void> {
   const material = getMaterial(materialId);
-  const text = material?.extracted_text?.trim();
+  const text = getMaterialText(materialId)?.trim();
   if (!material || !text) return;
   const subjectId = material.subject_id;
   try {

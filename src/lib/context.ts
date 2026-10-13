@@ -1,6 +1,6 @@
 import { listMaterialIdsInColumns } from "./board";
 import { getDb } from "./db";
-import { listMaterials } from "./subjects";
+import { getMaterialText, listMaterials } from "./subjects";
 
 export interface SubjectContextOptions {
   columnIds?: string[];
@@ -46,7 +46,7 @@ export function buildSubjectContext(
     const keywords = opts.keywords.map((k) => k.trim().toLowerCase()).filter(Boolean);
     if (keywords.length > 0) {
       const filtered = materials.filter((m) => {
-        const haystack = `${m.filename}\n${m.extracted_text ?? ""}`.toLowerCase();
+        const haystack = `${m.filename}\n${getMaterialText(m.id) ?? ""}`.toLowerCase();
         return keywords.some((keyword) => haystack.includes(keyword));
       });
       if (filtered.length > 0) materials = filtered;
@@ -56,13 +56,15 @@ export function buildSubjectContext(
   const parts: string[] = [];
   let total = 0;
   for (const m of materials) {
-    if (!m.extracted_text) continue;
+    if (m.extracted_text_length <= 0) continue;
     if (total >= maxChars) break;
+    const text = getMaterialText(m.id);
+    if (!text) continue;
     const header = `### ${m.filename}\n`;
     const room = maxChars - total;
-    const text = m.extracted_text.length > room ? m.extracted_text.slice(0, room) : m.extracted_text;
-    parts.push(header + text);
-    total += header.length + text.length;
+    const clipped = text.length > room ? text.slice(0, room) : text;
+    parts.push(header + clipped);
+    total += header.length + clipped.length;
   }
   return parts.join("\n\n");
 }

@@ -15,6 +15,8 @@ services:
       LLM_MODEL: "local-ai"
       DATA_DIR: "/app/data"
       PORT: "3000"
+      MAX_UPLOAD_BYTES: "1073741824"
+      MAX_UPLOAD_CHUNK_BYTES: "8388608"
       # Optional LAN password gate. Set a value to require it on every visit.
       # APP_PASSWORD: "change-me"
     volumes:
@@ -25,6 +27,6 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    # Keep the app from starving the NAS; it is lightweight (SQLite + Node).
-    mem_limit: 1g
+    # Keep the app from starving the NAS; large PDF extraction needs more headroom.
+    mem_limit: 2g
     cpus: "2.0"

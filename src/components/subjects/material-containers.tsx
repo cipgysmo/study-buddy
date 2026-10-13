@@ -19,7 +19,7 @@ interface MaterialItem {
   role: string;
   status: "processing" | "ready" | "failed";
   error: string | null;
-  extracted_text: string | null;
+  extracted_text_length: number;
   job_id: string | null;
   parse_job_id: string | null;
   created_at: string;
@@ -416,8 +416,8 @@ export function MaterialContainers({
                 ? material.error
                 : material.kind === "image"
                   ? t("image")
-                  : material.extracted_text
-                    ? `${material.extracted_text.length} ${t("chars")}`
+                  : material.extracted_text_length > 0
+                    ? `${material.extracted_text_length} ${t("chars")}`
                     : "—"}
             </span>
             {material.topicNames.length > 0 && (

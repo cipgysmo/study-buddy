@@ -432,6 +432,38 @@ const MIGRATIONS: { version: number; sql: string }[] = [
         ON assignment_template_items(template_id);
     `,
   },
+  {
+    version: 20,
+    sql: `
+      CREATE TABLE IF NOT EXISTS upload_sessions (
+        id              TEXT PRIMARY KEY,
+        subject_id      TEXT NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+        filename        TEXT NOT NULL,
+        mime            TEXT NOT NULL,
+        size            INTEGER NOT NULL,
+        role            TEXT NOT NULL DEFAULT 'notes',
+        container_name  TEXT NOT NULL DEFAULT '',
+        temp_path       TEXT NOT NULL,
+        total_chunks    INTEGER NOT NULL,
+        received_chunks INTEGER NOT NULL DEFAULT 0,
+        received_bytes  INTEGER NOT NULL DEFAULT 0,
+        status          TEXT NOT NULL DEFAULT 'uploading',
+        error           TEXT,
+        created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_upload_sessions_subject ON upload_sessions(subject_id);
+      CREATE INDEX IF NOT EXISTS idx_upload_sessions_status ON upload_sessions(status);
+    `,
+  },
+  {
+    version: 21,
+    sql: `
+      ALTER TABLE materials ADD COLUMN extracted_text_path TEXT;
+      ALTER TABLE materials ADD COLUMN extracted_text_length INTEGER NOT NULL DEFAULT 0;
+      UPDATE materials SET extracted_text_length = COALESCE(length(extracted_text), 0);
+    `,
+  },
 ];
 
 export function getDb(): Database.Database {

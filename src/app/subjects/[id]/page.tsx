@@ -41,7 +41,7 @@ export default async function SubjectDetailPage({
       role: m.role,
       status: m.status,
       error: m.error,
-      extracted_text: m.extracted_text,
+      extracted_text_length: m.extracted_text_length,
       job_id: m.job_id,
       parse_job_id: m.parse_job_id,
       created_at: m.created_at,

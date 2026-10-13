@@ -12,6 +12,9 @@ interface ContainerOption {
   name: string;
 }
 
+const CHUNK_SIZE_BYTES = 8 * 1024 * 1024;
+const CHUNK_THRESHOLD_BYTES = 8 * 1024 * 1024;
+
 export function UploadMaterialForm({
   subjectId,
   subjects = [],
@@ -31,6 +34,8 @@ export function UploadMaterialForm({
   const [isExam, setIsExam] = useState(false);
   const [containerName, setContainerName] = useState("");
   const [fetchedContainers, setFetchedContainers] = useState<ContainerOption[]>([]);
+  const [progress, setProgress] = useState<{ name: string; percent: number } | null>(null);
+  const [error, setError] = useState("");
 
   const fixedSubject = Boolean(subjectId);
   const loadedContainers = fixedSubject ? containers : fetchedContainers;
@@ -60,27 +65,24 @@ export function UploadMaterialForm({
   async function onFiles(files: FileList | null) {
     if (!files || files.length === 0 || uploading || !selectedSubjectId) return;
     setUploading(true);
+    setError("");
     const jobIds: string[] = [];
     try {
-      await Promise.all(
-        Array.from(files).map(async (file) => {
-          const form = new FormData();
-          form.append("file", file);
-          if (isExam) form.append("role", "exam");
-          const container = containerName.trim();
-          if (container) form.append("containerName", container);
-          const r = await fetch(`/api/subjects/${selectedSubjectId}/materials`, {
-            method: "POST",
-            body: form,
-          });
-          if (r.ok) {
-            const d = (await r.json()) as { job?: { id: string } };
-            if (d.job) jobIds.push(d.job.id);
-          }
-        })
-      );
+      for (const file of Array.from(files)) {
+        setProgress({ name: file.name, percent: 0 });
+        try {
+          const d =
+            file.size > CHUNK_THRESHOLD_BYTES
+              ? await uploadChunked(file)
+              : await uploadDirect(file);
+          if (d.job) jobIds.push(d.job.id);
+        } catch (e) {
+          setError(e instanceof Error ? e.message : t("uploadErrorUnknown"));
+        }
+      }
     } finally {
       setUploading(false);
+      setProgress(null);
       if (inputRef.current) inputRef.current.value = "";
     }
     router.refresh();
@@ -92,6 +94,92 @@ export function UploadMaterialForm({
       }
     }
     if (jobIds.length > 0) setPending((prev) => [...prev, ...jobIds]);
+  }
+
+  async function uploadDirect(file: File): Promise<{ job?: { id: string } }> {
+    const form = new FormData();
+    form.append("file", file);
+    if (isExam) form.append("role", "exam");
+    const container = containerName.trim();
+    if (container) form.append("containerName", container);
+    const r = await fetch(`/api/subjects/${selectedSubjectId}/materials`, {
+      method: "POST",
+      body: form,
+    });
+    const d = (await r.json().catch(() => ({}))) as { job?: { id: string }; error?: string };
+    if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
+    return d;
+  }
+
+  async function uploadChunked(file: File): Promise<{ job?: { id: string } }> {
+    const totalChunks = Math.max(1, Math.ceil(file.size / CHUNK_SIZE_BYTES));
+    const createRes = await fetch(`/api/subjects/${selectedSubjectId}/uploads`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        filename: file.name,
+        mime: file.type || "application/octet-stream",
+        size: file.size,
+        totalChunks,
+        role: isExam ? "exam" : "notes",
+        containerName: containerName.trim(),
+      }),
+    });
+    const createData = (await createRes.json().catch(() => ({}))) as {
+      upload?: { id: string };
+      error?: string;
+    };
+    if (!createRes.ok || !createData.upload?.id) {
+      throw new Error(createData.error || `HTTP ${createRes.status}`);
+    }
+
+    let uploadedBytes = 0;
+    for (let i = 0; i < totalChunks; i++) {
+      const start = i * CHUNK_SIZE_BYTES;
+      const blob = file.slice(start, Math.min(file.size, start + CHUNK_SIZE_BYTES));
+      await uploadChunk(createData.upload.id, i, blob, (loaded) => {
+        const percent = Math.min(99, Math.floor(((uploadedBytes + loaded) / file.size) * 100));
+        setProgress({ name: file.name, percent });
+      });
+      uploadedBytes += blob.size;
+      setProgress({ name: file.name, percent: Math.floor((uploadedBytes / file.size) * 100) });
+    }
+
+    const completeRes = await fetch(`/api/uploads/${createData.upload.id}/complete`, { method: "POST" });
+    const completeData = (await completeRes.json().catch(() => ({}))) as {
+      job?: { id: string };
+      error?: string;
+    };
+    if (!completeRes.ok) throw new Error(completeData.error || `HTTP ${completeRes.status}`);
+    return completeData;
+  }
+
+  function uploadChunk(uploadId: string, index: number, blob: Blob, onProgress: (loaded: number) => void) {
+    return new Promise<void>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", `/api/uploads/${uploadId}/chunk`);
+      xhr.setRequestHeader("Content-Type", "application/octet-stream");
+      xhr.setRequestHeader("X-Upload-Chunk-Index", String(index));
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) onProgress(e.loaded);
+      };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve();
+          return;
+        }
+        let message = `HTTP ${xhr.status}`;
+        try {
+          const d = JSON.parse(xhr.responseText) as { error?: string };
+          if (d.error) message = d.error;
+        } catch {
+          /* ignore */
+        }
+        reject(new Error(message));
+      };
+      xhr.onerror = () => reject(new Error("network_error"));
+      xhr.send(blob);
+    });
   }
 
   useEffect(() => {
@@ -183,6 +271,19 @@ export function UploadMaterialForm({
           onChange={(e) => onFiles(e.target.files)}
         />
       </label>
+      <p className="text-xs text-muted">{t("uploadLargeHint")}</p>
+      {progress && (
+        <div className="space-y-1">
+          <p className="text-xs text-muted">{t("uploadProgress", progress)}</p>
+          <div className="h-1.5 overflow-hidden rounded-full bg-foreground/10">
+            <div
+              className="h-full rounded-full bg-accent transition-all"
+              style={{ width: `${Math.max(0, Math.min(100, progress.percent))}%` }}
+            />
+          </div>
+        </div>
+      )}
+      {error && <p className="text-xs text-danger">{t("uploadError", { message: error })}</p>}
     </Card>
   );
 }

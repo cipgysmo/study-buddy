@@ -52,8 +52,8 @@ beforeAll(() => {
   db.prepare("INSERT INTO subjects (id, name) VALUES (?, ?)").run("subj-1", "Math");
   subjectId = "subj-1";
   db.prepare(
-    "INSERT INTO materials (id, subject_id, filename, stored_path, mime, kind, size, extracted_text) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-  ).run("mat-1", subjectId, "notes.txt", "/tmp/mat-1", "text/plain", "text", 20, "Fractions are parts of a whole.");
+    "INSERT INTO materials (id, subject_id, filename, stored_path, mime, kind, size, extracted_text, extracted_text_length) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+  ).run("mat-1", subjectId, "notes.txt", "/tmp/mat-1", "text/plain", "text", 20, "Fractions are parts of a whole.", 29);
   db.prepare(
     "INSERT INTO materials (id, subject_id, filename, stored_path, mime, kind, size, status, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
   ).run("img-1", subjectId, "fraction-diagram.png", "/tmp/img-1", "image/png", "image", 10, "ready", "notes");

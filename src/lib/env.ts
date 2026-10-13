@@ -47,3 +47,15 @@ export function dataDir(): string {
 export function appPassword(): string {
   return read("APP_PASSWORD", "");
 }
+
+/** Maximum accepted material upload size in bytes. */
+export function maxUploadBytes(): number {
+  const v = Number(read("MAX_UPLOAD_BYTES", String(1024 * 1024 * 1024)));
+  return Number.isFinite(v) && v > 0 ? Math.floor(v) : 1024 * 1024 * 1024;
+}
+
+/** Maximum accepted size for one chunked-upload request body. */
+export function maxUploadChunkBytes(): number {
+  const v = Number(read("MAX_UPLOAD_CHUNK_BYTES", String(8 * 1024 * 1024)));
+  return Number.isFinite(v) && v > 0 ? Math.floor(v) : 8 * 1024 * 1024;
+}

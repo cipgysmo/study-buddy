@@ -15,9 +15,9 @@ let subjectId: string;
 function addMaterial(id: string, filename: string, text: string) {
   getDb()
     .prepare(
-      "INSERT INTO materials (id, subject_id, filename, stored_path, mime, kind, size, extracted_text) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+      "INSERT INTO materials (id, subject_id, filename, stored_path, mime, kind, size, extracted_text, extracted_text_length) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
     )
-    .run(id, subjectId, filename, `/tmp/${id}`, "text/plain", "text", text.length, text);
+    .run(id, subjectId, filename, `/tmp/${id}`, "text/plain", "text", text.length, text, text.length);
 }
 
 beforeAll(() => {

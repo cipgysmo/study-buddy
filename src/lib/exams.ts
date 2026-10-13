@@ -8,7 +8,7 @@ import { insertQuiz, type Quiz } from "./quizzes";
 import { parseExamPrompt, type ParseExamDraft } from "./prompts/parse-exam";
 import { similarExamPrompt } from "./prompts/similar-exam";
 import type { QuizDraft } from "./prompts/quiz";
-import { getMaterial, getSubject } from "./subjects";
+import { getMaterial, getMaterialText, getSubject } from "./subjects";
 
 export interface ExamQuestion {
   id: string;
@@ -39,6 +39,11 @@ export function listExamQuestions(materialId: string): ExamQuestion[] {
   return rows.map(parseRow);
 }
 
+function truncateForPrompt(text: string, maxChars = 60_000): string {
+  if (text.length <= maxChars) return text;
+  return `${text.slice(0, maxChars)}\n\n[exam text truncated]`;
+}
+
 export function countExamQuestions(materialId: string): number {
   const row = getDb()
     .prepare("SELECT COUNT(*) AS n FROM exam_questions WHERE material_id = ?")
@@ -50,7 +55,8 @@ export function countExamQuestions(materialId: string): number {
 export async function parseExam(materialId: string): Promise<number> {
   const m = getMaterial(materialId);
   if (!m) throw new Error("material_not_found");
-  if (!m.extracted_text) throw new Error("no_text");
+  const examText = getMaterialText(materialId);
+  if (!examText) throw new Error("no_text");
   const subject = getSubject(m.subject_id);
   const locale = await resolveLocale();
   const languageName = LANGUAGES.find((l) => l.code === locale)?.name ?? locale;
@@ -62,7 +68,7 @@ export async function parseExam(materialId: string): Promise<number> {
         content: parseExamPrompt({
           language: languageName,
           subjectName: subject?.name ?? m.filename,
-          examText: m.extracted_text,
+          examText: truncateForPrompt(examText),
         }),
       },
     ],
@@ -106,7 +112,8 @@ export async function generateSimilarExam(
 ): Promise<Quiz> {
   const m = getMaterial(materialId);
   if (!m) throw new Error("material_not_found");
-  if (!m.extracted_text) throw new Error("no_text");
+  const examText = getMaterialText(materialId);
+  if (!examText) throw new Error("no_text");
   const subject = getSubject(m.subject_id);
   if (!subject) throw new Error("subject_not_found");
   const locale = await resolveLocale();
@@ -120,7 +127,7 @@ export async function generateSimilarExam(
           language: languageName,
           subjectName: subject.name,
           count,
-          examText: m.extracted_text,
+          examText: truncateForPrompt(examText),
           customPrompt,
         }),
       },

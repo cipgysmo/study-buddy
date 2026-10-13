@@ -6,6 +6,10 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 const nextConfig: NextConfig = {
   output: "standalone",
   serverExternalPackages: ["better-sqlite3", "pdf-parse"],
+  experimental: {
+    // Chunked uploads keep each proxied request small enough to buffer safely.
+    proxyClientMaxBodySize: "16mb",
+  },
   // pdf-parse (and its pdfjs-dist + @napi-rs/canvas deps) use an `exports` map
   // that Next's file tracer prunes incorrectly. Force-include their runtime files
   // so the standalone/Docker bundle can load them. @napi-rs ships the native

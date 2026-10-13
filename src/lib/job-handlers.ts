@@ -44,7 +44,7 @@ registerJobHandler("ocr", async ({ payload }) => {
 registerJobHandler("retag", async ({ payload }) => {
   const subjectId = str(payload.subjectId);
   const materials = listMaterials(subjectId).filter(
-    (m) => m.role === "notes" && m.extracted_text?.trim()
+    (m) => m.role === "notes" && m.extracted_text_length > 0
   );
   for (const m of materials) {
     await autoTagMaterialTopics(m.id);

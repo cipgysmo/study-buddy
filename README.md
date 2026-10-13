@@ -78,6 +78,8 @@ Environment variables (see `.env.example`):
 | `LLM_REQUEST_TIMEOUT_MS` | `360000`              | Abort/retry a single upstream LLM request after this long. |
 | `PORT`         | `3000`                           | Port the server listens on.                  |
 | `DATA_DIR`     | `./data`                         | Where the SQLite DB + uploads live.          |
+| `MAX_UPLOAD_BYTES` | `1073741824`               | Maximum material upload size accepted by the server. |
+| `MAX_UPLOAD_CHUNK_BYTES` | `8388608`          | Maximum size of one chunked-upload request body. |
 | `APP_PASSWORD` | *(empty)*                        | Optional LAN password gate (empty = off).    |
 
 The LLM must support **vision** for the Scan feature (the current `local-ai`
@@ -135,6 +137,8 @@ services:
       LLM_MODEL: "local-ai"
       DATA_DIR: "/app/data"
       PORT: "3000"
+      MAX_UPLOAD_BYTES: "1073741824"
+      MAX_UPLOAD_CHUNK_BYTES: "8388608"
       # Optional LAN password gate. Set a value to require it on every visit.
       # APP_PASSWORD: "change-me"
     volumes:
@@ -145,7 +149,7 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    mem_limit: 1g
+    mem_limit: 2g
     cpus: "2.0"
 ```
 
