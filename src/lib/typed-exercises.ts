@@ -164,8 +164,8 @@ export async function generateTypedExercises(
   const sourceRefs = ctx.sources.length > 0 ? JSON.stringify(ctx.sources) : null;
   const insert = getDb().prepare(
     `INSERT INTO typed_exercises
-      (id, subject_id, prompt, expected_answer, accepted_answers, grading_mode, explanation, difficulty, source_refs)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      (id, subject_id, prompt, expected_answer, accepted_answers, grading_mode, explanation, difficulty, source_refs, topic_ids, column_ids)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
   const created: TypedExercise[] = [];
   for (const ex of (draft.exercises ?? []).slice(0, count)) {
@@ -193,7 +193,9 @@ export async function generateTypedExercises(
       cleanGradingMode(ex.grading_mode),
       ex.explanation?.trim() || "",
       opts.difficulty ?? "medium",
-      sourceRefs
+      sourceRefs,
+      JSON.stringify(topicIds ?? []),
+      JSON.stringify(opts.columnIds ?? [])
     );
     const saved = getTypedExercise(id);
     if (saved) created.push(saved);

@@ -142,7 +142,7 @@ export async function generateExercises(
 
   const sourceRefs = ctx.sources.length > 0 ? JSON.stringify(ctx.sources) : null;
   const insert = getDb().prepare(
-    "INSERT INTO exercises (id, subject_id, prompt, solution_steps, difficulty, diagram, source_refs) VALUES (?, ?, ?, ?, ?, ?, ?)"
+    "INSERT INTO exercises (id, subject_id, prompt, solution_steps, difficulty, diagram, source_refs, topic_ids, column_ids) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
   );
   const created: Exercise[] = [];
   for (const ex of (draft.exercises ?? []).slice(0, count)) {
@@ -159,7 +159,9 @@ export async function generateExercises(
       JSON.stringify(steps),
       opts.difficulty ?? ex.difficulty ?? "medium",
       diagram,
-      sourceRefs
+      sourceRefs,
+      JSON.stringify(topicIds ?? []),
+      JSON.stringify(opts.columnIds ?? [])
     );
     const saved = getExercise(id);
     if (saved) created.push(saved);
@@ -254,14 +256,23 @@ export async function generateTrueFalse(
 
   const sourceRefs = ctx.sources.length > 0 ? JSON.stringify(ctx.sources) : null;
   const insert = getDb().prepare(
-    "INSERT INTO truefalse (id, subject_id, statement, is_correct, explanation, source_refs) VALUES (?, ?, ?, ?, ?, ?)"
+    "INSERT INTO truefalse (id, subject_id, statement, is_correct, explanation, source_refs, topic_ids, column_ids) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
   );
   const created: TrueFalseItem[] = [];
   const items = shuffleArray((draft.items ?? []).slice(0, count));
   for (const item of items) {
     if (!item.statement) continue;
     const id = randomUUID();
-    insert.run(id, subjectId, item.statement, item.is_correct ? 1 : 0, item.explanation ?? "", sourceRefs);
+    insert.run(
+      id,
+      subjectId,
+      item.statement,
+      item.is_correct ? 1 : 0,
+      item.explanation ?? "",
+      sourceRefs,
+      JSON.stringify(topicIds ?? []),
+      JSON.stringify(opts.columnIds ?? [])
+    );
     const saved = getTrueFalse(id);
     if (saved) created.push(saved);
   }

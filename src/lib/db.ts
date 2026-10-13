@@ -572,6 +572,24 @@ const MIGRATIONS: { version: number; sql: string }[] = [
       JOIN typed_exercises e ON e.id = ta.exercise_id;
     `,
   },
+  {
+    version: 26,
+    sql: `
+      ALTER TABLE quizzes ADD COLUMN topic_ids TEXT NOT NULL DEFAULT '[]';
+      ALTER TABLE quizzes ADD COLUMN column_ids TEXT NOT NULL DEFAULT '[]';
+
+      ALTER TABLE exercises ADD COLUMN topic_ids TEXT NOT NULL DEFAULT '[]';
+      ALTER TABLE exercises ADD COLUMN column_ids TEXT NOT NULL DEFAULT '[]';
+
+      ALTER TABLE truefalse ADD COLUMN topic_ids TEXT NOT NULL DEFAULT '[]';
+      ALTER TABLE truefalse ADD COLUMN column_ids TEXT NOT NULL DEFAULT '[]';
+
+      ALTER TABLE typed_exercises ADD COLUMN topic_ids TEXT NOT NULL DEFAULT '[]';
+      ALTER TABLE typed_exercises ADD COLUMN column_ids TEXT NOT NULL DEFAULT '[]';
+
+      CREATE INDEX IF NOT EXISTS idx_activity_attempts_item ON activity_attempts(kind, item_id);
+    `,
+  },
 ];
 
 export function getDb(): Database.Database {

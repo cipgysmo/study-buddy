@@ -32,6 +32,12 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M4 16V4a2 2 0 0 1 2-2h12" />
     </>
   ),
+  reports: (
+    <>
+      <path d="M3 3v18h18" />
+      <path d="M7 15l4-4 3 3 5-6" />
+    </>
+  ),
   history: (
     <>
       <circle cx="12" cy="12" r="10" />

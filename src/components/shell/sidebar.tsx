@@ -22,6 +22,7 @@ const NAV: NavItem[] = [
   { href: "/flashcards", labelKey: "flashcards" },
   { href: "/activities", labelKey: "activities" },
   { href: "/history", labelKey: "history" },
+  { href: "/reports", labelKey: "reports" },
   { href: "/scan", labelKey: "scan" },
   { href: "/progress", labelKey: "progress" },
   { href: "/admin", labelKey: "admin" },

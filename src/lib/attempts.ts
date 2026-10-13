@@ -91,6 +91,135 @@ export function listAttemptsPage(params: URLSearchParams): PagedResult<ActivityA
   return pagedResult(items, total, q.limit, q.offset);
 }
 
+export interface ReportArea {
+  id: string;
+  name: string;
+  kind: "topic" | "container";
+  subject_id: string | null;
+  attempts: number;
+  correct: number;
+  incorrect: number;
+  avgScore: number | null;
+  accuracy: number | null;
+}
+
+function parseIdArray(value: string | null | undefined): string[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+export function getSkillReport(subjectId?: string): { topics: ReportArea[]; containers: ReportArea[] } {
+  const db = getDb();
+  const where = subjectId ? "WHERE a.subject_id = ?" : "";
+  const args = subjectId ? [subjectId] : [];
+
+  const rows = [
+    ...db
+      .prepare(
+        `SELECT a.subject_id, a.correct, a.score, i.topic_ids, i.column_ids
+         FROM activity_attempts a JOIN quizzes i ON i.id = a.item_id ${where}`
+      )
+      .all(...args),
+    ...db
+      .prepare(
+        `SELECT a.subject_id, a.correct, a.score, i.topic_ids, i.column_ids
+         FROM activity_attempts a JOIN exercises i ON i.id = a.item_id ${where}`
+      )
+      .all(...args),
+    ...db
+      .prepare(
+        `SELECT a.subject_id, a.correct, a.score, i.topic_ids, i.column_ids
+         FROM activity_attempts a JOIN truefalse i ON i.id = a.item_id ${where}`
+      )
+      .all(...args),
+    ...db
+      .prepare(
+        `SELECT a.subject_id, a.correct, a.score, i.topic_ids, i.column_ids
+         FROM activity_attempts a JOIN typed_exercises i ON i.id = a.item_id ${where}`
+      )
+      .all(...args),
+  ] as {
+    subject_id: string | null;
+    correct: number | null;
+    score: number | null;
+    topic_ids: string | null;
+    column_ids: string | null;
+  }[];
+
+  const topicIds = new Set<string>();
+  const columnIds = new Set<string>();
+  const stats = new Map<string, { kind: "topic" | "container"; id: string; subject_id: string | null; attempts: number; correct: number; incorrect: number; scoreSum: number; scoreCount: number }>();
+
+  for (const row of rows) {
+    for (const id of parseIdArray(row.topic_ids)) topicIds.add(id);
+    for (const id of parseIdArray(row.column_ids)) columnIds.add(id);
+
+    for (const id of parseIdArray(row.topic_ids)) {
+      const key = `topic:${id}`;
+      const s = stats.get(key) ?? { kind: "topic", id, subject_id: row.subject_id, attempts: 0, correct: 0, incorrect: 0, scoreSum: 0, scoreCount: 0 };
+      s.attempts++;
+      if (row.correct === 1) s.correct++;
+      if (row.correct === 0) s.incorrect++;
+      if (typeof row.score === "number") {
+        s.scoreSum += row.score;
+        s.scoreCount++;
+      }
+      stats.set(key, s);
+    }
+
+    for (const id of parseIdArray(row.column_ids)) {
+      const key = `container:${id}`;
+      const s = stats.get(key) ?? { kind: "container", id, subject_id: row.subject_id, attempts: 0, correct: 0, incorrect: 0, scoreSum: 0, scoreCount: 0 };
+      s.attempts++;
+      if (row.correct === 1) s.correct++;
+      if (row.correct === 0) s.incorrect++;
+      if (typeof row.score === "number") {
+        s.scoreSum += row.score;
+        s.scoreCount++;
+      }
+      stats.set(key, s);
+    }
+  }
+
+  const names = new Map<string, string>();
+  if (topicIds.size > 0) {
+    const rows = db.prepare(`SELECT id, name FROM topics WHERE id IN (${[...topicIds].map(() => "?").join(",")})`).all(...topicIds) as { id: string; name: string }[];
+    for (const r of rows) names.set(`topic:${r.id}`, r.name);
+  }
+  if (columnIds.size > 0) {
+    const rows = db.prepare(`SELECT id, name FROM board_columns WHERE id IN (${[...columnIds].map(() => "?").join(",")})`).all(...columnIds) as { id: string; name: string }[];
+    for (const r of rows) names.set(`container:${r.id}`, r.name);
+  }
+
+  const areas: ReportArea[] = [];
+  for (const [key, s] of stats.entries()) {
+    const name = names.get(key);
+    if (!name) continue;
+    const graded = s.correct + s.incorrect;
+    areas.push({
+      id: s.id,
+      name,
+      kind: s.kind,
+      subject_id: s.subject_id,
+      attempts: s.attempts,
+      correct: s.correct,
+      incorrect: s.incorrect,
+      avgScore: s.scoreCount > 0 ? Math.round(s.scoreSum / s.scoreCount) : null,
+      accuracy: graded > 0 ? Math.round((s.correct / graded) * 100) : null,
+    });
+  }
+
+  return {
+    topics: areas.filter((a) => a.kind === "topic").sort((a, b) => (a.accuracy ?? 0) - (b.accuracy ?? 0)),
+    containers: areas.filter((a) => a.kind === "container").sort((a, b) => (a.accuracy ?? 0) - (b.accuracy ?? 0)),
+  };
+}
+
 export function getWeakSpots(subjectId?: string): WeakSpot[] {
   const where = subjectId ? "WHERE a.subject_id = ?" : "";
   const args = subjectId ? [subjectId] : [];

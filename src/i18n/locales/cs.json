@@ -12,6 +12,7 @@
     "flashcards": "Kartičky",
     "activities": "Aktivity",
     "history": "Historie",
+    "reports": "Reporty",
     "quizzes": "Kvízy",
     "exercises": "Cvičení",
     "mockExams": "Zkušební testy",
@@ -531,6 +532,18 @@
     "versionLabel": "Verze aplikace",
     "commitLabel": "Revize kódu",
     "buildDateLabel": "Datum sestavení"
+  },
+  "Reports": {
+    "title": "Reporty",
+    "subtitle": "Slabá a silná místa podle témat a kontejnerů.",
+    "strong": "Silné",
+    "good": "Dobré",
+    "developing": "Rozvíjející se",
+    "weak": "Slabé",
+    "topics": "Témata / dovednosti",
+    "containers": "Kontejnery",
+    "emptyTopics": "Zatím žádná data pro témata.",
+    "emptyContainers": "Zatím žádná data pro kontejnery."
   },
   "History": {
     "title": "Historie",

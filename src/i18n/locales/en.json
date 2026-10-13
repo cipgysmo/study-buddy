@@ -12,6 +12,7 @@
     "flashcards": "Flashcards",
     "activities": "Activities",
     "history": "History",
+    "reports": "Reports",
     "quizzes": "Quizzes",
     "exercises": "Exercises",
     "mockExams": "Mock Exams",
@@ -531,6 +532,18 @@
     "versionLabel": "App version",
     "commitLabel": "Build commit",
     "buildDateLabel": "Build date"
+  },
+  "Reports": {
+    "title": "Reports",
+    "subtitle": "Weak and strong areas by topic and container.",
+    "strong": "Strong",
+    "good": "Good",
+    "developing": "Developing",
+    "weak": "Weak",
+    "topics": "Topics / skills",
+    "containers": "Containers",
+    "emptyTopics": "No topic data yet.",
+    "emptyContainers": "No container data yet."
   },
   "History": {
     "title": "History",

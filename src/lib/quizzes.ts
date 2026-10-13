@@ -159,7 +159,8 @@ export async function generateQuiz(
     draft.title?.trim() || title?.trim() || "Quiz",
     durationMin ?? null,
     (draft.questions ?? []).slice(0, count),
-    ctx.sources
+    ctx.sources,
+    { topicIds, columnIds: opts.columnIds }
   );
 }
 
@@ -170,16 +171,21 @@ export function insertQuiz(
   quizTitle: string,
   durationMin: number | null,
   questions: QuizDraft["questions"],
-  sourceRefs?: unknown
+  sourceRefs?: unknown,
+  scope?: { topicIds?: string[]; columnIds?: string[] }
 ): Quiz {
   const id = randomUUID();
   const db = getDb();
-  db.prepare("INSERT INTO quizzes (id, subject_id, title, duration_min, source_refs) VALUES (?, ?, ?, ?, ?)").run(
+  db.prepare(
+    "INSERT INTO quizzes (id, subject_id, title, duration_min, source_refs, topic_ids, column_ids) VALUES (?, ?, ?, ?, ?, ?, ?)"
+  ).run(
     id,
     subjectId,
     quizTitle,
     durationMin,
-    sourceRefs ? JSON.stringify(sourceRefs) : null
+    sourceRefs ? JSON.stringify(sourceRefs) : null,
+    JSON.stringify(scope?.topicIds ?? []),
+    JSON.stringify(scope?.columnIds ?? [])
   );
   const insertQ = db.prepare(
     "INSERT INTO questions (id, quiz_id, prompt, options, correct_index, explanation, diagram, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
