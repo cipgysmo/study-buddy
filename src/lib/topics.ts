@@ -48,6 +48,14 @@ export function topicNames(ids: string[]): string[] {
   return names;
 }
 
+/** Add topics to a material without removing existing tags. */
+export function addMaterialTopics(materialId: string, topicIds: string[]): void {
+  const ins = getDb().prepare(
+    "INSERT OR IGNORE INTO material_topics (material_id, topic_id) VALUES (?, ?)"
+  );
+  for (const id of topicIds) ins.run(materialId, id);
+}
+
 /** Replace the set of topics a material is tagged with. */
 export function setMaterialTopics(materialId: string, topicIds: string[]): void {
   const db = getDb();
@@ -76,6 +84,16 @@ export function materialTopicNames(materialIds: string[]): Map<string, string[]>
     map.set(r.material_id, arr);
   }
   return map;
+}
+
+/** Resolve one topic name to an existing topic id, creating it when needed. */
+export function resolveTopicId(subjectId: string, name: string): string | null {
+  const trimmed = name.trim();
+  if (!trimmed) return null;
+  const existing = getDb()
+    .prepare("SELECT id FROM topics WHERE subject_id = ? AND lower(name) = lower(?)")
+    .get(subjectId, trimmed) as { id: string } | undefined;
+  return existing?.id ?? createTopic(subjectId, trimmed).id;
 }
 
 /**

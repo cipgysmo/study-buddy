@@ -7,6 +7,7 @@ export interface MaterialPage {
   page_number: number;
   image_path: string | null;
   text: string | null;
+  topic_id: string | null;
   status: "pending" | "ready" | "failed";
   error: string | null;
   created_at: string;
@@ -88,6 +89,28 @@ export function listMaterialPageSummaries(materialId: string): MaterialPageSumma
     text_length: row.text?.length ?? 0,
     error: row.error,
   }));
+}
+
+export function tagMaterialPages(materialId: string, startPage: number, endPage: number, topicId: string): void {
+  getDb()
+    .prepare(
+      `UPDATE material_pages
+       SET topic_id = ?
+       WHERE material_id = ? AND page_number BETWEEN ? AND ?`
+    )
+    .run(topicId, materialId, startPage, endPage);
+}
+
+export function listMaterialPageTextsInRange(materialId: string, startPage: number, endPage: number): { page_number: number; text: string }[] {
+  const rows = getDb()
+    .prepare(
+      `SELECT page_number, text
+       FROM material_pages
+       WHERE material_id = ? AND page_number BETWEEN ? AND ? AND text IS NOT NULL
+       ORDER BY page_number ASC`
+    )
+    .all(materialId, startPage, endPage) as { page_number: number; text: string }[];
+  return rows;
 }
 
 export function getMaterialPage(materialId: string, pageNumber: number): MaterialPage | null {

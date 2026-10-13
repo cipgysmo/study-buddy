@@ -2,18 +2,22 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { SubjectSelect, type SubjectOption } from "@/components/ui/subject-select";
 import { GenerationScopePicker } from "@/components/ui/generation-scope-picker";
 import { DeleteButton } from "@/components/subjects/delete-button";
 import type { GenerationDifficulty } from "@/lib/generation";
+import { formatDate } from "@/lib/format";
+import { groupItemsBySubject, sortItems, type GroupMode, type SortMode } from "@/lib/list-view";
 import { useJob } from "@/lib/use-jobs";
 import { QuizRunner, type RunnerQuestion } from "@/components/quizzes/quiz-runner";
 
 interface Exam {
   id: string;
+  subject_id: string;
   title: string;
   duration_min: number;
+  created_at: string;
 }
 
 export function MockExamsApp({
@@ -24,8 +28,12 @@ export function MockExamsApp({
   subjects: SubjectOption[];
 }) {
   const t = useTranslations("MockExams");
+  const tc = useTranslations("Common");
+  const locale = useLocale();
   const router = useRouter();
   const [subjectId, setSubjectId] = useState("");
+  const [sort, setSort] = useState<SortMode>("newest");
+  const [group, setGroup] = useState<GroupMode>("none");
   const [topicIds, setTopicIds] = useState<string[]>([]);
   const [columnIds, setColumnIds] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
@@ -141,6 +149,31 @@ export function MockExamsApp({
         >
           {busy ? t("generating") : t("generate")}
         </button>
+        <div className="ml-auto flex items-center gap-2">
+          <label className="text-xs text-muted">
+            {tc("sortLabel")}
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortMode)}
+              className="ml-2 min-h-9 rounded-lg border border-border bg-background px-2 py-1 text-sm"
+            >
+              <option value="newest">{tc("sortNewest")}</option>
+              <option value="oldest">{tc("sortOldest")}</option>
+              <option value="name">{tc("sortName")}</option>
+            </select>
+          </label>
+          <label className="text-xs text-muted">
+            {tc("groupLabel")}
+            <select
+              value={group}
+              onChange={(e) => setGroup(e.target.value as GroupMode)}
+              className="ml-2 min-h-9 rounded-lg border border-border bg-background px-2 py-1 text-sm"
+            >
+              <option value="none">{tc("groupNone")}</option>
+              <option value="subject">{tc("groupSubject")}</option>
+            </select>
+          </label>
+        </div>
         {error && <span className="text-sm text-red-500">{error}</span>}
       </div>
 
@@ -158,30 +191,60 @@ export function MockExamsApp({
         onCustomPromptChange={setCustomPrompt}
       />
 
-      {exams.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border bg-card p-10 text-center text-muted">
-          {t("empty")}
-        </div>
-      ) : (
-        <ul className="grid gap-3 sm:grid-cols-2">
-          {exams.map((exam) => (
-            <li key={exam.id} className="rounded-2xl border border-border bg-card p-4">
-              <div className="flex items-center justify-between gap-3">
-                <button
-                  onClick={() => void start(exam)}
-                  className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left font-medium hover:text-accent"
-                >
-                  <span className="min-w-0 truncate">{exam.title}</span>
-                  <span className="shrink-0 rounded-full bg-foreground/5 px-2 py-0.5 text-xs font-medium text-muted">
-                    {exam.duration_min} {t("minutes")}
-                  </span>
-                </button>
-                <DeleteButton href={`/api/quizzes/${exam.id}`} label={t("deleteExam")} />
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+      {(() => {
+        const filtered = subjectId ? exams.filter((exam) => exam.subject_id === subjectId) : exams;
+        const visible = sortItems(filtered, sort, (exam) => exam.title, locale);
+        if (visible.length === 0) {
+          return (
+            <div className="rounded-2xl border border-dashed border-border bg-card p-10 text-center text-muted">
+              {t("empty")}
+            </div>
+          );
+        }
+
+        const groups =
+          group === "subject" && !subjectId
+            ? groupItemsBySubject(visible, subjects)
+            : [{ subjectId: null, subjectName: "", color: null, items: visible }];
+
+        return (
+          <div className="space-y-5">
+            {groups.map((section) => (
+              <section key={section.subjectId ?? "all"} className="space-y-2">
+                {section.subjectName && (
+                  <div className="flex items-center gap-2">
+                    {section.color && (
+                      <span className="h-3 w-3 rounded-full" style={{ backgroundColor: section.color }} />
+                    )}
+                    <h2 className="text-sm font-semibold">{section.subjectName}</h2>
+                  </div>
+                )}
+                <ul className="grid gap-3 sm:grid-cols-2">
+                  {section.items.map((exam) => (
+                    <li key={exam.id} className="rounded-2xl border border-border bg-card p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <button
+                          onClick={() => void start(exam)}
+                          className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left font-medium hover:text-accent"
+                        >
+                          <span className="min-w-0 truncate">{exam.title}</span>
+                          <span className="shrink-0 rounded-full bg-foreground/5 px-2 py-0.5 text-xs font-medium text-muted">
+                            {exam.duration_min} {t("minutes")}
+                          </span>
+                        </button>
+                        <DeleteButton href={`/api/quizzes/${exam.id}`} label={t("deleteExam")} />
+                      </div>
+                      <p className="mt-1 text-xs text-muted">
+                        {tc("createdOn", { date: formatDate(exam.created_at, locale) })}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </div>
+        );
+      })()}
     </div>
   );
 }

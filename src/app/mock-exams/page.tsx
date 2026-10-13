@@ -7,10 +7,12 @@ export default async function MockExamsPage() {
   const t = await getTranslations("MockExams");
   const exams = listTimedQuizzes().map((q) => ({
     id: q.id,
+    subject_id: q.subject_id,
     title: q.title,
     duration_min: q.duration_min as number,
+    created_at: q.created_at,
   }));
-  const subjects = listSubjects().map((s) => ({ id: s.id, name: s.name }));
+  const subjects = listSubjects().map((s) => ({ id: s.id, name: s.name, color: s.color }));
 
   return (
     <div className="space-y-6">

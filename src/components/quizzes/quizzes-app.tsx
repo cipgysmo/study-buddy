@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -11,6 +11,8 @@ import { SubjectSelect, type SubjectOption } from "@/components/ui/subject-selec
 import { GenerationScopePicker } from "@/components/ui/generation-scope-picker";
 import { DeleteButton } from "@/components/subjects/delete-button";
 import type { GenerationDifficulty } from "@/lib/generation";
+import { formatDate } from "@/lib/format";
+import { groupItemsBySubject, sortItems, type GroupMode, type SortMode } from "@/lib/list-view";
 import { useJob } from "@/lib/use-jobs";
 import { QuizRunner, type RunnerQuestion } from "./quiz-runner";
 
@@ -18,6 +20,7 @@ interface Quiz {
   id: string;
   subject_id: string;
   title: string;
+  created_at: string;
 }
 
 export function QuizzesApp({
@@ -30,8 +33,12 @@ export function QuizzesApp({
   initialSubjectId?: string;
 }) {
   const t = useTranslations("Quizzes");
+  const tc = useTranslations("Common");
+  const locale = useLocale();
   const router = useRouter();
   const [subjectId, setSubjectId] = useState(initialSubjectId);
+  const [sort, setSort] = useState<SortMode>("newest");
+  const [group, setGroup] = useState<GroupMode>("none");
   const [topicIds, setTopicIds] = useState<string[]>([]);
   const [columnIds, setColumnIds] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
@@ -130,6 +137,31 @@ export function QuizzesApp({
         <Button onClick={generate} disabled={busy || !subjectId}>
           {busy ? t("generating") : t("generate")}
         </Button>
+        <div className="ml-auto flex items-center gap-2">
+          <label className="text-xs text-muted">
+            {tc("sortLabel")}
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortMode)}
+              className="ml-2 min-h-9 rounded-xl border border-border bg-background px-2 py-1 text-sm outline-none focus:border-accent"
+            >
+              <option value="newest">{tc("sortNewest")}</option>
+              <option value="oldest">{tc("sortOldest")}</option>
+              <option value="name">{tc("sortName")}</option>
+            </select>
+          </label>
+          <label className="text-xs text-muted">
+            {tc("groupLabel")}
+            <select
+              value={group}
+              onChange={(e) => setGroup(e.target.value as GroupMode)}
+              className="ml-2 min-h-9 rounded-xl border border-border bg-background px-2 py-1 text-sm outline-none focus:border-accent"
+            >
+              <option value="none">{tc("groupNone")}</option>
+              <option value="subject">{tc("groupSubject")}</option>
+            </select>
+          </label>
+        </div>
         {error && <span className="text-sm text-danger">{error}</span>}
       </Card>
 
@@ -148,29 +180,52 @@ export function QuizzesApp({
       />
 
       {(() => {
-        const visibleQuizzes = subjectId
+        const filtered = subjectId
           ? quizzes.filter((quiz) => quiz.subject_id === subjectId)
           : quizzes;
-        return visibleQuizzes.length === 0 ? (
-          <EmptyState title={t("empty")} icon={<NavIcon name="quizzes" className="h-5 w-5" />} />
-        ) : (
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {visibleQuizzes.map((q) => (
-              <li key={q.id}>
-                <Card className="p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <button
-                      onClick={() => loadQuiz(q.id)}
-                      className="min-w-0 truncate text-left font-medium transition hover:text-accent"
-                    >
-                      {q.title}
-                    </button>
-                    <DeleteButton href={`/api/quizzes/${q.id}`} label={t("deleteQuiz")} />
+        const visibleQuizzes = sortItems(filtered, sort, (quiz) => quiz.title, locale);
+        if (visibleQuizzes.length === 0) {
+          return <EmptyState title={t("empty")} icon={<NavIcon name="quizzes" className="h-5 w-5" />} />;
+        }
+
+        const groups =
+          group === "subject" && !subjectId
+            ? groupItemsBySubject(visibleQuizzes, subjects)
+            : [{ subjectId: null, subjectName: "", color: null, items: visibleQuizzes }];
+
+        return (
+          <div className="space-y-5">
+            {groups.map((section) => (
+              <section key={section.subjectId ?? "all"} className="space-y-2">
+                {section.subjectName && (
+                  <div className="flex items-center gap-2">
+                    {section.color && (
+                      <span className="h-3 w-3 rounded-full" style={{ backgroundColor: section.color }} />
+                    )}
+                    <h2 className="text-sm font-semibold">{section.subjectName}</h2>
                   </div>
-                </Card>
-              </li>
+                )}
+                <ul className="grid gap-3 sm:grid-cols-2">
+                  {section.items.map((q) => (
+                    <li key={q.id}>
+                      <Card className="p-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <button
+                            onClick={() => loadQuiz(q.id)}
+                            className="min-w-0 truncate text-left font-medium transition hover:text-accent"
+                          >
+                            {q.title}
+                          </button>
+                          <DeleteButton href={`/api/quizzes/${q.id}`} label={t("deleteQuiz")} />
+                        </div>
+                        <p className="mt-1 text-xs text-muted">{tc("createdOn", { date: formatDate(q.created_at, locale) })}</p>
+                      </Card>
+                    </li>
+                  ))}
+                </ul>
+              </section>
             ))}
-          </ul>
+          </div>
         );
       })()}
     </div>

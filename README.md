@@ -176,9 +176,10 @@ Notes:
 ### Publishing the image (GHCR)
 
 The image is published automatically to GitHub Container Registry. Pushing to
-`main` runs `.github/workflows/publish.yml`, which builds and pushes
-`ghcr.io/cipgysmo/study-buddy:latest` (plus a `sha` tag). To update the app on
-the NAS, pull the new image again:
+`main` runs `.github/workflows/publish.yml`, which bumps the app’s **minor**
+version, creates a GitHub release/tag (`vX.Y.0`), and pushes
+`ghcr.io/cipgysmo/study-buddy:latest` plus `sha` and version tags. To update the
+app on the NAS, pull the new image again:
 
 - **Docker Compose** deployment (run from the folder with `docker-compose.yml`):
   ```bash

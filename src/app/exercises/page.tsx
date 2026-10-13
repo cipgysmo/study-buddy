@@ -17,6 +17,7 @@ export default async function ExercisesPage({
     prompt: e.prompt,
     solution_steps: e.solution_steps,
     difficulty: e.difficulty,
+    created_at: e.created_at,
   }));
   const items = listTrueFalse(subject).map((i) => ({
     id: i.id,
@@ -24,6 +25,7 @@ export default async function ExercisesPage({
     statement: i.statement,
     is_correct: i.is_correct,
     explanation: i.explanation,
+    created_at: i.created_at,
   }));
   const typedExercises = listTypedExercises(subject).map((e) => ({
     id: e.id,
@@ -34,8 +36,9 @@ export default async function ExercisesPage({
     grading_mode: e.grading_mode,
     explanation: e.explanation,
     difficulty: e.difficulty,
+    created_at: e.created_at,
   }));
-  const subjects = listSubjects().map((s) => ({ id: s.id, name: s.name }));
+  const subjects = listSubjects().map((s) => ({ id: s.id, name: s.name, color: s.color }));
 
   return (
     <div className="space-y-6">

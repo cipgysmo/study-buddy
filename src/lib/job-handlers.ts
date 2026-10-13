@@ -9,6 +9,7 @@ import { generateExercises, generateTrueFalse } from "./practice";
 import { generateTypedExercises } from "./typed-exercises";
 import { addMaterialWithText, getMaterial, linkMaterialParseJob, listMaterials, processMaterial } from "./subjects";
 import { autoTagMaterialTopics } from "./topics";
+import { processMaterialToc } from "./toc";
 import { generateSimilarExam, parseExam } from "./exams";
 import { generateLesson } from "./lessons";
 import { cleanCustomPrompt, cleanDifficulty } from "./generation";
@@ -30,12 +31,13 @@ function topicIdArray(v: unknown): string[] {
 registerJobHandler("ocr", async ({ payload }) => {
   const materialId = str(payload.materialId);
   await processMaterial(materialId);
+  const tocCount = processMaterialToc(materialId);
   // Exam papers are parsed into questions right after their text is extracted.
   const m = getMaterial(materialId);
   if (m?.role === "exam") {
     const job = enqueueJob("parseExam", { materialId });
     linkMaterialParseJob(materialId, job.id);
-  } else if (m?.role === "notes") {
+  } else if (m?.role === "notes" && tocCount === 0) {
     await autoTagMaterialTopics(materialId);
   }
   return null;
@@ -47,7 +49,8 @@ registerJobHandler("retag", async ({ payload }) => {
     (m) => m.role === "notes" && m.extracted_text_length > 0
   );
   for (const m of materials) {
-    await autoTagMaterialTopics(m.id);
+    const tocCount = processMaterialToc(m.id);
+    if (tocCount === 0) await autoTagMaterialTopics(m.id);
   }
   return String(materials.length);
 });

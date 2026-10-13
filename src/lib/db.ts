@@ -484,6 +484,28 @@ const MIGRATIONS: { version: number; sql: string }[] = [
         ON material_pages(material_id, page_number);
     `,
   },
+  {
+    version: 23,
+    sql: `
+      ALTER TABLE material_pages ADD COLUMN topic_id TEXT REFERENCES topics(id) ON DELETE SET NULL;
+
+      CREATE TABLE IF NOT EXISTS material_toc_entries (
+        id             TEXT PRIMARY KEY,
+        material_id    TEXT NOT NULL REFERENCES materials(id) ON DELETE CASCADE,
+        topic_id       TEXT REFERENCES topics(id) ON DELETE SET NULL,
+        title          TEXT NOT NULL,
+        level          INTEGER NOT NULL DEFAULT 1,
+        printed_page   INTEGER NOT NULL,
+        pdf_page_start INTEGER NOT NULL,
+        pdf_page_end   INTEGER,
+        created_at     TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_material_toc_entries_material
+        ON material_toc_entries(material_id, pdf_page_start);
+      CREATE INDEX IF NOT EXISTS idx_material_toc_entries_topic
+        ON material_toc_entries(topic_id);
+    `,
+  },
 ];
 
 export function getDb(): Database.Database {

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -11,6 +11,8 @@ import { SubjectSelect, type SubjectOption } from "@/components/ui/subject-selec
 import { GenerationScopePicker } from "@/components/ui/generation-scope-picker";
 import { Diagram } from "@/components/ui/diagram";
 import type { GenerationDifficulty } from "@/lib/generation";
+import { formatDate } from "@/lib/format";
+import { groupItemsBySubject, sortItems, type GroupMode, type SortMode } from "@/lib/list-view";
 import { useJob } from "@/lib/use-jobs";
 
 interface Exercise {
@@ -20,6 +22,7 @@ interface Exercise {
   solution_steps: string[];
   difficulty: string;
   diagram?: string | null;
+  created_at: string;
 }
 interface TrueFalseItem {
   id: string;
@@ -27,6 +30,7 @@ interface TrueFalseItem {
   statement: string;
   is_correct: boolean;
   explanation: string;
+  created_at: string;
 }
 interface TypedExercise {
   id: string;
@@ -37,6 +41,7 @@ interface TypedExercise {
   grading_mode: "exact" | "flexible" | "creative";
   explanation: string;
   difficulty: string;
+  created_at: string;
 }
 interface GradeResult {
   correct: boolean;
@@ -58,10 +63,14 @@ export function PracticeApp({
   initialSubjectId?: string;
 }) {
   const t = useTranslations("Practice");
+  const tc = useTranslations("Common");
   const ts = useTranslations("Subjects");
+  const locale = useLocale();
   const router = useRouter();
   const [tab, setTab] = useState<"exercises" | "truefalse" | "typed">("exercises");
   const [subjectId, setSubjectId] = useState(initialSubjectId);
+  const [sort, setSort] = useState<SortMode>("newest");
+  const [group, setGroup] = useState<GroupMode>("none");
   const [topicIds, setTopicIds] = useState<string[]>([]);
   const [columnIds, setColumnIds] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
@@ -146,6 +155,18 @@ export function PracticeApp({
     return t("modeFlexible");
   }
 
+  function visibleGroups<T extends { id: string; subject_id: string; created_at: string }>(
+    all: T[],
+    nameOf: (item: T) => string
+  ) {
+    const filtered = subjectId ? all.filter((item) => item.subject_id === subjectId) : all;
+    const sorted = sortItems(filtered, sort, nameOf, locale);
+    if (group === "subject" && !subjectId) {
+      return groupItemsBySubject(sorted, subjects);
+    }
+    return [{ subjectId: null, subjectName: "", color: null, items: sorted }];
+  }
+
   function difficultyLabel(d: string) {
     if (d === "balanced") return ts("difficultyBalanced");
     if (d === "easy") return ts("difficultyNoob");
@@ -195,6 +216,31 @@ export function PracticeApp({
         >
           {t("generateTyped")}
         </Button>
+        <div className="ml-auto flex items-center gap-2">
+          <label className="text-xs text-muted">
+            {tc("sortLabel")}
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortMode)}
+              className="ml-2 min-h-9 rounded-xl border border-border bg-background px-2 py-1 text-sm outline-none focus:border-accent"
+            >
+              <option value="newest">{tc("sortNewest")}</option>
+              <option value="oldest">{tc("sortOldest")}</option>
+              <option value="name">{tc("sortName")}</option>
+            </select>
+          </label>
+          <label className="text-xs text-muted">
+            {tc("groupLabel")}
+            <select
+              value={group}
+              onChange={(e) => setGroup(e.target.value as GroupMode)}
+              className="ml-2 min-h-9 rounded-xl border border-border bg-background px-2 py-1 text-sm outline-none focus:border-accent"
+            >
+              <option value="none">{tc("groupNone")}</option>
+              <option value="subject">{tc("groupSubject")}</option>
+            </select>
+          </label>
+        </div>
         {error && <span className="text-sm text-danger">{error}</span>}
       </Card>
 
@@ -249,25 +295,30 @@ export function PracticeApp({
       </div>
 
       {(() => {
-        const visibleExercises = subjectId
-          ? exercises.filter((exercise) => exercise.subject_id === subjectId)
-          : exercises;
-        const visibleItems = subjectId
-          ? items.filter((item) => item.subject_id === subjectId)
-          : items;
-        const visibleTyped = subjectId
-          ? typedExercises.filter((exercise) => exercise.subject_id === subjectId)
-          : typedExercises;
+        const typedGroups = visibleGroups(typedExercises, (exercise) => exercise.prompt);
+        const exerciseGroups = visibleGroups(exercises, (exercise) => exercise.prompt);
+        const itemGroups = visibleGroups(items, (item) => item.statement);
 
         if (tab === "typed") {
-          return visibleTyped.length === 0 ? (
+          return typedGroups.every((section) => section.items.length === 0) ? (
             <EmptyState
               title={t("emptyTyped")}
               icon={<NavIcon name="exercises" className="h-5 w-5" />}
             />
           ) : (
-            <div className="space-y-3">
-              {visibleTyped.map((ex, index) => {
+            <div className="space-y-5">
+              {typedGroups.map((section) => (
+                <section key={section.subjectId ?? "all"} className="space-y-3">
+                  {section.subjectName && (
+                    <div className="flex items-center gap-2">
+                      {section.color && (
+                        <span className="h-3 w-3 rounded-full" style={{ backgroundColor: section.color }} />
+                      )}
+                      <h2 className="text-sm font-semibold">{section.subjectName}</h2>
+                    </div>
+                  )}
+                  <div className="space-y-3">
+              {section.items.map((ex, index) => {
                 const result = typedResults[ex.id];
                 return (
                   <Card key={ex.id} className="p-4">
@@ -291,6 +342,9 @@ export function PracticeApp({
                       </span>
                       <span className="rounded-full bg-foreground/5 px-2 py-0.5 text-xs text-muted">
                         {gradingModeLabel(ex.grading_mode)}
+                      </span>
+                      <span className="rounded-full bg-foreground/5 px-2 py-0.5 text-xs text-muted">
+                        {tc("createdOn", { date: formatDate(ex.created_at, locale) })}
                       </span>
                     </div>
                     <div className="mt-3 space-y-2">
@@ -330,22 +384,36 @@ export function PracticeApp({
                         )}
                       </div>
                     )}
-                  </Card>
-                );
-              })}
-            </div>
-          );
-        }
+                   </Card>
+                 );
+               })}
+                   </div>
+                 </section>
+               ))}
+             </div>
+           );
+         }
 
-        if (tab === "exercises") {
-          return visibleExercises.length === 0 ? (
+         if (tab === "exercises") {
+          return exerciseGroups.every((section) => section.items.length === 0) ? (
             <EmptyState
               title={t("emptyExercises")}
               icon={<NavIcon name="exercises" className="h-5 w-5" />}
             />
           ) : (
-            <div className="space-y-3">
-              {visibleExercises.map((ex, index) => (
+            <div className="space-y-5">
+              {exerciseGroups.map((section) => (
+                <section key={section.subjectId ?? "all"} className="space-y-3">
+                  {section.subjectName && (
+                    <div className="flex items-center gap-2">
+                      {section.color && (
+                        <span className="h-3 w-3 rounded-full" style={{ backgroundColor: section.color }} />
+                      )}
+                      <h2 className="text-sm font-semibold">{section.subjectName}</h2>
+                    </div>
+                  )}
+                  <div className="space-y-3">
+              {section.items.map((ex, index) => (
                 <Card key={ex.id} className="p-4">
                   <div className="flex items-start justify-between gap-3">
                     <p className="font-medium">
@@ -361,9 +429,12 @@ export function PracticeApp({
                       ✕
                     </button>
                   </div>
-                  <div className="mt-2">
+                  <div className="mt-2 flex flex-wrap gap-2">
                     <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs text-accent">
                       {difficultyLabel(ex.difficulty)}
+                    </span>
+                    <span className="rounded-full bg-foreground/5 px-2 py-0.5 text-xs text-muted">
+                      {tc("createdOn", { date: formatDate(ex.created_at, locale) })}
                     </span>
                   </div>
                   {ex.diagram && (
@@ -389,20 +460,34 @@ export function PracticeApp({
                       </ol>
                     </div>
                   )}
-                </Card>
-              ))}
-            </div>
-          );
-        }
+                 </Card>
+               ))}
+                   </div>
+                 </section>
+               ))}
+             </div>
+           );
+         }
 
-        return visibleItems.length === 0 ? (
+         return itemGroups.every((section) => section.items.length === 0) ? (
           <EmptyState
             title={t("emptyTrueFalse")}
             icon={<NavIcon name="quizzes" className="h-5 w-5" />}
           />
-        ) : (
-          <div className="space-y-3">
-            {visibleItems.map((item, index) => {
+         ) : (
+           <div className="space-y-5">
+             {itemGroups.map((section) => (
+               <section key={section.subjectId ?? "all"} className="space-y-3">
+                 {section.subjectName && (
+                   <div className="flex items-center gap-2">
+                     {section.color && (
+                       <span className="h-3 w-3 rounded-full" style={{ backgroundColor: section.color }} />
+                     )}
+                     <h2 className="text-sm font-semibold">{section.subjectName}</h2>
+                   </div>
+                 )}
+                 <div className="space-y-3">
+             {section.items.map((item, index) => {
               const answered = item.id in tfAnswers;
               const correct = tfAnswers[item.id] === item.is_correct;
               const btnClass = (value: boolean) => {
@@ -427,11 +512,14 @@ export function PracticeApp({
                     >
                       ✕
                     </button>
-                  </div>
-                  <div className="mt-3 flex gap-2">
-                    <Button
-                      variant="secondary"
-                      onClick={() => setTfAnswers((p) => ({ ...p, [item.id]: true }))}
+                   </div>
+                   <p className="mt-1 text-xs text-muted">
+                     {tc("createdOn", { date: formatDate(item.created_at, locale) })}
+                   </p>
+                   <div className="mt-3 flex gap-2">
+                     <Button
+                       variant="secondary"
+                       onClick={() => setTfAnswers((p) => ({ ...p, [item.id]: true }))}
                       disabled={answered}
                       className={btnClass(true)}
                     >
@@ -463,12 +551,15 @@ export function PracticeApp({
                       )}
                     </div>
                   )}
-                </Card>
-              );
-            })}
-          </div>
-        );
-      })()}
+                 </Card>
+               );
+             })}
+                 </div>
+               </section>
+             ))}
+           </div>
+         );
+       })()}
     </div>
   );
 }

@@ -11,6 +11,16 @@ interface PageText {
   image_url: string | null;
 }
 
+interface TocEntry {
+  id: string;
+  title: string;
+  level: number;
+  printed_page: number;
+  pdf_page_start: number;
+  pdf_page_end: number | null;
+  topic_name: string | null;
+}
+
 export function MaterialPdfPreview({
   materialId,
   filename,
@@ -25,6 +35,7 @@ export function MaterialPdfPreview({
   const [open, setOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [pageData, setPageData] = useState<PageText | null>(null);
+  const [toc, setToc] = useState<TocEntry[]>([]);
   const [showText, setShowText] = useState(false);
 
   const total = pageCount ?? 0;
@@ -39,6 +50,22 @@ export function MaterialPdfPreview({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, total]);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    fetch(`/api/materials/${materialId}/toc`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : { entries: [] }))
+      .then((d) => {
+        if (!cancelled) setToc((d.entries as TocEntry[]) ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setToc([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [materialId, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -121,6 +148,28 @@ export function MaterialPdfPreview({
                 </button>
               </div>
             </div>
+
+            {toc.length > 0 && (
+              <div className="flex gap-1 overflow-x-auto border-b border-border px-2 py-1.5">
+                {toc.map((entry) => (
+                  <button
+                    key={entry.id}
+                    type="button"
+                    onClick={() => setPage(entry.pdf_page_start)}
+                    className={
+                      "shrink-0 rounded-md px-2 py-1 text-xs transition-colors " +
+                      (page >= entry.pdf_page_start &&
+                      (entry.pdf_page_end === null || page <= entry.pdf_page_end)
+                        ? "bg-accent/10 text-accent"
+                        : "text-muted hover:bg-foreground/5 hover:text-foreground")
+                    }
+                    title={`${entry.title} · str. ${entry.printed_page}`}
+                  >
+                    {entry.title}
+                  </button>
+                ))}
+              </div>
+            )}
 
             <div className="min-h-0 flex-1 bg-muted/10">
               <iframe
