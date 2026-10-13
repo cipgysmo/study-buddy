@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { LANGUAGES } from "@/i18n/languages";
+import { recordAttempt } from "./attempts";
 import { buildSubjectContextWithSources } from "./context";
 import { getDb } from "./db";
 import { orderBySql, parseListQuery, pagedResult, searchSql, type PagedResult } from "./list-query";
@@ -215,5 +216,14 @@ export function gradeQuiz(
   const attempt = getDb()
     .prepare("SELECT * FROM quiz_attempts WHERE id = ?")
     .get(attemptId) as QuizAttempt;
+  const quiz = getQuiz(quizId);
+  recordAttempt({
+    subjectId: quiz?.subject_id ?? null,
+    kind: "quiz",
+    itemId: quizId,
+    correct: score === total,
+    score: total > 0 ? Math.round((score / total) * 100) : null,
+    payload: { score, total },
+  });
   return { score, total, attempt };
 }

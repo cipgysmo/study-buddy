@@ -32,6 +32,12 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M4 16V4a2 2 0 0 1 2-2h12" />
     </>
   ),
+  history: (
+    <>
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </>
+  ),
   activities: (
     <>
       <rect x="3" y="3" width="7" height="7" rx="1.5" />

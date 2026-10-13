@@ -11,6 +11,7 @@
     "examPrep": "Exam Prep",
     "flashcards": "Flashcards",
     "activities": "Activities",
+    "history": "History",
     "quizzes": "Quizzes",
     "exercises": "Exercises",
     "mockExams": "Mock Exams",
@@ -530,6 +531,19 @@
     "versionLabel": "App version",
     "commitLabel": "Build commit",
     "buildDateLabel": "Build date"
+  },
+  "History": {
+    "title": "History",
+    "subtitle": "Review completed tests and answered questions.",
+    "weakSpots": "Weak spots",
+    "empty": "No history yet.",
+    "incorrectCount": "{count, plural, one {# incorrect} other {# incorrect}}",
+    "correct": "Correct",
+    "incorrect": "Incorrect",
+    "kind_quiz": "Quiz",
+    "kind_typed": "Typed answer",
+    "kind_truefalse": "True/false",
+    "kind_exercise": "Exercise"
   },
   "MockExams": {
     "title": "Mock Exams",

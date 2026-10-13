@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { LANGUAGES } from "@/i18n/languages";
+import { recordAttempt } from "./attempts";
 import { buildSubjectContextWithSources } from "./context";
 import { getDb } from "./db";
 import type { GenerationOptions } from "./generation";
@@ -277,8 +278,17 @@ export async function gradeTypedExercise(
       result.correct ? 1 : 0,
       result.score,
       result.feedback,
-      exercise.grading_mode
-    );
+       exercise.grading_mode
+     );
 
-  return result;
+   recordAttempt({
+     subjectId: exercise.subject_id,
+     kind: "typed",
+     itemId: id,
+     correct: result.correct,
+     score: result.score,
+     payload: { answer: studentAnswer, feedback: result.feedback, grading_mode: exercise.grading_mode },
+   });
+
+   return result;
 }

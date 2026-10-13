@@ -194,6 +194,15 @@ export function PracticeApp({
     }
   }
 
+  async function answerTrueFalse(id: string, answer: boolean) {
+    setTfAnswers((p) => ({ ...p, [id]: answer }));
+    await fetch(`/api/truefalse/${id}/answer`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ answer }),
+    });
+  }
+
   async function remove(kind: "exercises" | "truefalse" | "typedexercises", id: string) {
     await fetch(`/api/${kind}/${id}`, { method: "DELETE" });
     router.refresh();
@@ -742,7 +751,7 @@ export function PracticeApp({
                   <div className="mt-3 flex gap-2">
                     <Button
                       variant="secondary"
-                      onClick={() => setTfAnswers((p) => ({ ...p, [item.id]: true }))}
+                      onClick={() => void answerTrueFalse(item.id, true)}
                       disabled={answered}
                       className={btnClass(true)}
                     >
@@ -750,7 +759,7 @@ export function PracticeApp({
                     </Button>
                     <Button
                       variant="secondary"
-                      onClick={() => setTfAnswers((p) => ({ ...p, [item.id]: false }))}
+                      onClick={() => void answerTrueFalse(item.id, false)}
                       disabled={answered}
                       className={btnClass(false)}
                     >

@@ -535,6 +535,43 @@ const MIGRATIONS: { version: number; sql: string }[] = [
       CREATE INDEX IF NOT EXISTS idx_material_pages_topic ON material_pages(topic_id);
     `,
   },
+  {
+    version: 25,
+    sql: `
+      CREATE TABLE IF NOT EXISTS activity_attempts (
+        id          TEXT PRIMARY KEY,
+        subject_id  TEXT REFERENCES subjects(id) ON DELETE CASCADE,
+        kind        TEXT NOT NULL,
+        item_id     TEXT NOT NULL,
+        question_id TEXT,
+        correct     INTEGER,
+        score       INTEGER,
+        payload     TEXT,
+        created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_activity_attempts_subject_created
+        ON activity_attempts(subject_id, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_activity_attempts_kind_created
+        ON activity_attempts(kind, created_at DESC);
+
+      INSERT INTO activity_attempts (id, subject_id, kind, item_id, question_id, correct, score, payload, created_at)
+      SELECT lower(hex(randomblob(16))), q.subject_id, 'quiz', qa.quiz_id, NULL,
+             CASE WHEN qa.score = qa.total THEN 1 ELSE 0 END,
+             CASE WHEN qa.total > 0 THEN CAST(ROUND(100.0 * qa.score / qa.total) AS INTEGER) ELSE NULL END,
+             json_object('score', qa.score, 'total', qa.total),
+             qa.taken_at
+      FROM quiz_attempts qa
+      JOIN quizzes q ON q.id = qa.quiz_id;
+
+      INSERT INTO activity_attempts (id, subject_id, kind, item_id, question_id, correct, score, payload, created_at)
+      SELECT lower(hex(randomblob(16))), e.subject_id, 'typed', ta.exercise_id, NULL,
+             ta.correct, ta.score,
+             json_object('answer', ta.answer, 'feedback', ta.feedback, 'grading_mode', ta.grading_mode),
+             ta.created_at
+      FROM typed_attempts ta
+      JOIN typed_exercises e ON e.id = ta.exercise_id;
+    `,
+  },
 ];
 
 export function getDb(): Database.Database {

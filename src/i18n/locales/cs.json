@@ -11,6 +11,7 @@
     "examPrep": "Příprava na zkoušky",
     "flashcards": "Kartičky",
     "activities": "Aktivity",
+    "history": "Historie",
     "quizzes": "Kvízy",
     "exercises": "Cvičení",
     "mockExams": "Zkušební testy",
@@ -530,6 +531,19 @@
     "versionLabel": "Verze aplikace",
     "commitLabel": "Revize kódu",
     "buildDateLabel": "Datum sestavení"
+  },
+  "History": {
+    "title": "Historie",
+    "subtitle": "Přehled dokončených testů a odpovědí.",
+    "weakSpots": "Slabá místa",
+    "empty": "Zatím žádná historie.",
+    "incorrectCount": "{count, plural, one {# špatně} few {# špatně} other {# špatně}}",
+    "correct": "Správně",
+    "incorrect": "Špatně",
+    "kind_quiz": "Kvíz",
+    "kind_typed": "Psaná odpověď",
+    "kind_truefalse": "Pravda/nepravda",
+    "kind_exercise": "Cvičení"
   },
   "MockExams": {
     "title": "Zkušební testy",
