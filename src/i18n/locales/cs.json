@@ -488,7 +488,12 @@
     "cleanupRun": "Smazat staré položky",
     "cleanupRunning": "Mažu…",
     "cleanupConfirm": "Opravdu smazat staré položky? Tuto akci nelze vrátit.",
-    "cleanupNothing": "Nic starého ke smazání."
+    "cleanupNothing": "Nic starého ke smazání.",
+    "version": "Verze",
+    "versionHint": "Informace o nainstalované verzi aplikace.",
+    "versionLabel": "Verze aplikace",
+    "commitLabel": "Revize kódu",
+    "buildDateLabel": "Datum sestavení"
   },
   "MockExams": {
     "title": "Zkušební testy",

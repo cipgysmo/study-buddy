@@ -22,10 +22,16 @@ RUN npm run build
 # ---- 3. Runtime ----
 FROM node:24-slim AS run
 WORKDIR /app
+ARG APP_VERSION
+ARG APP_COMMIT
+ARG APP_BUILD_DATE
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     DATA_DIR=/app/data \
-    PORT=3000
+    PORT=3000 \
+    APP_VERSION=$APP_VERSION \
+    APP_COMMIT=$APP_COMMIT \
+    APP_BUILD_DATE=$APP_BUILD_DATE
 # Standalone server + its pruned node_modules (includes better-sqlite3)
 COPY --from=build /app/.next/standalone ./
 # @napi-rs/canvas ships its native binding as a platform-specific optional

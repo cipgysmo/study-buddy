@@ -488,7 +488,12 @@
     "cleanupRun": "Delete old items",
     "cleanupRunning": "Deleting…",
     "cleanupConfirm": "Delete old items? This cannot be undone.",
-    "cleanupNothing": "Nothing old to delete."
+    "cleanupNothing": "Nothing old to delete.",
+    "version": "Version",
+    "versionHint": "Information about the installed app build.",
+    "versionLabel": "App version",
+    "commitLabel": "Build commit",
+    "buildDateLabel": "Build date"
   },
   "MockExams": {
     "title": "Mock Exams",

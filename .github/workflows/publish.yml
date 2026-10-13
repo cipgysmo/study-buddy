@@ -43,6 +43,12 @@ jobs:
             type=sha
             type=semver,pattern=v{{version}}
 
+      - name: Set app build metadata
+        id: app
+        run: |
+          echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+          echo "date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
+
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
@@ -50,5 +56,9 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            APP_VERSION=${{ steps.app.outputs.version }}
+            APP_COMMIT=${{ github.sha }}
+            APP_BUILD_DATE=${{ steps.app.outputs.date }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
