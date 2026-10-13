@@ -11,6 +11,7 @@ export default async function MockExamsPage() {
     title: q.title,
     duration_min: q.duration_min as number,
     created_at: q.created_at,
+    source_refs: q.source_refs,
   }));
   const subjects = listSubjects().map((s) => ({ id: s.id, name: s.name, color: s.color }));
 

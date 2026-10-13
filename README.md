@@ -54,6 +54,7 @@ npm run lint        # eslint .
 npm run build       # production build
 npm test            # vitest (unit tests)
 npm run seed:demo   # add Czech demo content for screenshots/testing
+npm run seed:production-sample  # local-only: copy a realistic sample from the production instance
 ```
 
 For the screenshots above, start the app once so the database is created, then run:

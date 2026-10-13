@@ -1,14 +1,15 @@
 import { cleanCustomPrompt, cleanDifficulty } from "@/lib/generation";
 import { enqueueJob } from "@/lib/jobs";
 import "@/lib/job-handlers";
-import { listTypedExercises } from "@/lib/typed-exercises";
+import { listTypedExercisesPage } from "@/lib/typed-exercises";
 import { cleanStringArray } from "@/lib/request-utils";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
-  const subjectId = new URL(req.url).searchParams.get("subjectId") ?? undefined;
-  return Response.json({ typedExercises: listTypedExercises(subjectId) });
+  const params = new URL(req.url).searchParams;
+  const subjectId = params.get("subjectId") ?? params.get("subject") ?? undefined;
+  return Response.json(listTypedExercisesPage(params, subjectId));
 }
 
 export async function POST(req: Request) {

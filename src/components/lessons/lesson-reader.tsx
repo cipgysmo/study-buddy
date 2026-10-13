@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { RichText } from "@/components/ui/rich-text";
 import { Diagram } from "@/components/ui/diagram";
 import { MaterialImage } from "@/components/subjects/material-image";
+import { SourceChips } from "@/components/ui/source-chips";
 import type { Lesson, LessonChapter } from "@/lib/lessons";
 
 export function LessonReader({
@@ -77,6 +78,8 @@ export function LessonReader({
         )}
         {lesson.status === "failed" && <span className="text-sm text-danger">{t("failed")}</span>}
       </header>
+
+      <SourceChips value={lesson.source_refs} />
 
       <div className="flex flex-col gap-4 sm:flex-row">
         <aside className="flex shrink-0 flex-row flex-wrap gap-1 sm:w-56 sm:flex-col">

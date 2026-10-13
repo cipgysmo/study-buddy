@@ -15,6 +15,7 @@ export default async function QuizzesPage({
     subject_id: q.subject_id,
     title: q.title,
     created_at: q.created_at,
+    source_refs: q.source_refs,
   }));
   const subjects = listSubjects().map((s) => ({ id: s.id, name: s.name, color: s.color }));
 

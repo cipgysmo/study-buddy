@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { LANGUAGES } from "@/i18n/languages";
-import { buildSubjectContext } from "./context";
+import { buildSubjectContextWithSources } from "./context";
 import { getDb } from "./db";
+import { orderBySql, parseListQuery, pagedResult, searchSql, type PagedResult } from "./list-query";
 import { cleanDiagramSvg } from "./diagram";
 import type { GenerationOptions } from "./generation";
 import { resolveLocale } from "./locale";
@@ -17,6 +18,8 @@ export interface Quiz {
   created_at: string;
   /** Time limit in minutes; null = untimed. Timed quizzes are mock exams. */
   duration_min: number | null;
+  archived_at: string | null;
+  source_refs: string | null;
 }
 
 export interface Question {
@@ -40,14 +43,39 @@ export interface QuizAttempt {
   taken_at: string;
 }
 
-export function listQuizzes(): Quiz[] {
-  return getDb().prepare("SELECT * FROM quizzes ORDER BY created_at DESC").all() as Quiz[];
+export function listQuizzes(opts: { subjectId?: string; timed?: boolean; includeArchived?: boolean } = {}): Quiz[] {
+  const where: string[] = [];
+  const args: unknown[] = [];
+  if (!opts.includeArchived) where.push("archived_at IS NULL");
+  if (opts.timed) where.push("duration_min IS NOT NULL");
+  if (opts.subjectId) {
+    where.push("subject_id = ?");
+    args.push(opts.subjectId);
+  }
+  const sql = `SELECT * FROM quizzes ${where.length ? `WHERE ${where.join(" AND ")}` : ""} ORDER BY created_at DESC`;
+  return getDb().prepare(sql).all(...args) as Quiz[];
 }
 
-export function listTimedQuizzes(): Quiz[] {
-  return getDb()
-    .prepare("SELECT * FROM quizzes WHERE duration_min IS NOT NULL ORDER BY created_at DESC")
-    .all() as Quiz[];
+export function listTimedQuizzes(opts: { subjectId?: string; includeArchived?: boolean } = {}): Quiz[] {
+  return listQuizzes({ ...opts, timed: true });
+}
+
+export function listQuizzesPage(params: URLSearchParams, opts: { timed?: boolean } = {}): PagedResult<Quiz> {
+  const q = parseListQuery(params);
+  const where: string[] = [];
+  const args: unknown[] = [];
+  if (!q.includeArchived) where.push("archived_at IS NULL");
+  if (opts.timed) where.push("duration_min IS NOT NULL");
+  if (q.search) {
+    where.push(searchSql(["title"]));
+    args.push(`%${q.search.toLowerCase()}%`);
+  }
+  const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+  const total = (getDb().prepare(`SELECT COUNT(*) AS n FROM quizzes ${whereSql}`).get(...args) as { n: number }).n;
+  const items = getDb()
+    .prepare(`SELECT * FROM quizzes ${whereSql} ORDER BY ${orderBySql(q.sort, "title")} LIMIT ? OFFSET ?`)
+    .all(...args, q.limit, q.offset) as Quiz[];
+  return pagedResult(items, total, q.limit, q.offset);
 }
 
 export function getQuiz(id: string): Quiz | null {
@@ -81,6 +109,16 @@ export function deleteQuiz(id: string): void {
   getDb().prepare("DELETE FROM quizzes WHERE id = ?").run(id);
 }
 
+export function setQuizArchived(ids: string[], archived: boolean): number {
+  if (ids.length === 0) return 0;
+  const placeholders = ids.map(() => "?").join(",");
+  const value = archived ? new Date().toISOString().replace("T", " ").slice(0, 19) : null;
+  const info = getDb()
+    .prepare(`UPDATE quizzes SET archived_at = ? WHERE id IN (${placeholders})`)
+    .run(value, ...ids);
+  return info.changes;
+}
+
 export async function generateQuiz(
   subjectId: string,
   count: number,
@@ -93,7 +131,8 @@ export async function generateQuiz(
   if (!subject) throw new Error("subject_not_found");
   const locale = await resolveLocale();
   const languageName = LANGUAGES.find((l) => l.code === locale)?.name ?? locale;
-  const context = buildSubjectContext(subjectId, topicIds, 60000, opts);
+  const ctx = buildSubjectContextWithSources(subjectId, topicIds, 60000, opts);
+  const context = ctx.text;
 
   const draft = await chatJSON<QuizDraft>({
     messages: [
@@ -118,7 +157,8 @@ export async function generateQuiz(
     subjectId,
     draft.title?.trim() || title?.trim() || "Quiz",
     durationMin ?? null,
-    (draft.questions ?? []).slice(0, count)
+    (draft.questions ?? []).slice(0, count),
+    ctx.sources
   );
 }
 
@@ -128,15 +168,17 @@ export function insertQuiz(
   subjectId: string,
   quizTitle: string,
   durationMin: number | null,
-  questions: QuizDraft["questions"]
+  questions: QuizDraft["questions"],
+  sourceRefs?: unknown
 ): Quiz {
   const id = randomUUID();
   const db = getDb();
-  db.prepare("INSERT INTO quizzes (id, subject_id, title, duration_min) VALUES (?, ?, ?, ?)").run(
+  db.prepare("INSERT INTO quizzes (id, subject_id, title, duration_min, source_refs) VALUES (?, ?, ?, ?, ?)").run(
     id,
     subjectId,
     quizTitle,
-    durationMin
+    durationMin,
+    sourceRefs ? JSON.stringify(sourceRefs) : null
   );
   const insertQ = db.prepare(
     "INSERT INTO questions (id, quiz_id, prompt, options, correct_index, explanation, diagram, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"

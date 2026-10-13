@@ -1,9 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { LANGUAGES } from "@/i18n/languages";
-import { buildSubjectContext } from "./context";
+import { buildSubjectContextWithSources } from "./context";
 import { getDb } from "./db";
 import { cleanDiagramSvg } from "./diagram";
 import type { GenerationOptions } from "./generation";
+import { orderBySql, parseListQuery, pagedResult, searchSql, type PagedResult } from "./list-query";
 import { resolveLocale } from "./locale";
 import { chatJSON } from "./llm";
 import { exerciseGeneratorPrompt, type ExerciseDraft } from "./prompts/exercises";
@@ -20,6 +21,8 @@ export interface Exercise {
   /** Optional standalone SVG figure attached to the exercise. */
   diagram: string | null;
   created_at: string;
+  archived_at: string | null;
+  source_refs: string | null;
 }
 
 export interface TrueFalseItem {
@@ -29,6 +32,8 @@ export interface TrueFalseItem {
   is_correct: boolean;
   explanation: string;
   created_at: string;
+  archived_at: string | null;
+  source_refs: string | null;
 }
 
 type ExerciseRow = Omit<Exercise, "solution_steps"> & { solution_steps: string };
@@ -50,13 +55,38 @@ function parseTrueFalse(row: TrueFalseRow): TrueFalseItem {
   return { ...row, is_correct: row.is_correct === 1 };
 }
 
-export function listExercises(subjectId?: string): Exercise[] {
-  const rows = subjectId
-    ? (getDb()
-        .prepare("SELECT * FROM exercises WHERE subject_id = ? ORDER BY created_at DESC")
-        .all(subjectId) as ExerciseRow[])
-    : (getDb().prepare("SELECT * FROM exercises ORDER BY created_at DESC").all() as ExerciseRow[]);
+export function listExercises(subjectId?: string, includeArchived = false): Exercise[] {
+  const where = includeArchived ? [] : ["archived_at IS NULL"];
+  const args: unknown[] = [];
+  if (subjectId) {
+    where.push("subject_id = ?");
+    args.push(subjectId);
+  }
+  const rows = getDb()
+    .prepare(`SELECT * FROM exercises ${where.length ? `WHERE ${where.join(" AND ")}` : ""} ORDER BY created_at DESC`)
+    .all(...args) as ExerciseRow[];
   return rows.map(parseExercise);
+}
+
+export function listExercisesPage(params: URLSearchParams, subjectId?: string): PagedResult<Exercise> {
+  const q = parseListQuery(params);
+  const where: string[] = [];
+  const args: unknown[] = [];
+  if (!q.includeArchived) where.push("archived_at IS NULL");
+  if (subjectId) {
+    where.push("subject_id = ?");
+    args.push(subjectId);
+  }
+  if (q.search) {
+    where.push(searchSql(["prompt"]));
+    args.push(`%${q.search.toLowerCase()}%`);
+  }
+  const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+  const total = (getDb().prepare(`SELECT COUNT(*) AS n FROM exercises ${whereSql}`).get(...args) as { n: number }).n;
+  const rows = getDb()
+    .prepare(`SELECT * FROM exercises ${whereSql} ORDER BY ${orderBySql(q.sort, "prompt")} LIMIT ? OFFSET ?`)
+    .all(...args, q.limit, q.offset) as ExerciseRow[];
+  return pagedResult(rows.map(parseExercise), total, q.limit, q.offset);
 }
 
 export function getExercise(id: string): Exercise | null {
@@ -70,6 +100,14 @@ export function deleteExercise(id: string): void {
   getDb().prepare("DELETE FROM exercises WHERE id = ?").run(id);
 }
 
+export function setExerciseArchived(ids: string[], archived: boolean): number {
+  if (ids.length === 0) return 0;
+  const placeholders = ids.map(() => "?").join(",");
+  const value = archived ? new Date().toISOString().replace("T", " ").slice(0, 19) : null;
+  return getDb().prepare(`UPDATE exercises SET archived_at = ? WHERE id IN (${placeholders})`).run(value, ...ids)
+    .changes;
+}
+
 export async function generateExercises(
   subjectId: string,
   count: number,
@@ -80,7 +118,8 @@ export async function generateExercises(
   if (!subject) throw new Error("subject_not_found");
   const locale = await resolveLocale();
   const languageName = LANGUAGES.find((l) => l.code === locale)?.name ?? locale;
-  const context = buildSubjectContext(subjectId, topicIds, 60000, opts);
+  const ctx = buildSubjectContextWithSources(subjectId, topicIds, 60000, opts);
+  const context = ctx.text;
 
   const draft = await chatJSON<ExerciseDraft>({
     messages: [
@@ -101,8 +140,9 @@ export async function generateExercises(
     temperature: 0.5,
   });
 
+  const sourceRefs = ctx.sources.length > 0 ? JSON.stringify(ctx.sources) : null;
   const insert = getDb().prepare(
-    "INSERT INTO exercises (id, subject_id, prompt, solution_steps, difficulty, diagram) VALUES (?, ?, ?, ?, ?, ?)"
+    "INSERT INTO exercises (id, subject_id, prompt, solution_steps, difficulty, diagram, source_refs) VALUES (?, ?, ?, ?, ?, ?, ?)"
   );
   const created: Exercise[] = [];
   for (const ex of (draft.exercises ?? []).slice(0, count)) {
@@ -118,7 +158,8 @@ export async function generateExercises(
       ex.prompt,
       JSON.stringify(steps),
       opts.difficulty ?? ex.difficulty ?? "medium",
-      diagram
+      diagram,
+      sourceRefs
     );
     const saved = getExercise(id);
     if (saved) created.push(saved);
@@ -126,15 +167,38 @@ export async function generateExercises(
   return created;
 }
 
-export function listTrueFalse(subjectId?: string): TrueFalseItem[] {
-  const rows = subjectId
-    ? (getDb()
-        .prepare("SELECT * FROM truefalse WHERE subject_id = ? ORDER BY created_at DESC, rowid DESC")
-        .all(subjectId) as TrueFalseRow[])
-    : (getDb()
-        .prepare("SELECT * FROM truefalse ORDER BY created_at DESC, rowid DESC")
-        .all() as TrueFalseRow[]);
+export function listTrueFalse(subjectId?: string, includeArchived = false): TrueFalseItem[] {
+  const where = includeArchived ? [] : ["archived_at IS NULL"];
+  const args: unknown[] = [];
+  if (subjectId) {
+    where.push("subject_id = ?");
+    args.push(subjectId);
+  }
+  const rows = getDb()
+    .prepare(`SELECT * FROM truefalse ${where.length ? `WHERE ${where.join(" AND ")}` : ""} ORDER BY created_at DESC, rowid DESC`)
+    .all(...args) as TrueFalseRow[];
   return rows.map(parseTrueFalse);
+}
+
+export function listTrueFalsePage(params: URLSearchParams, subjectId?: string): PagedResult<TrueFalseItem> {
+  const q = parseListQuery(params);
+  const where: string[] = [];
+  const args: unknown[] = [];
+  if (!q.includeArchived) where.push("archived_at IS NULL");
+  if (subjectId) {
+    where.push("subject_id = ?");
+    args.push(subjectId);
+  }
+  if (q.search) {
+    where.push(searchSql(["statement"]));
+    args.push(`%${q.search.toLowerCase()}%`);
+  }
+  const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+  const total = (getDb().prepare(`SELECT COUNT(*) AS n FROM truefalse ${whereSql}`).get(...args) as { n: number }).n;
+  const rows = getDb()
+    .prepare(`SELECT * FROM truefalse ${whereSql} ORDER BY ${orderBySql(q.sort, "statement")} LIMIT ? OFFSET ?`)
+    .all(...args, q.limit, q.offset) as TrueFalseRow[];
+  return pagedResult(rows.map(parseTrueFalse), total, q.limit, q.offset);
 }
 
 export function getTrueFalse(id: string): TrueFalseItem | null {
@@ -148,6 +212,14 @@ export function deleteTrueFalse(id: string): void {
   getDb().prepare("DELETE FROM truefalse WHERE id = ?").run(id);
 }
 
+export function setTrueFalseArchived(ids: string[], archived: boolean): number {
+  if (ids.length === 0) return 0;
+  const placeholders = ids.map(() => "?").join(",");
+  const value = archived ? new Date().toISOString().replace("T", " ").slice(0, 19) : null;
+  return getDb().prepare(`UPDATE truefalse SET archived_at = ? WHERE id IN (${placeholders})`).run(value, ...ids)
+    .changes;
+}
+
 export async function generateTrueFalse(
   subjectId: string,
   count: number,
@@ -158,7 +230,8 @@ export async function generateTrueFalse(
   if (!subject) throw new Error("subject_not_found");
   const locale = await resolveLocale();
   const languageName = LANGUAGES.find((l) => l.code === locale)?.name ?? locale;
-  const context = buildSubjectContext(subjectId, topicIds, 60000, opts);
+  const ctx = buildSubjectContextWithSources(subjectId, topicIds, 60000, opts);
+  const context = ctx.text;
 
   const draft = await chatJSON<TrueFalseDraft>({
     messages: [
@@ -179,15 +252,16 @@ export async function generateTrueFalse(
     temperature: 0.5,
   });
 
+  const sourceRefs = ctx.sources.length > 0 ? JSON.stringify(ctx.sources) : null;
   const insert = getDb().prepare(
-    "INSERT INTO truefalse (id, subject_id, statement, is_correct, explanation) VALUES (?, ?, ?, ?, ?)"
+    "INSERT INTO truefalse (id, subject_id, statement, is_correct, explanation, source_refs) VALUES (?, ?, ?, ?, ?, ?)"
   );
   const created: TrueFalseItem[] = [];
   const items = shuffleArray((draft.items ?? []).slice(0, count));
   for (const item of items) {
     if (!item.statement) continue;
     const id = randomUUID();
-    insert.run(id, subjectId, item.statement, item.is_correct ? 1 : 0, item.explanation ?? "");
+    insert.run(id, subjectId, item.statement, item.is_correct ? 1 : 0, item.explanation ?? "", sourceRefs);
     const saved = getTrueFalse(id);
     if (saved) created.push(saved);
   }

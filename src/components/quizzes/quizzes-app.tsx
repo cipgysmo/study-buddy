@@ -10,6 +10,7 @@ import { NavIcon } from "@/components/shell/nav-icons";
 import { SubjectSelect, type SubjectOption } from "@/components/ui/subject-select";
 import { GenerationScopePicker } from "@/components/ui/generation-scope-picker";
 import { DeleteButton } from "@/components/subjects/delete-button";
+import { SourceChips } from "@/components/ui/source-chips";
 import type { GenerationDifficulty } from "@/lib/generation";
 import {
   groupItemsBySubjectAndDay,
@@ -20,11 +21,14 @@ import {
 import { useJob } from "@/lib/use-jobs";
 import { QuizRunner, type RunnerQuestion } from "./quiz-runner";
 
+const PAGE_SIZE = 10;
+
 interface Quiz {
   id: string;
   subject_id: string;
   title: string;
   created_at: string;
+  source_refs: string | null;
 }
 
 export function QuizzesApp({
@@ -44,6 +48,8 @@ export function QuizzesApp({
   const [sort, setSort] = useState<SortMode>("newest");
   const [group, setGroup] = useState<GroupMode>("subject");
   const [query, setQuery] = useState("");
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [visibleCounts, setVisibleCounts] = useState<Record<string, number>>({});
   const [topicIds, setTopicIds] = useState<string[]>([]);
   const [columnIds, setColumnIds] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
@@ -117,7 +123,7 @@ export function QuizzesApp({
 
   return (
     <div className="space-y-6">
-      <Card className="flex flex-wrap items-end gap-3 p-4">
+      <Card className="sticky top-0 z-10 flex flex-wrap items-end gap-3 p-4 backdrop-blur">
         <SubjectSelect
           value={subjectId}
           onChange={(v) => {
@@ -234,33 +240,74 @@ export function QuizzesApp({
                     <h2 className="text-sm font-semibold">{section.subjectName}</h2>
                   </div>
                 )}
-                {section.dayGroups.map((day) => (
-                  <div key={day.dayKey} className="space-y-2">
-                    {(day.dayLabel || day.timeLabel) && (
-                      <p className="text-xs font-medium text-muted">
-                        {day.dayLabel}
-                        {day.timeLabel ? ` · ${day.timeLabel}` : ""}
-                      </p>
-                    )}
-                    <ul className="grid gap-3 sm:grid-cols-2">
-                      {day.items.map((q) => (
-                        <li key={q.id}>
-                          <Card className="p-4">
-                            <div className="flex items-center justify-between gap-3">
-                              <button
-                                onClick={() => loadQuiz(q.id)}
-                                className="min-w-0 truncate text-left font-medium transition hover:text-accent"
-                              >
-                                {q.title}
-                              </button>
-                              <DeleteButton href={`/api/quizzes/${q.id}`} label={t("deleteQuiz")} />
-                            </div>
-                          </Card>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
+                {section.dayGroups.map((day) => {
+                  const key = `${section.subjectId ?? "all"}|${day.dayKey}`;
+                  const isCollapsed = collapsed.has(key);
+                  const limit = visibleCounts[key] ?? PAGE_SIZE;
+                  const shown = isCollapsed ? [] : day.items.slice(0, limit);
+                  return (
+                    <div key={key} className="space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setCollapsed((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(key)) next.delete(key);
+                              else next.add(key);
+                              return next;
+                            })
+                          }
+                          className="min-h-10 rounded-lg px-2 text-left text-xs font-medium text-muted transition hover:bg-foreground/5 hover:text-foreground"
+                          aria-expanded={!isCollapsed}
+                        >
+                          {isCollapsed ? tc("expand") : tc("collapse")}
+                        </button>
+                        <p className="text-xs font-medium text-muted">
+                          {day.dayLabel}
+                          {day.timeLabel ? ` · ${day.timeLabel}` : ""}
+                          <span className="ml-2 opacity-70">({day.items.length})</span>
+                        </p>
+                      </div>
+                      <ul className="grid gap-3 sm:grid-cols-2">
+                        {shown.map((q) => (
+                          <li key={q.id}>
+                            <Card className="p-4">
+                              <div className="flex items-center justify-between gap-3">
+                                <button
+                                  onClick={() => loadQuiz(q.id)}
+                                  className="min-w-0 truncate text-left font-medium transition hover:text-accent"
+                                >
+                                  {q.title}
+                                </button>
+                                <DeleteButton href={`/api/quizzes/${q.id}`} label={t("deleteQuiz")} />
+                              </div>
+                              <SourceChips value={q.source_refs} />
+                            </Card>
+                          </li>
+                        ))}
+                      </ul>
+                      {!isCollapsed && day.items.length > limit && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setVisibleCounts((prev) => ({ ...prev, [key]: limit + PAGE_SIZE }))}
+                        >
+                          {tc("showMore")}
+                        </Button>
+                      )}
+                      {!isCollapsed && limit > PAGE_SIZE && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setVisibleCounts((prev) => ({ ...prev, [key]: PAGE_SIZE }))}
+                        >
+                          {tc("showLess")}
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })}
               </section>
             ))}
           </div>

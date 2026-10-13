@@ -506,6 +506,35 @@ const MIGRATIONS: { version: number; sql: string }[] = [
         ON material_toc_entries(topic_id);
     `,
   },
+  {
+    version: 24,
+    sql: `
+      ALTER TABLE quizzes ADD COLUMN archived_at TEXT;
+      ALTER TABLE quizzes ADD COLUMN source_refs TEXT;
+
+      ALTER TABLE exercises ADD COLUMN archived_at TEXT;
+      ALTER TABLE exercises ADD COLUMN source_refs TEXT;
+
+      ALTER TABLE truefalse ADD COLUMN archived_at TEXT;
+      ALTER TABLE truefalse ADD COLUMN source_refs TEXT;
+
+      ALTER TABLE typed_exercises ADD COLUMN archived_at TEXT;
+      ALTER TABLE typed_exercises ADD COLUMN source_refs TEXT;
+
+      ALTER TABLE lessons ADD COLUMN source_refs TEXT;
+
+      CREATE INDEX IF NOT EXISTS idx_quizzes_subject_created ON quizzes(subject_id, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_quizzes_archived_created ON quizzes(archived_at, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_exercises_subject_created ON exercises(subject_id, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_exercises_archived_created ON exercises(archived_at, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_truefalse_subject_created ON truefalse(subject_id, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_truefalse_archived_created ON truefalse(archived_at, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_typed_exercises_subject_created ON typed_exercises(subject_id, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_typed_exercises_archived_created ON typed_exercises(archived_at, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_flashcards_subject_due ON flashcards(subject_id, due_at ASC);
+      CREATE INDEX IF NOT EXISTS idx_material_pages_topic ON material_pages(topic_id);
+    `,
+  },
 ];
 
 export function getDb(): Database.Database {

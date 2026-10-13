@@ -1,13 +1,13 @@
 import { cleanCustomPrompt, cleanDifficulty } from "@/lib/generation";
 import { enqueueJob } from "@/lib/jobs";
 import "@/lib/job-handlers";
-import { listQuizzes } from "@/lib/quizzes";
+import { listQuizzesPage } from "@/lib/quizzes";
 import { cleanStringArray } from "@/lib/request-utils";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  return Response.json({ quizzes: listQuizzes() });
+export async function GET(req: Request) {
+  return Response.json(listQuizzesPage(new URL(req.url).searchParams));
 }
 
 export async function POST(req: Request) {

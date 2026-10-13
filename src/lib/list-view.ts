@@ -1,5 +1,13 @@
 import { formatDayKey, formatDayLabel, formatTimeRange, parseSqliteDate } from "./format";
 
+export interface SourceRef {
+  materialId: string;
+  filename: string;
+  title?: string;
+  pageStart?: number;
+  pageEnd?: number;
+}
+
 export type SortMode = "newest" | "oldest" | "name";
 export type GroupMode = "none" | "subject";
 
@@ -14,6 +22,28 @@ export interface GroupedItems<T> {
   subjectName: string;
   color: string | null;
   items: T[];
+}
+
+export function parseSourceRefs(value: string | null | undefined): SourceRef[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return Array.isArray(parsed) ? (parsed as SourceRef[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function sourceLabel(source: SourceRef): string {
+  const pages =
+    source.pageStart && source.pageEnd
+      ? source.pageStart === source.pageEnd
+        ? `p. ${source.pageStart}`
+        : `pp. ${source.pageStart}-${source.pageEnd}`
+      : source.pageStart
+        ? `p. ${source.pageStart}`
+        : "";
+  return [source.title ?? source.filename, pages].filter(Boolean).join(" · ");
 }
 
 export function sortItems<T extends { id: string; created_at: string }>(
@@ -78,6 +108,26 @@ export function groupItemsBySubjectAndDay<T extends { subject_id: string | null;
 
     return { ...group, dayGroups };
   });
+}
+
+export function findDuplicateIds<T extends { id: string; subject_id: string | null }>(
+  items: T[],
+  nameOf: (item: T) => string
+): Set<string> {
+  const byKey = new Map<string, string[]>();
+  for (const item of items) {
+    const key = `${item.subject_id ?? ""}|${nameOf(item).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim()}`;
+    const list = byKey.get(key) ?? [];
+    list.push(item.id);
+    byKey.set(key, list);
+  }
+  const dupes = new Set<string>();
+  for (const ids of byKey.values()) {
+    if (ids.length > 1) {
+      for (const id of ids.slice(1)) dupes.add(id);
+    }
+  }
+  return dupes;
 }
 
 export function groupItemsBySubject<T extends { subject_id: string | null }>(

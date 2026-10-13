@@ -1,14 +1,15 @@
 import { enqueueJob } from "@/lib/jobs";
 import "@/lib/job-handlers";
 import { cleanCustomPrompt, cleanDifficulty } from "@/lib/generation";
-import { listExercises } from "@/lib/practice";
+import { listExercisesPage } from "@/lib/practice";
 import { cleanStringArray } from "@/lib/request-utils";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
-  const subjectId = new URL(req.url).searchParams.get("subjectId") ?? undefined;
-  return Response.json({ exercises: listExercises(subjectId) });
+  const params = new URL(req.url).searchParams;
+  const subjectId = params.get("subjectId") ?? params.get("subject") ?? undefined;
+  return Response.json(listExercisesPage(params, subjectId));
 }
 
 export async function POST(req: Request) {

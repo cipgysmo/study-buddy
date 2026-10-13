@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { LANGUAGES } from "@/i18n/languages";
-import { buildSubjectContext } from "./context";
+import { buildSubjectContextWithSources } from "./context";
 import { getDb } from "./db";
 import { cleanDiagramSvg } from "./diagram";
 import { resolveLocale } from "./locale";
@@ -30,6 +30,7 @@ export interface Lesson {
   error: string | null;
   job_id: string | null;
   created_at: string;
+  source_refs: string | null;
 }
 
 export interface LessonChapter {
@@ -169,7 +170,8 @@ export async function generateLesson(lessonId: string): Promise<number> {
   const languageName = LANGUAGES.find((l) => l.code === locale)?.name ?? locale;
   // Bound the notes sent to the model: a fuller slice for the outline, a smaller
   // one re-sent per chapter (the per-chapter calls are the dominant cost).
-  const notes = buildSubjectContext(lesson.subject_id, lesson.topic_ids, LESSON_OUTLINE_CHARS);
+  const ctx = buildSubjectContextWithSources(lesson.subject_id, lesson.topic_ids, LESSON_OUTLINE_CHARS);
+  const notes = ctx.text;
   if (!notes.trim()) {
     setLessonStatus(lessonId, "failed", "no_material");
     throw new Error("no_material");
@@ -206,7 +208,11 @@ export async function generateLesson(lessonId: string): Promise<number> {
     .map((m, i) => ({ index: i, label: m.filename, id: m.id }));
 
   const db = getDb();
-  db.prepare("UPDATE lessons SET title = ? WHERE id = ?").run(title, lessonId);
+  db.prepare("UPDATE lessons SET title = ?, source_refs = ? WHERE id = ?").run(
+    title,
+    ctx.sources.length > 0 ? JSON.stringify(ctx.sources) : null,
+    lessonId
+  );
   // Idempotent: drop any chapters from a previous (possibly interrupted) run.
   db.prepare("DELETE FROM lesson_chapters WHERE lesson_id = ?").run(lessonId);
   const insert = db.prepare(

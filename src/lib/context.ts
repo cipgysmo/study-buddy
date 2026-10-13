@@ -9,6 +9,19 @@ export interface SubjectContextOptions {
   keywords?: string[];
 }
 
+export interface SourceRef {
+  materialId: string;
+  filename: string;
+  title?: string;
+  pageStart?: number;
+  pageEnd?: number;
+}
+
+export interface SubjectContextResult {
+  text: string;
+  sources: SourceRef[];
+}
+
 function materialHeader(filename: string, pageCount: number | null): string {
   return pageCount ? `### ${filename} (pages 1-${pageCount})\n` : `### ${filename}\n`;
 }
@@ -17,10 +30,10 @@ function buildTocContext(
   materials: { id: string; filename: string }[],
   topicIds: string[],
   maxChars: number
-): { text: string; coveredMaterialIds: Set<string> } {
+): { text: string; coveredMaterialIds: Set<string>; sources: SourceRef[] } {
   const ranges = getTopicPageRanges(topicIds, materials.map((m) => m.id));
   const covered = new Set<string>();
-  if (ranges.length === 0) return { text: "", coveredMaterialIds: covered };
+  if (ranges.length === 0) return { text: "", coveredMaterialIds: covered, sources: [] };
 
   const byMaterial = new Map<string, typeof ranges>();
   for (const range of ranges) {
@@ -30,6 +43,7 @@ function buildTocContext(
   }
 
   const parts: string[] = [];
+  const sources: SourceRef[] = [];
   let total = 0;
 
   for (const material of materials) {
@@ -43,6 +57,13 @@ function buildTocContext(
       const pages = listMaterialPageTextsInRange(material.id, range.pdf_page_start, end);
       if (pages.length === 0) continue;
 
+      sources.push({
+        materialId: material.id,
+        filename: material.filename,
+        title: range.title,
+        pageStart: range.pdf_page_start,
+        pageEnd: end,
+      });
       const header = `### ${material.filename} — ${range.title} (pages ${range.pdf_page_start}-${end})\n`;
       const body = pages.map((page) => `[page ${page.page_number}]\n${page.text}`).join("\n\n");
       const room = maxChars - total;
@@ -52,7 +73,7 @@ function buildTocContext(
     }
   }
 
-  return { text: parts.join("\n\n"), coveredMaterialIds: covered };
+  return { text: parts.join("\n\n"), coveredMaterialIds: covered, sources };
 }
 
 /**
@@ -63,12 +84,12 @@ function buildTocContext(
  * Container filters are strict: selecting a container should not silently pull
  * in materials from outside it.
  */
-export function buildSubjectContext(
+export function buildSubjectContextWithSources(
   subjectId: string,
   topicIds?: string[],
   maxChars = 60000,
   opts: SubjectContextOptions = {}
-): string {
+): SubjectContextResult {
   let materials = listMaterials(subjectId);
 
   if (opts.columnIds && opts.columnIds.length > 0) {
@@ -102,6 +123,7 @@ export function buildSubjectContext(
   }
 
   const parts: string[] = [];
+  const sources: SourceRef[] = [];
   let total = 0;
   let coveredMaterialIds = new Set<string>();
 
@@ -111,6 +133,7 @@ export function buildSubjectContext(
       parts.push(toc.text);
       total += toc.text.length;
       coveredMaterialIds = toc.coveredMaterialIds;
+      sources.push(...toc.sources);
     }
   }
 
@@ -120,11 +143,26 @@ export function buildSubjectContext(
     if (total >= maxChars) break;
     const text = getMaterialText(m.id);
     if (!text) continue;
+    sources.push({
+      materialId: m.id,
+      filename: m.filename,
+      pageStart: 1,
+      pageEnd: m.page_count ?? undefined,
+    });
     const header = materialHeader(m.filename, m.page_count);
     const room = maxChars - total;
     const clipped = text.length > room ? text.slice(0, room) : text;
     parts.push(header + clipped);
     total += header.length + clipped.length;
   }
-  return parts.join("\n\n");
+  return { text: parts.join("\n\n"), sources };
+}
+
+export function buildSubjectContext(
+  subjectId: string,
+  topicIds?: string[],
+  maxChars = 60000,
+  opts: SubjectContextOptions = {}
+): string {
+  return buildSubjectContextWithSources(subjectId, topicIds, maxChars, opts).text;
 }

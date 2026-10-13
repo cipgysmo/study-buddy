@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { LANGUAGES } from "@/i18n/languages";
-import { buildSubjectContext } from "./context";
+import { buildSubjectContextWithSources } from "./context";
 import { getDb } from "./db";
 import type { GenerationOptions } from "./generation";
+import { orderBySql, parseListQuery, pagedResult, searchSql, type PagedResult } from "./list-query";
 import { resolveLocale } from "./locale";
 import { chatJSON } from "./llm";
 import {
@@ -25,6 +26,8 @@ export interface TypedExercise {
   explanation: string;
   difficulty: string;
   created_at: string;
+  archived_at: string | null;
+  source_refs: string | null;
 }
 
 export interface TypedGradeResult {
@@ -64,18 +67,45 @@ function parseTypedExercise(row: TypedExerciseRow): TypedExercise {
     explanation: row.explanation,
     difficulty: row.difficulty,
     created_at: row.created_at,
+    archived_at: row.archived_at ?? null,
+    source_refs: row.source_refs ?? null,
   };
 }
 
-export function listTypedExercises(subjectId?: string): TypedExercise[] {
-  const rows = (
-    subjectId
-      ? getDb()
-          .prepare("SELECT * FROM typed_exercises WHERE subject_id = ? ORDER BY created_at DESC")
-          .all(subjectId)
-      : getDb().prepare("SELECT * FROM typed_exercises ORDER BY created_at DESC").all()
-  ) as TypedExerciseRow[];
+export function listTypedExercises(subjectId?: string, includeArchived = false): TypedExercise[] {
+  const where = includeArchived ? [] : ["archived_at IS NULL"];
+  const args: unknown[] = [];
+  if (subjectId) {
+    where.push("subject_id = ?");
+    args.push(subjectId);
+  }
+  const rows = getDb()
+    .prepare(`SELECT * FROM typed_exercises ${where.length ? `WHERE ${where.join(" AND ")}` : ""} ORDER BY created_at DESC`)
+    .all(...args) as TypedExerciseRow[];
   return rows.map(parseTypedExercise);
+}
+
+export function listTypedExercisesPage(params: URLSearchParams, subjectId?: string): PagedResult<TypedExercise> {
+  const q = parseListQuery(params);
+  const where: string[] = [];
+  const args: unknown[] = [];
+  if (!q.includeArchived) where.push("archived_at IS NULL");
+  if (subjectId) {
+    where.push("subject_id = ?");
+    args.push(subjectId);
+  }
+  if (q.search) {
+    where.push(searchSql(["prompt"]));
+    args.push(`%${q.search.toLowerCase()}%`);
+  }
+  const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+  const total = (
+    getDb().prepare(`SELECT COUNT(*) AS n FROM typed_exercises ${whereSql}`).get(...args) as { n: number }
+  ).n;
+  const rows = getDb()
+    .prepare(`SELECT * FROM typed_exercises ${whereSql} ORDER BY ${orderBySql(q.sort, "prompt")} LIMIT ? OFFSET ?`)
+    .all(...args, q.limit, q.offset) as TypedExerciseRow[];
+  return pagedResult(rows.map(parseTypedExercise), total, q.limit, q.offset);
 }
 
 export function getTypedExercise(id: string): TypedExercise | null {
@@ -89,6 +119,15 @@ export function deleteTypedExercise(id: string): void {
   getDb().prepare("DELETE FROM typed_exercises WHERE id = ?").run(id);
 }
 
+export function setTypedExerciseArchived(ids: string[], archived: boolean): number {
+  if (ids.length === 0) return 0;
+  const placeholders = ids.map(() => "?").join(",");
+  const value = archived ? new Date().toISOString().replace("T", " ").slice(0, 19) : null;
+  return getDb()
+    .prepare(`UPDATE typed_exercises SET archived_at = ? WHERE id IN (${placeholders})`)
+    .run(value, ...ids).changes;
+}
+
 export async function generateTypedExercises(
   subjectId: string,
   count: number,
@@ -99,7 +138,8 @@ export async function generateTypedExercises(
   if (!subject) throw new Error("subject_not_found");
   const locale = await resolveLocale();
   const languageName = LANGUAGES.find((l) => l.code === locale)?.name ?? locale;
-  const context = buildSubjectContext(subjectId, topicIds, 60000, opts);
+  const ctx = buildSubjectContextWithSources(subjectId, topicIds, 60000, opts);
+  const context = ctx.text;
 
   const draft = await chatJSON<TypedExerciseDraft>({
     messages: [
@@ -120,10 +160,11 @@ export async function generateTypedExercises(
     temperature: 0.5,
   });
 
+  const sourceRefs = ctx.sources.length > 0 ? JSON.stringify(ctx.sources) : null;
   const insert = getDb().prepare(
     `INSERT INTO typed_exercises
-      (id, subject_id, prompt, expected_answer, accepted_answers, grading_mode, explanation, difficulty)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      (id, subject_id, prompt, expected_answer, accepted_answers, grading_mode, explanation, difficulty, source_refs)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
   const created: TypedExercise[] = [];
   for (const ex of (draft.exercises ?? []).slice(0, count)) {
@@ -150,7 +191,8 @@ export async function generateTypedExercises(
       JSON.stringify(accepted),
       cleanGradingMode(ex.grading_mode),
       ex.explanation?.trim() || "",
-      opts.difficulty ?? "medium"
+      opts.difficulty ?? "medium",
+      sourceRefs
     );
     const saved = getTypedExercise(id);
     if (saved) created.push(saved);
