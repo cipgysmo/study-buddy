@@ -378,6 +378,7 @@ export function MaterialContainers({
     return (
       <article
         key={material.id}
+        id={`material-${material.id}`}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault();

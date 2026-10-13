@@ -300,7 +300,7 @@ export function MockExamsApp({
                               </button>
                               <DeleteButton href={`/api/quizzes/${exam.id}`} label={t("deleteExam")} />
                             </div>
-                            <SourceChips value={exam.source_refs} />
+                            <SourceChips value={exam.source_refs} subjectId={exam.subject_id} />
                           </li>
                         ))}
                       </ul>

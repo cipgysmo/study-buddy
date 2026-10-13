@@ -79,7 +79,7 @@ export function LessonReader({
         {lesson.status === "failed" && <span className="text-sm text-danger">{t("failed")}</span>}
       </header>
 
-      <SourceChips value={lesson.source_refs} />
+      <SourceChips value={lesson.source_refs} subjectId={lesson.subject_id} />
 
       <div className="flex flex-col gap-4 sm:flex-row">
         <aside className="flex shrink-0 flex-row flex-wrap gap-1 sm:w-56 sm:flex-col">

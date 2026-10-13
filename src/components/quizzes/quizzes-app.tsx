@@ -282,7 +282,7 @@ export function QuizzesApp({
                                 </button>
                                 <DeleteButton href={`/api/quizzes/${q.id}`} label={t("deleteQuiz")} />
                               </div>
-                              <SourceChips value={q.source_refs} />
+                              <SourceChips value={q.source_refs} subjectId={q.subject_id} />
                             </Card>
                           </li>
                         ))}

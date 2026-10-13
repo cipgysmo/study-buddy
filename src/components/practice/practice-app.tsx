@@ -611,7 +611,7 @@ export function PracticeApp({
                       {gradingModeLabel(ex.grading_mode)}
                     </span>
                   </div>
-                  <SourceChips value={ex.source_refs} />
+                  {result && <SourceChips value={ex.source_refs} subjectId={ex.subject_id} />}
                   <div className="mt-3 space-y-2">
                     <label className="block text-xs font-semibold text-muted" htmlFor={`typed-${ex.id}`}>
                       {t("yourAnswer")}
@@ -680,7 +680,7 @@ export function PracticeApp({
                     {difficultyLabel(ex.difficulty)}
                   </span>
                 </div>
-                <SourceChips value={ex.source_refs} />
+                {revealed[ex.id] && <SourceChips value={ex.source_refs} subjectId={ex.subject_id} />}
                 {ex.diagram && (
                   <div className="mt-3">
                     <Diagram svg={ex.diagram} />
@@ -738,7 +738,7 @@ export function PracticeApp({
                       ✕
                     </button>
                   </div>
-                  <SourceChips value={item.source_refs} />
+                  {answered && <SourceChips value={item.source_refs} subjectId={item.subject_id} />}
                   <div className="mt-3 flex gap-2">
                     <Button
                       variant="secondary"

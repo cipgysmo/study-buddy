@@ -3,7 +3,13 @@
 import { useTranslations } from "next-intl";
 import { parseSourceRefs, sourceLabel } from "@/lib/list-view";
 
-export function SourceChips({ value }: { value: string | null | undefined }) {
+export function SourceChips({
+  value,
+  subjectId,
+}: {
+  value: string | null | undefined;
+  subjectId?: string | null;
+}) {
   const t = useTranslations("Common");
   const sources = parseSourceRefs(value).slice(0, 3);
   if (sources.length === 0) return null;
@@ -13,7 +19,7 @@ export function SourceChips({ value }: { value: string | null | undefined }) {
       {sources.map((source, index) => (
         <a
           key={`${source.materialId}-${index}`}
-          href={`/subjects/${source.materialId}`}
+          href={subjectId ? `/subjects/${subjectId}#material-${source.materialId}` : "/subjects"}
           className="rounded-full bg-foreground/5 px-2 py-0.5 text-[11px] text-muted transition hover:bg-accent/10 hover:text-accent"
           title={source.filename}
         >
