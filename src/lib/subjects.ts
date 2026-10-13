@@ -5,6 +5,7 @@ import { getDb } from "./db";
 import { dataDir } from "./env";
 import { extractTextFromFile, kindFromMime, type MaterialKind } from "./extract";
 import { ocrImage } from "./ocr";
+import { processPdfMaterial } from "./pdf";
 import { removeDerivedDir, removeDerivedImages } from "./image-derive";
 
 export interface Subject {
@@ -27,6 +28,7 @@ export interface Material {
   extracted_text: string | null;
   extracted_text_path: string | null;
   extracted_text_length: number;
+  page_count: number | null;
   status: "processing" | "ready" | "failed";
   error: string | null;
   job_id: string | null;
@@ -93,7 +95,7 @@ export function listMaterials(subjectId: string): MaterialSummary[] {
   return getDb()
     .prepare(
       `SELECT id, subject_id, filename, stored_path, mime, kind, size,
-              extracted_text_length, status, error, job_id,
+              extracted_text_length, page_count, status, error, job_id,
               role, parse_job_id, created_at
        FROM materials
        WHERE subject_id = ?
@@ -256,13 +258,15 @@ export async function processMaterial(materialId: string): Promise<void> {
   if (!m) return;
   db.prepare("UPDATE materials SET status = 'processing', error = NULL WHERE id = ?").run(materialId);
   try {
-    let text = await extractTextFromFile(m.stored_path, m.kind);
-    if (m.kind === "image" && !text) {
-      const buffer = fs.readFileSync(m.stored_path);
-      text = await ocrImage(buffer, m.mime);
-    }
-    if (m.kind === "pdf" && !text?.trim()) {
-      throw new Error("no_text_extracted");
+    let text: string | null;
+    if (m.kind === "pdf") {
+      text = await processPdfMaterial(m);
+    } else {
+      text = await extractTextFromFile(m.stored_path, m.kind);
+      if (m.kind === "image" && !text) {
+        const buffer = fs.readFileSync(m.stored_path);
+        text = await ocrImage(buffer, m.mime);
+      }
     }
     setMaterialExtractedText(materialId, text);
   } catch (e) {
@@ -286,6 +290,23 @@ export function deleteMaterial(id: string): void {
     } catch {
       /* ignore */
     }
+  }
+  const pages = getDb()
+    .prepare("SELECT image_path FROM material_pages WHERE material_id = ?")
+    .all(id) as { image_path: string | null }[];
+  for (const page of pages) {
+    if (page.image_path) {
+      try {
+        fs.rmSync(page.image_path, { force: true });
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+  try {
+    fs.rmSync(path.join(dataDir(), "uploads", m.subject_id, id), { recursive: true, force: true });
+  } catch {
+    /* ignore */
   }
   removeDerivedImages(m.subject_id, id);
   getDb().prepare("DELETE FROM materials WHERE id = ?").run(id);

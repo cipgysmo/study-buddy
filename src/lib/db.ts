@@ -464,6 +464,26 @@ const MIGRATIONS: { version: number; sql: string }[] = [
       UPDATE materials SET extracted_text_length = COALESCE(length(extracted_text), 0);
     `,
   },
+  {
+    version: 22,
+    sql: `
+      ALTER TABLE materials ADD COLUMN page_count INTEGER;
+
+      CREATE TABLE IF NOT EXISTS material_pages (
+        id          TEXT PRIMARY KEY,
+        material_id TEXT NOT NULL REFERENCES materials(id) ON DELETE CASCADE,
+        page_number INTEGER NOT NULL,
+        image_path  TEXT,
+        text        TEXT,
+        status      TEXT NOT NULL DEFAULT 'pending',
+        error       TEXT,
+        created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+        UNIQUE (material_id, page_number)
+      );
+      CREATE INDEX IF NOT EXISTS idx_material_pages_material
+        ON material_pages(material_id, page_number);
+    `,
+  },
 ];
 
 export function getDb(): Database.Database {

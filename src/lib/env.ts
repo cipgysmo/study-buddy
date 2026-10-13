@@ -59,3 +59,15 @@ export function maxUploadChunkBytes(): number {
   const v = Number(read("MAX_UPLOAD_CHUNK_BYTES", String(8 * 1024 * 1024)));
   return Number.isFinite(v) && v > 0 ? Math.floor(v) : 8 * 1024 * 1024;
 }
+
+/** Maximum PDF pages to OCR. 0 means no limit. */
+export function pdfOcrMaxPages(): number {
+  const v = Number(read("PDF_OCR_MAX_PAGES", "0"));
+  return Number.isFinite(v) && v >= 0 ? Math.floor(v) : 0;
+}
+
+/** Rendered PDF page width used for OCR. */
+export function pdfOcrPageWidth(): number {
+  const v = Number(read("PDF_OCR_PAGE_WIDTH", "1600"));
+  return Number.isFinite(v) && v > 0 ? Math.floor(v) : 1600;
+}

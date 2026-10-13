@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { dataDir } from "@/lib/env";
+import { streamFileWithRange } from "@/lib/file-stream";
 import { getDerivedImage } from "@/lib/image-derive";
 import { deleteMaterial, getMaterial } from "@/lib/subjects";
 
@@ -35,8 +36,7 @@ export async function GET(req: Request, ctx: Ctx) {
       return Response.json({ error: "unreadable_image" }, { status: 500 });
     }
   } else {
-    buffer = fs.readFileSync(stored);
-    mime = m.mime;
+    return streamFileWithRange(req, stored, m.mime);
   }
 
   return new Response(buffer as BodyInit, {

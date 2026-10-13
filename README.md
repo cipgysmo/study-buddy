@@ -80,6 +80,8 @@ Environment variables (see `.env.example`):
 | `DATA_DIR`     | `./data`                         | Where the SQLite DB + uploads live.          |
 | `MAX_UPLOAD_BYTES` | `1073741824`               | Maximum material upload size accepted by the server. |
 | `MAX_UPLOAD_CHUNK_BYTES` | `8388608`          | Maximum size of one chunked-upload request body. |
+| `PDF_OCR_MAX_PAGES` | `0`                       | Maximum PDF pages to OCR; `0` means no limit. |
+| `PDF_OCR_PAGE_WIDTH` | `1600`                   | Rendered PDF page width used for OCR.        |
 | `APP_PASSWORD` | *(empty)*                        | Optional LAN password gate (empty = off).    |
 
 The LLM must support **vision** for the Scan feature (the current `local-ai`
@@ -139,6 +141,8 @@ services:
       PORT: "3000"
       MAX_UPLOAD_BYTES: "1073741824"
       MAX_UPLOAD_CHUNK_BYTES: "8388608"
+      PDF_OCR_MAX_PAGES: "0"
+      PDF_OCR_PAGE_WIDTH: "1600"
       # Optional LAN password gate. Set a value to require it on every visit.
       # APP_PASSWORD: "change-me"
     volumes:

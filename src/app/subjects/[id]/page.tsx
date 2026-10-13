@@ -42,6 +42,7 @@ export default async function SubjectDetailPage({
       status: m.status,
       error: m.error,
       extracted_text_length: m.extracted_text_length,
+      page_count: m.page_count,
       job_id: m.job_id,
       parse_job_id: m.parse_job_id,
       created_at: m.created_at,

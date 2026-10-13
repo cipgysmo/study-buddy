@@ -8,6 +8,7 @@ import { DeleteButton } from "@/components/subjects/delete-button";
 import { ExamPaperCard } from "@/components/subjects/exam-paper-card";
 import { MaterialIconButton } from "@/components/subjects/material-icon-button";
 import { MaterialImage } from "@/components/subjects/material-image";
+import { MaterialPdfPreview } from "@/components/subjects/material-pdf-preview";
 import { MaterialStatus } from "@/components/subjects/material-status";
 import type { BoardCard, BoardColumn } from "@/lib/board";
 import { formatDate } from "@/lib/format";
@@ -20,6 +21,7 @@ interface MaterialItem {
   status: "processing" | "ready" | "failed";
   error: string | null;
   extracted_text_length: number;
+  page_count: number | null;
   job_id: string | null;
   parse_job_id: string | null;
   created_at: string;
@@ -400,6 +402,12 @@ export function MaterialContainers({
 
           {material.kind === "image" ? (
             <MaterialImage src={`/api/materials/${material.id}`} alt={material.filename} />
+          ) : material.kind === "pdf" ? (
+            <MaterialPdfPreview
+              materialId={material.id}
+              filename={material.filename}
+              pageCount={material.page_count}
+            />
           ) : (
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-border bg-foreground/5 text-[10px] font-semibold uppercase tracking-wide text-muted">
               {material.kind.slice(0, 3)}
@@ -435,7 +443,13 @@ export function MaterialContainers({
           </div>
 
           <div className="flex shrink-0 items-center gap-1">
-            <MaterialStatus status={material.status} error={material.error} jobId={material.job_id} />
+            <MaterialStatus
+              materialId={material.id}
+              status={material.status}
+              error={material.error}
+              jobId={material.job_id}
+              canReprocess={material.kind === "pdf"}
+            />
             {card && (
               <MaterialIconButton
                 onClick={() => void unassignCard(card.id)}

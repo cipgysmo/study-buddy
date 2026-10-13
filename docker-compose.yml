@@ -17,6 +17,8 @@ services:
       PORT: "3000"
       MAX_UPLOAD_BYTES: "1073741824"
       MAX_UPLOAD_CHUNK_BYTES: "8388608"
+      PDF_OCR_MAX_PAGES: "0"
+      PDF_OCR_PAGE_WIDTH: "1600"
       # Optional LAN password gate. Set a value to require it on every visit.
       # APP_PASSWORD: "change-me"
     volumes:
