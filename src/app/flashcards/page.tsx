@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { dueFlashcards } from "@/lib/flashcards";
+import { dueFlashcards, listFlashcards } from "@/lib/flashcards";
 import { listSubjects } from "@/lib/subjects";
 import { FlashcardsApp } from "@/components/flashcards/flashcards-app";
 
@@ -10,8 +10,15 @@ export default async function FlashcardsPage({
 }) {
   const t = await getTranslations("Flashcards");
   const { subject } = await searchParams;
-  const subjects = listSubjects().map((s) => ({ id: s.id, name: s.name }));
+  const subjects = listSubjects().map((s) => ({ id: s.id, name: s.name, color: s.color }));
   const initialDue = dueFlashcards(subject).map((c) => ({ id: c.id, front: c.front, back: c.back }));
+  const allCards = listFlashcards(subject).map((c) => ({
+    id: c.id,
+    subject_id: c.subject_id,
+    front: c.front,
+    back: c.back,
+    created_at: c.created_at,
+  }));
 
   return (
     <div className="space-y-6">
@@ -22,6 +29,7 @@ export default async function FlashcardsPage({
       <FlashcardsApp
         subjects={subjects}
         initialDue={initialDue}
+        allCards={allCards}
         initialSubjectId={subject ?? ""}
       />
     </div>

@@ -68,7 +68,7 @@ interface SavedFilters {
 }
 
 const PAGE_SIZE = 10;
-const FILTER_KEY = "study-buddy:practice-filters";
+const FILTER_KEY = "study-buddy:practice-filters:v2";
 
 export function PracticeApp({
   exercises,
@@ -282,7 +282,7 @@ export function PracticeApp({
       );
     });
     const sorted = sortItems(filtered, sort, nameOf, locale);
-    if (group === "subject" && !subjectId) {
+    if (group === "subject") {
       return groupItemsBySubjectAndDay(sorted, subjects, locale, sort === "oldest" ? "asc" : "desc");
     }
     return [

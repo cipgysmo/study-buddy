@@ -226,7 +226,7 @@ export function MockExamsApp({
         }
 
         const groups =
-          group === "subject" && !subjectId
+          group === "subject"
             ? groupItemsBySubjectAndDay(visible, subjects, locale, sort === "oldest" ? "asc" : "desc")
             : [
                 {

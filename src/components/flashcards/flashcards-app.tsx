@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -10,6 +10,7 @@ import { NavIcon } from "@/components/shell/nav-icons";
 import { SubjectSelect, type SubjectOption } from "@/components/ui/subject-select";
 import { DeleteButton } from "@/components/subjects/delete-button";
 import type { GenerationDifficulty } from "@/lib/generation";
+import { groupItemsBySubjectAndDay } from "@/lib/list-view";
 import { useJob } from "@/lib/use-jobs";
 
 interface Card {
@@ -18,16 +19,24 @@ interface Card {
   back: string;
 }
 
+interface AllCard extends Card {
+  subject_id: string;
+  created_at: string;
+}
+
 export function FlashcardsApp({
   subjects,
   initialDue,
+  allCards = [],
   initialSubjectId = "",
 }: {
   subjects: SubjectOption[];
   initialDue: Card[];
+  allCards?: AllCard[];
   initialSubjectId?: string;
 }) {
   const t = useTranslations("Flashcards");
+  const locale = useLocale();
   const [subjectId, setSubjectId] = useState(initialSubjectId);
   const [topicIds, setTopicIds] = useState<string[]>([]);
   const [columnIds, setColumnIds] = useState<string[]>([]);
@@ -100,6 +109,8 @@ export function FlashcardsApp({
   }
 
   const current = due[0];
+  const filteredAllCards = subjectId ? allCards.filter((c) => c.subject_id === subjectId) : allCards;
+  const allCardGroups = groupItemsBySubjectAndDay(filteredAllCards, subjects, locale);
 
   return (
     <div className="space-y-6">
@@ -191,6 +202,48 @@ export function FlashcardsApp({
           </Card>
         )}
       </div>
+
+      {allCards.length > 0 && (
+        <section className="space-y-4">
+          <h2 className="text-lg font-semibold">{t("allCards")}</h2>
+          <div className="space-y-5">
+            {allCardGroups.map((section) => (
+              <section key={section.subjectId ?? "all"} className="space-y-3">
+                {section.subjectName && (
+                  <div className="flex items-center gap-2">
+                    {section.color && (
+                      <span className="h-3 w-3 rounded-full" style={{ backgroundColor: section.color }} />
+                    )}
+                    <h3 className="text-sm font-semibold">{section.subjectName}</h3>
+                  </div>
+                )}
+                {section.dayGroups.map((day) => (
+                  <div key={day.dayKey} className="space-y-2">
+                    {(day.dayLabel || day.timeLabel) && (
+                      <p className="text-xs font-medium text-muted">
+                        {day.dayLabel}
+                        {day.timeLabel ? ` · ${day.timeLabel}` : ""}
+                        <span className="ml-2 opacity-70">({day.items.length})</span>
+                      </p>
+                    )}
+                    <ul className="grid gap-2 sm:grid-cols-2">
+                      {day.items.map((card) => (
+                        <li
+                          key={card.id}
+                          className="rounded-xl border border-border bg-card px-3 py-2 text-sm"
+                        >
+                          <span className="block truncate font-medium">{card.front}</span>
+                          <span className="mt-0.5 block truncate text-xs text-muted">{card.back}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </section>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

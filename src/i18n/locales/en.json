@@ -364,6 +364,7 @@
     "good": "Good",
     "easy": "Easy",
     "empty": "No cards yet.",
+    "allCards": "All cards",
     "deleteCard": "Delete card"
   },
   "Quizzes": {

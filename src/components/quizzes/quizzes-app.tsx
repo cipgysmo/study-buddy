@@ -210,7 +210,7 @@ export function QuizzesApp({
         }
 
         const groups =
-          group === "subject" && !subjectId
+          group === "subject"
             ? groupItemsBySubjectAndDay(visibleQuizzes, subjects, locale, sort === "oldest" ? "asc" : "desc")
             : [
                 {
