@@ -289,7 +289,14 @@ export async function gradeTypedExercise(
      itemId: id,
      correct: result.correct,
      score: result.score,
-     payload: { answer: studentAnswer, feedback: result.feedback, grading_mode: exercise.grading_mode },
+     payload: {
+       prompt: exercise.prompt,
+       answer: studentAnswer,
+       expected_answer: exercise.expected_answer,
+       accepted_answers: exercise.accepted_answers,
+       feedback: result.feedback,
+       grading_mode: exercise.grading_mode,
+     },
    });
 
    return result;

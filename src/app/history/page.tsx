@@ -2,6 +2,43 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { getWeakSpots, listAttemptsPage } from "@/lib/attempts";
 import { groupItemsBySubjectAndDay } from "@/lib/list-view";
 import { listSubjects } from "@/lib/subjects";
+import { getTimezone } from "@/lib/timezone";
+
+interface QuizDetail {
+  prompt: string;
+  answer: string | null;
+  correctAnswer: string;
+  correct: boolean;
+}
+
+interface AttemptPayload {
+  title?: string | null;
+  score?: number | null;
+  total?: number | null;
+  details?: QuizDetail[];
+  prompt?: string;
+  answer?: string | boolean;
+  expected_answer?: string;
+  accepted_answers?: string[];
+  feedback?: string;
+  statement?: string;
+  correct_answer?: boolean;
+  explanation?: string;
+}
+
+function parsePayload(value: string | null): AttemptPayload | null {
+  if (!value) return null;
+  try {
+    return JSON.parse(value) as AttemptPayload;
+  } catch {
+    return null;
+  }
+}
+
+function formatAnswer(value: string | boolean | null | undefined): string {
+  if (typeof value === "boolean") return value ? "True" : "False";
+  return value ?? "—";
+}
 
 export default async function HistoryPage({
   searchParams,
@@ -17,7 +54,8 @@ export default async function HistoryPage({
   const { items } = listAttemptsPage(params);
   const weakSpots = getWeakSpots(subject);
   const subjects = listSubjects().map((s) => ({ id: s.id, name: s.name, color: s.color }));
-  const groups = groupItemsBySubjectAndDay(items, subjects, locale);
+  const timezone = getTimezone();
+  const groups = groupItemsBySubjectAndDay(items, subjects, locale, "desc", timezone);
 
   return (
     <div className="space-y-6">
@@ -63,33 +101,108 @@ export default async function HistoryPage({
                     </p>
                   )}
                   <ul className="space-y-2">
-                    {day.items.map((attempt) => (
-                      <li
-                        key={attempt.id}
-                        className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-3 py-2 text-sm"
-                      >
-                        <span className="min-w-0 truncate">
-                          {t(`kind_${attempt.kind}`)}
-                          {attempt.subject_name ? ` · ${attempt.subject_name}` : ""}
-                        </span>
-                        <span
-                          className={
-                            "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium " +
-                            (attempt.correct === false
-                              ? "bg-danger/10 text-danger"
-                              : attempt.correct === true
-                                ? "bg-success/10 text-success"
-                                : "bg-foreground/5 text-muted")
-                          }
-                        >
-                          {attempt.score == null
+                    {day.items.map((attempt) => {
+                      const payload = parsePayload(attempt.payload);
+                      const summary =
+                        attempt.kind === "quiz" && payload?.score != null && payload?.total != null
+                          ? `${payload.score}/${payload.total}`
+                          : attempt.score == null
                             ? attempt.correct === false
                               ? t("incorrect")
                               : t("correct")
-                            : `${attempt.score}%`}
-                        </span>
-                      </li>
-                    ))}
+                            : `${attempt.score}%`;
+                      const title =
+                        payload?.title ??
+                        payload?.prompt ??
+                        payload?.statement ??
+                        t(`kind_${attempt.kind}`);
+                      return (
+                        <li key={attempt.id} className="rounded-xl border border-border bg-card">
+                          <details className="group">
+                            <summary className="flex cursor-pointer items-center justify-between gap-3 px-3 py-2 text-sm">
+                              <span className="min-w-0 truncate">
+                                <span className="font-medium">{title}</span>
+                                {attempt.subject_name ? (
+                                  <span className="block truncate text-xs text-muted">
+                                    {attempt.subject_name}
+                                  </span>
+                                ) : null}
+                              </span>
+                              <span
+                                className={
+                                  "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium " +
+                                  (attempt.correct === false
+                                    ? "bg-danger/10 text-danger"
+                                    : attempt.correct === true
+                                      ? "bg-success/10 text-success"
+                                      : "bg-foreground/5 text-muted")
+                                }
+                              >
+                                {summary}
+                              </span>
+                            </summary>
+                            <div className="space-y-3 border-t border-border px-3 py-3 text-sm">
+                              {payload?.details?.length ? (
+                                <ul className="space-y-3">
+                                  {payload.details.map((d, i) => (
+                                    <li key={i} className="space-y-1">
+                                      <p className="font-medium">{d.prompt}</p>
+                                      <p className="text-muted">
+                                        {t("yourAnswer")}: {formatAnswer(d.answer)}
+                                      </p>
+                                      <p className="text-muted">
+                                        {t("correctAnswer")}: {formatAnswer(d.correctAnswer)}
+                                      </p>
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : null}
+
+                              {payload?.prompt ? (
+                                <div className="space-y-1">
+                                  <p className="font-medium">{payload.prompt}</p>
+                                  <p className="text-muted">
+                                    {t("yourAnswer")}: {formatAnswer(payload.answer)}
+                                  </p>
+                                  {payload.expected_answer ? (
+                                    <p className="text-muted">
+                                      {t("correctAnswer")}: {payload.expected_answer}
+                                    </p>
+                                  ) : null}
+                                  {payload.accepted_answers?.length ? (
+                                    <p className="text-muted">
+                                      {t("acceptedAnswers")}: {payload.accepted_answers.join(", ")}
+                                    </p>
+                                  ) : null}
+                                  {payload.feedback ? (
+                                    <p className="text-muted">
+                                      {t("feedback")}: {payload.feedback}
+                                    </p>
+                                  ) : null}
+                                </div>
+                              ) : null}
+
+                              {payload?.statement ? (
+                                <div className="space-y-1">
+                                  <p className="font-medium">{payload.statement}</p>
+                                  <p className="text-muted">
+                                    {t("yourAnswer")}: {formatAnswer(payload.answer)}
+                                  </p>
+                                  <p className="text-muted">
+                                    {t("correctAnswer")}: {formatAnswer(payload.correct_answer)}
+                                  </p>
+                                  {payload.explanation ? (
+                                    <p className="text-muted">
+                                      {t("explanation")}: {payload.explanation}
+                                    </p>
+                                  ) : null}
+                                </div>
+                              ) : null}
+                            </div>
+                          </details>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               ))}

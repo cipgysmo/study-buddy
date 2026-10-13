@@ -85,7 +85,8 @@ export function groupItemsBySubjectAndDay<T extends { subject_id: string | null;
   items: T[],
   subjects: SubjectOption[],
   locale: string,
-  dayOrder: "asc" | "desc" = "desc"
+  dayOrder: "asc" | "desc" = "desc",
+  timeZone?: string
 ): SubjectDayGroup<T>[] {
   const subjectGroups = groupItemsBySubject(items, subjects);
   return subjectGroups.map((group) => {
@@ -101,8 +102,8 @@ export function groupItemsBySubjectAndDay<T extends { subject_id: string | null;
       .sort((a, b) => (dayOrder === "asc" ? a[0].localeCompare(b[0]) : b[0].localeCompare(a[0])))
       .map(([dayKey, dayItems]) => ({
         dayKey,
-        dayLabel: formatDayLabel(dayItems[0].created_at, locale),
-        timeLabel: formatTimeRange(dayItems.map((item) => item.created_at), locale),
+        dayLabel: formatDayLabel(dayItems[0].created_at, locale, timeZone),
+        timeLabel: formatTimeRange(dayItems.map((item) => item.created_at), locale, timeZone),
         items: dayItems,
       }));
 

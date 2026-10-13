@@ -140,11 +140,13 @@ export function MaterialContainers({
   subjects = [],
   initial,
   materials: initialMaterials,
+  timeZone,
 }: {
   subjectId: string;
   subjects?: { id: string; name: string }[];
   initial: BoardColumn[];
   materials: MaterialItem[];
+  timeZone?: string;
 }) {
   const t = useTranslations("Subjects");
   const locale = useLocale();
@@ -418,7 +420,7 @@ export function MaterialContainers({
           <div className="min-w-0 flex-1">
             <span className="block truncate text-sm font-medium">{material.filename}</span>
             <span className="mt-0.5 block truncate text-xs text-muted">
-              {t("addedOn", { date: formatDate(material.created_at, locale) })}
+              {t("addedOn", { date: formatDate(material.created_at, locale, timeZone) })}
             </span>
             <span className="mt-0.5 block truncate text-xs text-muted">
               {material.status === "failed" && material.error

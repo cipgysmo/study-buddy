@@ -3,10 +3,10 @@ export function parseSqliteDate(value: string): Date {
   return new Date(normalized);
 }
 
-export function formatDate(value: string, locale = "en"): string {
+export function formatDate(value: string, locale = "en", timeZone?: string): string {
   const date = parseSqliteDate(value);
   if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(date);
+  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone }).format(date);
 }
 
 export function formatDayKey(value: string): string {
@@ -15,25 +15,25 @@ export function formatDayKey(value: string): string {
   return date.toISOString().slice(0, 10);
 }
 
-export function formatDayLabel(value: string, locale = "en"): string {
+export function formatDayLabel(value: string, locale = "en", timeZone?: string): string {
   const date = parseSqliteDate(value);
   if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(date);
+  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone }).format(date);
 }
 
-export function formatTimeLabel(value: string, locale = "en"): string {
+export function formatTimeLabel(value: string, locale = "en", timeZone?: string): string {
   const date = parseSqliteDate(value);
   if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat(locale, { timeStyle: "short" }).format(date);
+  return new Intl.DateTimeFormat(locale, { timeStyle: "short", timeZone }).format(date);
 }
 
-export function formatTimeRange(values: string[], locale = "en"): string | null {
+export function formatTimeRange(values: string[], locale = "en", timeZone?: string): string | null {
   const times = values
     .map((value) => ({ value, date: parseSqliteDate(value) }))
     .filter((x) => !Number.isNaN(x.date.getTime()))
     .sort((a, b) => a.date.getTime() - b.date.getTime());
   if (times.length < 2) return null;
-  const first = formatTimeLabel(times[0].value, locale);
-  const last = formatTimeLabel(times[times.length - 1].value, locale);
+  const first = formatTimeLabel(times[0].value, locale, timeZone);
+  const last = formatTimeLabel(times[times.length - 1].value, locale, timeZone);
   return first === last ? null : `${first}–${last}`;
 }

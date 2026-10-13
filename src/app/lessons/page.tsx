@@ -3,6 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { groupItemsBySubjectAndDay } from "@/lib/list-view";
 import { countChapters, listLessons } from "@/lib/lessons";
 import { getSubject, listSubjects } from "@/lib/subjects";
+import { getTimezone } from "@/lib/timezone";
 import { DeleteButton } from "@/components/subjects/delete-button";
 
 export default async function LessonsPage() {
@@ -10,7 +11,7 @@ export default async function LessonsPage() {
   const locale = await getLocale();
   const lessons = listLessons();
   const subjects = listSubjects().map((s) => ({ id: s.id, name: s.name, color: s.color }));
-  const groups = groupItemsBySubjectAndDay(lessons, subjects, locale);
+  const groups = groupItemsBySubjectAndDay(lessons, subjects, locale, "desc", getTimezone());
 
   return (
     <div className="space-y-4">

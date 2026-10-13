@@ -4,11 +4,13 @@ import { LanguageSwitcher } from "@/components/settings/language-switcher";
 import { NameField } from "@/components/settings/name-field";
 import { SoundToggle } from "@/components/settings/sound-toggle";
 import { ThemeSwitcher } from "@/components/settings/theme-switcher";
+import { TimezoneField } from "@/components/settings/timezone-field";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { getSetting } from "@/lib/db";
 import { getStudentName } from "@/lib/profile";
 import { resolveTheme } from "@/lib/theme";
+import { getTimezone } from "@/lib/timezone";
 import { getAppVersionInfo } from "@/lib/version";
 
 export default async function SettingsPage() {
@@ -17,6 +19,7 @@ export default async function SettingsPage() {
   const theme = await resolveTheme();
   const name = getStudentName();
   const sound = (getSetting("sound") ?? "on") as "on" | "off";
+  const timezone = getTimezone();
   const version = getAppVersionInfo();
 
   return (
@@ -55,6 +58,14 @@ export default async function SettingsPage() {
           </div>
           <SoundToggle current={sound} />
         </div>
+      </Card>
+
+      <Card className="max-w-md space-y-3 p-5">
+        <div>
+          <h2 className="font-medium">{t("timezone")}</h2>
+          <p className="mt-0.5 text-sm text-muted">{t("timezoneHint")}</p>
+        </div>
+        <TimezoneField current={timezone} />
       </Card>
 
       <Card className="max-w-md space-y-2 p-5">

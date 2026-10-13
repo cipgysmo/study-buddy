@@ -27,7 +27,12 @@ export async function POST(req: Request, ctx: Ctx) {
     itemId: id,
     correct,
     score: correct ? 100 : 0,
-    payload: { answer: body.answer, explanation: item.explanation },
+    payload: {
+      statement: item.statement,
+      answer: body.answer,
+      correct_answer: item.is_correct,
+      explanation: item.explanation,
+    },
   });
   return Response.json({ ok: true, correct });
 }

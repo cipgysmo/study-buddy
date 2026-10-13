@@ -229,7 +229,17 @@ export function gradeQuiz(
     itemId: quizId,
     correct: score === total,
     score: total > 0 ? Math.round((score / total) * 100) : null,
-    payload: { score, total },
+    payload: {
+      score,
+      total,
+      title: quiz?.title ?? null,
+      details: questions.map((q) => ({
+        prompt: q.prompt,
+        answer: answers[q.id] != null ? q.options[answers[q.id]] : null,
+        correctAnswer: q.options[q.correct_index],
+        correct: answers[q.id] === q.correct_index,
+      })),
+    },
   });
   return { score, total, attempt };
 }

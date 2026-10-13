@@ -13,6 +13,7 @@ import { dueFlashcards } from "@/lib/flashcards";
 import { listBoard } from "@/lib/board";
 import { getJob } from "@/lib/jobs";
 import { getSubject, listMaterials, listSubjects } from "@/lib/subjects";
+import { getTimezone } from "@/lib/timezone";
 import { listTopics, materialTopicNames } from "@/lib/topics";
 
 export default async function SubjectDetailPage({
@@ -147,6 +148,7 @@ export default async function SubjectDetailPage({
           subjects={subjects}
           initial={board}
           materials={materialItems}
+          timeZone={getTimezone()}
         />
       </section>
     </div>
