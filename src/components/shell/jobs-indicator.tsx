@@ -5,6 +5,13 @@ import { useTranslations } from "next-intl";
 import { Spinner } from "@/components/ui/spinner";
 import { useActiveJobs } from "./jobs-provider";
 
+function humanizeJobType(type: string): string {
+  return type
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .replace(/^\w/, (c) => c.toUpperCase());
+}
+
 export function JobsIndicator({ variant = "list" }: { variant?: "badge" | "list" }) {
   const t = useTranslations("Common");
   const tj = useTranslations("Jobs");
@@ -43,7 +50,9 @@ export function JobsIndicator({ variant = "list" }: { variant?: "badge" | "list"
           className="group flex items-center gap-2 rounded-lg bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent"
         >
           <Spinner className="h-3 w-3" />
-          <span className="min-w-0 truncate">{tj(job.type)}</span>
+          <span className="min-w-0 truncate">
+            {tj.has(job.type) ? tj(job.type) : humanizeJobType(job.type)}
+          </span>
           <button
             type="button"
             onClick={() => void cancel(job.id)}

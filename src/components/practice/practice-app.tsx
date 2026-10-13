@@ -11,8 +11,13 @@ import { SubjectSelect, type SubjectOption } from "@/components/ui/subject-selec
 import { GenerationScopePicker } from "@/components/ui/generation-scope-picker";
 import { Diagram } from "@/components/ui/diagram";
 import type { GenerationDifficulty } from "@/lib/generation";
-import { formatDate } from "@/lib/format";
-import { groupItemsBySubject, sortItems, type GroupMode, type SortMode } from "@/lib/list-view";
+import {
+  groupItemsBySubjectAndDay,
+  sortItems,
+  type GroupMode,
+  type SortMode,
+  type SubjectDayGroup,
+} from "@/lib/list-view";
 import { useJob } from "@/lib/use-jobs";
 
 interface Exercise {
@@ -70,7 +75,8 @@ export function PracticeApp({
   const [tab, setTab] = useState<"exercises" | "truefalse" | "typed">("exercises");
   const [subjectId, setSubjectId] = useState(initialSubjectId);
   const [sort, setSort] = useState<SortMode>("newest");
-  const [group, setGroup] = useState<GroupMode>("none");
+  const [group, setGroup] = useState<GroupMode>("subject");
+  const [query, setQuery] = useState("");
   const [topicIds, setTopicIds] = useState<string[]>([]);
   const [columnIds, setColumnIds] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
@@ -158,13 +164,23 @@ export function PracticeApp({
   function visibleGroups<T extends { id: string; subject_id: string; created_at: string }>(
     all: T[],
     nameOf: (item: T) => string
-  ) {
-    const filtered = subjectId ? all.filter((item) => item.subject_id === subjectId) : all;
+  ): SubjectDayGroup<T>[] {
+    const q = query.trim().toLowerCase();
+    const filtered = all.filter(
+      (item) => (!subjectId || item.subject_id === subjectId) && (!q || nameOf(item).toLowerCase().includes(q))
+    );
     const sorted = sortItems(filtered, sort, nameOf, locale);
     if (group === "subject" && !subjectId) {
-      return groupItemsBySubject(sorted, subjects);
+      return groupItemsBySubjectAndDay(sorted, subjects, locale, sort === "oldest" ? "asc" : "desc");
     }
-    return [{ subjectId: null, subjectName: "", color: null, items: sorted }];
+    return [
+      {
+        subjectId: null,
+        subjectName: "",
+        color: null,
+        dayGroups: [{ dayKey: "all", dayLabel: "", timeLabel: null, items: sorted }],
+      },
+    ];
   }
 
   function difficultyLabel(d: string) {
@@ -216,6 +232,13 @@ export function PracticeApp({
         >
           {t("generateTyped")}
         </Button>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={tc("searchPlaceholder")}
+          aria-label={tc("search")}
+          className="min-w-52 flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-ring"
+        />
         <div className="ml-auto flex items-center gap-2">
           <label className="text-xs text-muted">
             {tc("sortLabel")}
@@ -300,7 +323,7 @@ export function PracticeApp({
         const itemGroups = visibleGroups(items, (item) => item.statement);
 
         if (tab === "typed") {
-          return typedGroups.every((section) => section.items.length === 0) ? (
+          return typedGroups.every((section) => section.dayGroups.every((day) => day.items.length === 0)) ? (
             <EmptyState
               title={t("emptyTyped")}
               icon={<NavIcon name="exercises" className="h-5 w-5" />}
@@ -317,8 +340,15 @@ export function PracticeApp({
                       <h2 className="text-sm font-semibold">{section.subjectName}</h2>
                     </div>
                   )}
-                  <div className="space-y-3">
-              {section.items.map((ex, index) => {
+                  {section.dayGroups.map((day) => (
+                    <div key={day.dayKey} className="space-y-3">
+                      {(day.dayLabel || day.timeLabel) && (
+                        <p className="text-xs font-medium text-muted">
+                          {day.dayLabel}
+                          {day.timeLabel ? ` · ${day.timeLabel}` : ""}
+                        </p>
+                      )}
+              {day.items.map((ex, index) => {
                 const result = typedResults[ex.id];
                 return (
                   <Card key={ex.id} className="p-4">
@@ -342,9 +372,6 @@ export function PracticeApp({
                       </span>
                       <span className="rounded-full bg-foreground/5 px-2 py-0.5 text-xs text-muted">
                         {gradingModeLabel(ex.grading_mode)}
-                      </span>
-                      <span className="rounded-full bg-foreground/5 px-2 py-0.5 text-xs text-muted">
-                        {tc("createdOn", { date: formatDate(ex.created_at, locale) })}
                       </span>
                     </div>
                     <div className="mt-3 space-y-2">
@@ -387,15 +414,16 @@ export function PracticeApp({
                    </Card>
                  );
                })}
-                   </div>
-                 </section>
-               ))}
-             </div>
-           );
-         }
+                    </div>
+                  ))}
+                </section>
+              ))}
+            </div>
+          );
+        }
 
-         if (tab === "exercises") {
-          return exerciseGroups.every((section) => section.items.length === 0) ? (
+        if (tab === "exercises") {
+          return exerciseGroups.every((section) => section.dayGroups.every((day) => day.items.length === 0)) ? (
             <EmptyState
               title={t("emptyExercises")}
               icon={<NavIcon name="exercises" className="h-5 w-5" />}
@@ -412,8 +440,15 @@ export function PracticeApp({
                       <h2 className="text-sm font-semibold">{section.subjectName}</h2>
                     </div>
                   )}
-                  <div className="space-y-3">
-              {section.items.map((ex, index) => (
+                  {section.dayGroups.map((day) => (
+                    <div key={day.dayKey} className="space-y-3">
+                      {(day.dayLabel || day.timeLabel) && (
+                        <p className="text-xs font-medium text-muted">
+                          {day.dayLabel}
+                          {day.timeLabel ? ` · ${day.timeLabel}` : ""}
+                        </p>
+                      )}
+              {day.items.map((ex, index) => (
                 <Card key={ex.id} className="p-4">
                   <div className="flex items-start justify-between gap-3">
                     <p className="font-medium">
@@ -432,9 +467,6 @@ export function PracticeApp({
                   <div className="mt-2 flex flex-wrap gap-2">
                     <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs text-accent">
                       {difficultyLabel(ex.difficulty)}
-                    </span>
-                    <span className="rounded-full bg-foreground/5 px-2 py-0.5 text-xs text-muted">
-                      {tc("createdOn", { date: formatDate(ex.created_at, locale) })}
                     </span>
                   </div>
                   {ex.diagram && (
@@ -462,14 +494,15 @@ export function PracticeApp({
                   )}
                  </Card>
                ))}
-                   </div>
-                 </section>
-               ))}
-             </div>
-           );
-         }
+                    </div>
+                  ))}
+                </section>
+              ))}
+            </div>
+          );
+        }
 
-         return itemGroups.every((section) => section.items.length === 0) ? (
+        return itemGroups.every((section) => section.dayGroups.every((day) => day.items.length === 0)) ? (
           <EmptyState
             title={t("emptyTrueFalse")}
             icon={<NavIcon name="quizzes" className="h-5 w-5" />}
@@ -486,8 +519,15 @@ export function PracticeApp({
                      <h2 className="text-sm font-semibold">{section.subjectName}</h2>
                    </div>
                  )}
-                 <div className="space-y-3">
-             {section.items.map((item, index) => {
+                  {section.dayGroups.map((day) => (
+                    <div key={day.dayKey} className="space-y-3">
+                      {(day.dayLabel || day.timeLabel) && (
+                        <p className="text-xs font-medium text-muted">
+                          {day.dayLabel}
+                          {day.timeLabel ? ` · ${day.timeLabel}` : ""}
+                        </p>
+                      )}
+              {day.items.map((item, index) => {
               const answered = item.id in tfAnswers;
               const correct = tfAnswers[item.id] === item.is_correct;
               const btnClass = (value: boolean) => {
@@ -513,9 +553,6 @@ export function PracticeApp({
                       ✕
                     </button>
                    </div>
-                   <p className="mt-1 text-xs text-muted">
-                     {tc("createdOn", { date: formatDate(item.created_at, locale) })}
-                   </p>
                    <div className="mt-3 flex gap-2">
                      <Button
                        variant="secondary"
@@ -554,12 +591,13 @@ export function PracticeApp({
                  </Card>
                );
              })}
-                 </div>
-               </section>
-             ))}
-           </div>
-         );
-       })()}
+                    </div>
+                  ))}
+                </section>
+              ))}
+            </div>
+          );
+        })()}
     </div>
   );
 }

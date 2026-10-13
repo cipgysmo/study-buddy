@@ -7,8 +7,12 @@ import { SubjectSelect, type SubjectOption } from "@/components/ui/subject-selec
 import { GenerationScopePicker } from "@/components/ui/generation-scope-picker";
 import { DeleteButton } from "@/components/subjects/delete-button";
 import type { GenerationDifficulty } from "@/lib/generation";
-import { formatDate } from "@/lib/format";
-import { groupItemsBySubject, sortItems, type GroupMode, type SortMode } from "@/lib/list-view";
+import {
+  groupItemsBySubjectAndDay,
+  sortItems,
+  type GroupMode,
+  type SortMode,
+} from "@/lib/list-view";
 import { useJob } from "@/lib/use-jobs";
 import { QuizRunner, type RunnerQuestion } from "@/components/quizzes/quiz-runner";
 
@@ -33,7 +37,8 @@ export function MockExamsApp({
   const router = useRouter();
   const [subjectId, setSubjectId] = useState("");
   const [sort, setSort] = useState<SortMode>("newest");
-  const [group, setGroup] = useState<GroupMode>("none");
+  const [group, setGroup] = useState<GroupMode>("subject");
+  const [query, setQuery] = useState("");
   const [topicIds, setTopicIds] = useState<string[]>([]);
   const [columnIds, setColumnIds] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
@@ -149,6 +154,13 @@ export function MockExamsApp({
         >
           {busy ? t("generating") : t("generate")}
         </button>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={tc("searchPlaceholder")}
+          aria-label={tc("search")}
+          className="min-w-52 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+        />
         <div className="ml-auto flex items-center gap-2">
           <label className="text-xs text-muted">
             {tc("sortLabel")}
@@ -192,7 +204,12 @@ export function MockExamsApp({
       />
 
       {(() => {
-        const filtered = subjectId ? exams.filter((exam) => exam.subject_id === subjectId) : exams;
+        const q = query.trim().toLowerCase();
+        const filtered = exams.filter(
+          (exam) =>
+            (!subjectId || exam.subject_id === subjectId) &&
+            (!q || exam.title.toLowerCase().includes(q))
+        );
         const visible = sortItems(filtered, sort, (exam) => exam.title, locale);
         if (visible.length === 0) {
           return (
@@ -204,13 +221,27 @@ export function MockExamsApp({
 
         const groups =
           group === "subject" && !subjectId
-            ? groupItemsBySubject(visible, subjects)
-            : [{ subjectId: null, subjectName: "", color: null, items: visible }];
+            ? groupItemsBySubjectAndDay(visible, subjects, locale, sort === "oldest" ? "asc" : "desc")
+            : [
+                {
+                  subjectId: null,
+                  subjectName: "",
+                  color: null,
+                  dayGroups: [
+                    {
+                      dayKey: "all",
+                      dayLabel: "",
+                      timeLabel: null,
+                      items: visible,
+                    },
+                  ],
+                },
+              ];
 
         return (
           <div className="space-y-5">
             {groups.map((section) => (
-              <section key={section.subjectId ?? "all"} className="space-y-2">
+              <section key={section.subjectId ?? "all"} className="space-y-3">
                 {section.subjectName && (
                   <div className="flex items-center gap-2">
                     {section.color && (
@@ -219,27 +250,34 @@ export function MockExamsApp({
                     <h2 className="text-sm font-semibold">{section.subjectName}</h2>
                   </div>
                 )}
-                <ul className="grid gap-3 sm:grid-cols-2">
-                  {section.items.map((exam) => (
-                    <li key={exam.id} className="rounded-2xl border border-border bg-card p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <button
-                          onClick={() => void start(exam)}
-                          className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left font-medium hover:text-accent"
-                        >
-                          <span className="min-w-0 truncate">{exam.title}</span>
-                          <span className="shrink-0 rounded-full bg-foreground/5 px-2 py-0.5 text-xs font-medium text-muted">
-                            {exam.duration_min} {t("minutes")}
-                          </span>
-                        </button>
-                        <DeleteButton href={`/api/quizzes/${exam.id}`} label={t("deleteExam")} />
-                      </div>
-                      <p className="mt-1 text-xs text-muted">
-                        {tc("createdOn", { date: formatDate(exam.created_at, locale) })}
+                {section.dayGroups.map((day) => (
+                  <div key={day.dayKey} className="space-y-2">
+                    {(day.dayLabel || day.timeLabel) && (
+                      <p className="text-xs font-medium text-muted">
+                        {day.dayLabel}
+                        {day.timeLabel ? ` · ${day.timeLabel}` : ""}
                       </p>
-                    </li>
-                  ))}
-                </ul>
+                    )}
+                    <ul className="grid gap-3 sm:grid-cols-2">
+                      {day.items.map((exam) => (
+                        <li key={exam.id} className="rounded-2xl border border-border bg-card p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <button
+                              onClick={() => void start(exam)}
+                              className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left font-medium hover:text-accent"
+                            >
+                              <span className="min-w-0 truncate">{exam.title}</span>
+                              <span className="shrink-0 rounded-full bg-foreground/5 px-2 py-0.5 text-xs font-medium text-muted">
+                                {exam.duration_min} {t("minutes")}
+                              </span>
+                            </button>
+                            <DeleteButton href={`/api/quizzes/${exam.id}`} label={t("deleteExam")} />
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
               </section>
             ))}
           </div>

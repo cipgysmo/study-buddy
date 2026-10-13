@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupItemsBySubject, sortItems } from "@/lib/list-view";
+import { groupItemsBySubject, groupItemsBySubjectAndDay, sortItems } from "@/lib/list-view";
 
 const items = [
   { id: "b", subject_id: "s2", created_at: "2026-01-02 10:00:00", title: "Beta" },
@@ -24,6 +24,21 @@ describe("list view helpers", () => {
       "b",
       "c",
     ]);
+  });
+
+  it("groups items by subject and day with a time range when needed", () => {
+    const groups = groupItemsBySubjectAndDay(
+      [
+        { id: "a", subject_id: "s1", created_at: "2026-01-01 10:00:00" },
+        { id: "b", subject_id: "s1", created_at: "2026-01-01 11:30:00" },
+        { id: "c", subject_id: "s1", created_at: "2026-01-02 09:00:00" },
+      ],
+      [{ id: "s1", name: "Math", color: "#000" }],
+      "en"
+    );
+    expect(groups[0].dayGroups).toHaveLength(2);
+    expect(groups[0].dayGroups[0].timeLabel).toBeNull();
+    expect(groups[0].dayGroups[1].timeLabel).toContain("–");
   });
 
   it("groups items by subject", () => {

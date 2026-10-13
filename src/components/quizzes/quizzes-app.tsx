@@ -11,8 +11,12 @@ import { SubjectSelect, type SubjectOption } from "@/components/ui/subject-selec
 import { GenerationScopePicker } from "@/components/ui/generation-scope-picker";
 import { DeleteButton } from "@/components/subjects/delete-button";
 import type { GenerationDifficulty } from "@/lib/generation";
-import { formatDate } from "@/lib/format";
-import { groupItemsBySubject, sortItems, type GroupMode, type SortMode } from "@/lib/list-view";
+import {
+  groupItemsBySubjectAndDay,
+  sortItems,
+  type GroupMode,
+  type SortMode,
+} from "@/lib/list-view";
 import { useJob } from "@/lib/use-jobs";
 import { QuizRunner, type RunnerQuestion } from "./quiz-runner";
 
@@ -38,7 +42,8 @@ export function QuizzesApp({
   const router = useRouter();
   const [subjectId, setSubjectId] = useState(initialSubjectId);
   const [sort, setSort] = useState<SortMode>("newest");
-  const [group, setGroup] = useState<GroupMode>("none");
+  const [group, setGroup] = useState<GroupMode>("subject");
+  const [query, setQuery] = useState("");
   const [topicIds, setTopicIds] = useState<string[]>([]);
   const [columnIds, setColumnIds] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
@@ -137,6 +142,13 @@ export function QuizzesApp({
         <Button onClick={generate} disabled={busy || !subjectId}>
           {busy ? t("generating") : t("generate")}
         </Button>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={tc("searchPlaceholder")}
+          aria-label={tc("search")}
+          className="min-w-52 flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-ring"
+        />
         <div className="ml-auto flex items-center gap-2">
           <label className="text-xs text-muted">
             {tc("sortLabel")}
@@ -180,9 +192,12 @@ export function QuizzesApp({
       />
 
       {(() => {
-        const filtered = subjectId
-          ? quizzes.filter((quiz) => quiz.subject_id === subjectId)
-          : quizzes;
+        const q = query.trim().toLowerCase();
+        const filtered = quizzes.filter(
+          (quiz) =>
+            (!subjectId || quiz.subject_id === subjectId) &&
+            (!q || quiz.title.toLowerCase().includes(q))
+        );
         const visibleQuizzes = sortItems(filtered, sort, (quiz) => quiz.title, locale);
         if (visibleQuizzes.length === 0) {
           return <EmptyState title={t("empty")} icon={<NavIcon name="quizzes" className="h-5 w-5" />} />;
@@ -190,13 +205,27 @@ export function QuizzesApp({
 
         const groups =
           group === "subject" && !subjectId
-            ? groupItemsBySubject(visibleQuizzes, subjects)
-            : [{ subjectId: null, subjectName: "", color: null, items: visibleQuizzes }];
+            ? groupItemsBySubjectAndDay(visibleQuizzes, subjects, locale, sort === "oldest" ? "asc" : "desc")
+            : [
+                {
+                  subjectId: null,
+                  subjectName: "",
+                  color: null,
+                  dayGroups: [
+                    {
+                      dayKey: "all",
+                      dayLabel: "",
+                      timeLabel: null,
+                      items: visibleQuizzes,
+                    },
+                  ],
+                },
+              ];
 
         return (
           <div className="space-y-5">
             {groups.map((section) => (
-              <section key={section.subjectId ?? "all"} className="space-y-2">
+              <section key={section.subjectId ?? "all"} className="space-y-3">
                 {section.subjectName && (
                   <div className="flex items-center gap-2">
                     {section.color && (
@@ -205,24 +234,33 @@ export function QuizzesApp({
                     <h2 className="text-sm font-semibold">{section.subjectName}</h2>
                   </div>
                 )}
-                <ul className="grid gap-3 sm:grid-cols-2">
-                  {section.items.map((q) => (
-                    <li key={q.id}>
-                      <Card className="p-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <button
-                            onClick={() => loadQuiz(q.id)}
-                            className="min-w-0 truncate text-left font-medium transition hover:text-accent"
-                          >
-                            {q.title}
-                          </button>
-                          <DeleteButton href={`/api/quizzes/${q.id}`} label={t("deleteQuiz")} />
-                        </div>
-                        <p className="mt-1 text-xs text-muted">{tc("createdOn", { date: formatDate(q.created_at, locale) })}</p>
-                      </Card>
-                    </li>
-                  ))}
-                </ul>
+                {section.dayGroups.map((day) => (
+                  <div key={day.dayKey} className="space-y-2">
+                    {(day.dayLabel || day.timeLabel) && (
+                      <p className="text-xs font-medium text-muted">
+                        {day.dayLabel}
+                        {day.timeLabel ? ` · ${day.timeLabel}` : ""}
+                      </p>
+                    )}
+                    <ul className="grid gap-3 sm:grid-cols-2">
+                      {day.items.map((q) => (
+                        <li key={q.id}>
+                          <Card className="p-4">
+                            <div className="flex items-center justify-between gap-3">
+                              <button
+                                onClick={() => loadQuiz(q.id)}
+                                className="min-w-0 truncate text-left font-medium transition hover:text-accent"
+                              >
+                                {q.title}
+                              </button>
+                              <DeleteButton href={`/api/quizzes/${q.id}`} label={t("deleteQuiz")} />
+                            </div>
+                          </Card>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
               </section>
             ))}
           </div>

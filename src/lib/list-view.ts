@@ -1,4 +1,4 @@
-import { parseSqliteDate } from "./format";
+import { formatDayKey, formatDayLabel, formatTimeRange, parseSqliteDate } from "./format";
 
 export type SortMode = "newest" | "oldest" | "name";
 export type GroupMode = "none" | "subject";
@@ -35,6 +35,49 @@ export function sortItems<T extends { id: string; created_at: string }>(
     return mode === "oldest" ? a.id.localeCompare(b.id) : b.id.localeCompare(a.id);
   });
   return copy;
+}
+
+export interface DayGroup<T> {
+  dayKey: string;
+  dayLabel: string;
+  timeLabel: string | null;
+  items: T[];
+}
+
+export interface SubjectDayGroup<T> {
+  subjectId: string | null;
+  subjectName: string;
+  color: string | null;
+  dayGroups: DayGroup<T>[];
+}
+
+export function groupItemsBySubjectAndDay<T extends { subject_id: string | null; created_at: string }>(
+  items: T[],
+  subjects: SubjectOption[],
+  locale: string,
+  dayOrder: "asc" | "desc" = "desc"
+): SubjectDayGroup<T>[] {
+  const subjectGroups = groupItemsBySubject(items, subjects);
+  return subjectGroups.map((group) => {
+    const byDay = new Map<string, T[]>();
+    for (const item of group.items) {
+      const key = formatDayKey(item.created_at);
+      const list = byDay.get(key) ?? [];
+      list.push(item);
+      byDay.set(key, list);
+    }
+
+    const dayGroups = [...byDay.entries()]
+      .sort((a, b) => (dayOrder === "asc" ? a[0].localeCompare(b[0]) : b[0].localeCompare(a[0])))
+      .map(([dayKey, dayItems]) => ({
+        dayKey,
+        dayLabel: formatDayLabel(dayItems[0].created_at, locale),
+        timeLabel: formatTimeRange(dayItems.map((item) => item.created_at), locale),
+        items: dayItems,
+      }));
+
+    return { ...group, dayGroups };
+  });
 }
 
 export function groupItemsBySubject<T extends { subject_id: string | null }>(
