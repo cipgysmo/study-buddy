@@ -464,7 +464,9 @@
     "kind_mixed": "Mix cvičení",
     "answered": "Zodpovězeno {answered}/{total}",
     "correctCount": "{count, plural, one {# správně} few {# správně} other {# správně}}",
-    "remaining": "{count, plural, one {# zbývá} few {# zbývá} other {# zbývá}}"
+    "remaining": "{count, plural, one {# zbývá} few {# zbývá} other {# zbývá}}",
+    "itemsCount": "{count, plural, one {# položka} few {# položky} other {# položek}}",
+    "showItems": "Zobrazit položky"
   },
   "Progress": {
     "title": "Progres",

@@ -81,7 +81,7 @@ interface PracticeView {
 }
 
 const PAGE_SIZE = 10;
-const FILTER_KEY = "study-buddy:practice-filters:v3";
+const FILTER_KEY = "study-buddy:practice-filters:v4";
 const SESSION_KEY = "study-buddy:practice-session:v1";
 const VIEWS_KEY = "study-buddy:practice-views:v1";
 const TABS: PracticeTab[] = ["exercises", "truefalse", "typed"];
@@ -619,77 +619,77 @@ export function PracticeApp({
     );
   }
 
-  function renderSetGrouped<T extends ListItem>(
-    groups: SetGroup<T>[],
-    emptyTitle: string,
-    icon: "exercises" | "quizzes",
-    renderItem: (item: T, index: number) => ReactNode
-  ) {
+  function viewUngroupedDay(dayKey: string) {
+    setGroup("none");
+    setDateFrom(dayKey);
+    setDateTo(dayKey);
+    setSetIdFilter("");
+    setShowFilters(true);
+    updateQuery({ set: null });
+  }
+
+  function renderSessionCards<T extends ListItem>(groups: SetGroup<T>[], emptyTitle: string, icon: "exercises" | "quizzes") {
     if (groups.length === 0) {
       return renderEmpty(emptyTitle, icon);
     }
 
+    const key = "sessions";
+    const limit = visibleCounts[key] ?? PAGE_SIZE;
+    const shown = groups.slice(0, limit);
+
     return (
-      <div className="space-y-5">
-        {groups.map((setGroup) => {
-          const key = `set|${setGroup.key}`;
-          const isCollapsed = collapsed.has(key);
-          const limit = visibleCounts[key] ?? PAGE_SIZE;
-          const shown = isCollapsed ? [] : setGroup.items.slice(0, limit);
-          return (
-            <div key={key} className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => toggleGroup(key)}
-                  className="min-h-10 rounded-lg px-2 text-left text-xs font-medium text-muted transition hover:bg-foreground/5 hover:text-foreground"
-                  aria-expanded={!isCollapsed}
-                >
-                  {isCollapsed ? tc("expand") : tc("collapse")}
-                </button>
-                {setGroup.color && (
-                  <span className="h-3 w-3 rounded-full" style={{ backgroundColor: setGroup.color }} />
-                )}
-                <p className="text-xs font-medium text-muted">
-                  {setGroup.setId ? t("session") : t("ungrouped")}
-                  {setGroup.subjectName && setGroup.subjectName !== "—" ? ` · ${setGroup.subjectName}` : ""}
-                  {setGroup.dayLabel ? ` · ${setGroup.dayLabel}` : ""}
-                  {setGroup.timeLabel ? ` · ${setGroup.timeLabel}` : ""}
-                  <span className="ml-2 opacity-70">({setGroup.items.length})</span>
+      <div className="space-y-3">
+        {shown.map((session) => (
+          <Card key={session.key} className="p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  {session.color && (
+                    <span className="h-3 w-3 rounded-full" style={{ backgroundColor: session.color }} />
+                  )}
+                  <p className="font-medium">
+                    {session.setId ? session.dayLabel || t("session") : t("ungrouped")}
+                  </p>
+                </div>
+                <p className="mt-1 text-xs text-muted">
+                  {session.subjectName && session.subjectName !== "—" ? `${session.subjectName} · ` : ""}
+                  {session.timeLabel ? `${session.timeLabel} · ` : ""}
+                  {t("itemsCount", { count: session.items.length })}
                 </p>
-                {setGroup.setId && (
-                  <Link
-                    href={`/practice/${setGroup.setId}`}
-                    className="inline-flex min-h-8 items-center rounded-lg border border-border bg-background px-3 text-xs font-medium transition hover:border-accent hover:text-accent"
-                  >
-                    {t("openSession")}
-                  </Link>
-                )}
               </div>
-              <div className="space-y-3">
-                {shown.map((item, index) => renderItem(item, index))}
-              </div>
-              {!isCollapsed && setGroup.items.length > limit && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setVisibleCounts((prev) => ({ ...prev, [key]: limit + PAGE_SIZE }))}
+              {session.setId ? (
+                <Link
+                  href={`/practice/${session.setId}`}
+                  className="inline-flex min-h-10 items-center justify-center rounded-xl bg-accent px-3 py-2 text-sm font-medium text-accent-foreground transition hover:opacity-90"
                 >
-                  {tc("showMore")}
-                </Button>
-              )}
-              {!isCollapsed && limit > PAGE_SIZE && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setVisibleCounts((prev) => ({ ...prev, [key]: PAGE_SIZE }))}
-                >
-                  {tc("showLess")}
+                  {t("openSession")}
+                </Link>
+              ) : (
+                <Button size="sm" variant="secondary" onClick={() => viewUngroupedDay(session.dayKey)}>
+                  {t("showItems")}
                 </Button>
               )}
             </div>
-          );
-        })}
+          </Card>
+        ))}
+        {groups.length > limit && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setVisibleCounts((prev) => ({ ...prev, [key]: limit + PAGE_SIZE }))}
+          >
+            {tc("showMore")}
+          </Button>
+        )}
+        {limit > PAGE_SIZE && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setVisibleCounts((prev) => ({ ...prev, [key]: PAGE_SIZE }))}
+          >
+            {tc("showLess")}
+          </Button>
+        )}
       </div>
     );
   }
@@ -701,7 +701,7 @@ export function PracticeApp({
     renderItem: (item: T, index: number) => ReactNode
   ) {
     if (group === "set") {
-      return renderSetGrouped(setGroups(sorted), emptyTitle, icon, renderItem);
+      return renderSessionCards(setGroups(sorted), emptyTitle, icon);
     }
     return renderGrouped(subjectGroups(sorted), emptyTitle, icon, renderItem);
   }

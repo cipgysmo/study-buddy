@@ -464,7 +464,9 @@
     "kind_mixed": "Mixed practice",
     "answered": "Answered {answered}/{total}",
     "correctCount": "{count, plural, one {# correct} other {# correct}}",
-    "remaining": "{count, plural, one {# remaining} other {# remaining}}"
+    "remaining": "{count, plural, one {# remaining} other {# remaining}}",
+    "itemsCount": "{count, plural, one {# item} other {# items}}",
+    "showItems": "Show items"
   },
   "Progress": {
     "title": "Progress",
