@@ -4,13 +4,13 @@ import { useTranslations } from "next-intl";
 import { ContainerPicker } from "@/components/ui/container-picker";
 import { DifficultyPicker } from "@/components/ui/difficulty-picker";
 import { KeywordPicker } from "@/components/ui/keyword-picker";
-import { TopicPicker } from "@/components/ui/topic-picker";
+import { TopicInput } from "@/components/ui/topic-input";
 import type { GenerationDifficulty } from "@/lib/generation";
 
 export function GenerationScopePicker({
   subjectId,
-  topicIds,
-  onTopicIdsChange,
+  topicNames,
+  onTopicNamesChange,
   columnIds,
   onColumnIdsChange,
   keywords,
@@ -21,8 +21,8 @@ export function GenerationScopePicker({
   onCustomPromptChange,
 }: {
   subjectId: string;
-  topicIds: string[];
-  onTopicIdsChange: (ids: string[]) => void;
+  topicNames: string[];
+  onTopicNamesChange: (names: string[]) => void;
   columnIds: string[];
   onColumnIdsChange: (ids: string[]) => void;
   keywords: string[];
@@ -44,7 +44,7 @@ export function GenerationScopePicker({
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs font-semibold text-muted">{t("topics")}</span>
-        <TopicPicker subjectId={subjectId} selected={topicIds} onChange={onTopicIdsChange} />
+        <TopicInput subjectId={subjectId} value={topicNames} onChange={onTopicNamesChange} />
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs font-semibold text-muted">{t("keywordsLabel")}</span>

@@ -38,7 +38,7 @@ export function FlashcardsApp({
   const t = useTranslations("Flashcards");
   const locale = useLocale();
   const [subjectId, setSubjectId] = useState(initialSubjectId);
-  const [topicIds, setTopicIds] = useState<string[]>([]);
+  const [topicNames, setTopicNames] = useState<string[]>([]);
   const [columnIds, setColumnIds] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
   const [customPrompt, setCustomPrompt] = useState("");
@@ -79,7 +79,7 @@ export function FlashcardsApp({
         body: JSON.stringify({
           subjectId,
           count,
-          topicIds,
+          topicNames,
           columnIds,
           keywords,
           difficulty,
@@ -119,7 +119,7 @@ export function FlashcardsApp({
           value={subjectId}
           onChange={(v) => {
             setSubjectId(v);
-            setTopicIds([]);
+            setTopicNames([]);
             setColumnIds([]);
             setKeywords([]);
             setCustomPrompt("");
@@ -145,8 +145,8 @@ export function FlashcardsApp({
 
       <GenerationScopePicker
         subjectId={subjectId}
-        topicIds={topicIds}
-        onTopicIdsChange={setTopicIds}
+        topicNames={topicNames}
+        onTopicNamesChange={setTopicNames}
         columnIds={columnIds}
         onColumnIdsChange={setColumnIds}
         keywords={keywords}

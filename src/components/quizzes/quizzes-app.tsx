@@ -49,7 +49,7 @@ export function QuizzesApp({
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [visibleCounts, setVisibleCounts] = useState<Record<string, number>>({});
-  const [topicIds, setTopicIds] = useState<string[]>([]);
+  const [topicNames, setTopicNames] = useState<string[]>([]);
   const [columnIds, setColumnIds] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
   const [customPrompt, setCustomPrompt] = useState("");
@@ -85,7 +85,7 @@ export function QuizzesApp({
         body: JSON.stringify({
           subjectId,
           count,
-          topicIds,
+          topicNames,
           columnIds,
           keywords,
           difficulty,
@@ -108,7 +108,7 @@ export function QuizzesApp({
           value={subjectId}
           onChange={(v) => {
             setSubjectId(v);
-            setTopicIds([]);
+            setTopicNames([]);
             setColumnIds([]);
             setKeywords([]);
             setCustomPrompt("");
@@ -165,8 +165,8 @@ export function QuizzesApp({
 
       <GenerationScopePicker
         subjectId={subjectId}
-        topicIds={topicIds}
-        onTopicIdsChange={setTopicIds}
+        topicNames={topicNames}
+        onTopicNamesChange={setTopicNames}
         columnIds={columnIds}
         onColumnIdsChange={setColumnIds}
         keywords={keywords}

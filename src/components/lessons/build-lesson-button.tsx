@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { TopicPicker } from "@/components/ui/topic-picker";
+import { TopicInput } from "@/components/ui/topic-input";
 import { useJob } from "@/lib/use-jobs";
 
 /**
@@ -15,7 +15,7 @@ import { useJob } from "@/lib/use-jobs";
 export function BuildLessonButton({ subjectId }: { subjectId: string }) {
   const t = useTranslations("Lessons");
   const router = useRouter();
-  const [topicIds, setTopicIds] = useState<string[]>([]);
+  const [topicNames, setTopicNames] = useState<string[]>([]);
   const [jobId, setJobId] = useState<string | null>(null);
   const [lessonId, setLessonId] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -38,7 +38,7 @@ export function BuildLessonButton({ subjectId }: { subjectId: string }) {
       const r = await fetch(`/api/subjects/${subjectId}/lessons`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topicIds }),
+        body: JSON.stringify({ topicNames }),
       });
       const d = (await r.json()) as { lesson?: { id: string }; job?: { id: string }; error?: string };
       if (!r.ok || !d.job || !d.lesson) throw new Error(d.error ?? "error");
@@ -60,7 +60,7 @@ export function BuildLessonButton({ subjectId }: { subjectId: string }) {
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs text-muted">{t("topicsLabel")}</span>
-        <TopicPicker subjectId={subjectId} selected={topicIds} onChange={setTopicIds} />
+        <TopicInput subjectId={subjectId} value={topicNames} onChange={setTopicNames} />
       </div>
     </Card>
   );

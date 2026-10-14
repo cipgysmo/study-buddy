@@ -590,6 +590,18 @@ const MIGRATIONS: { version: number; sql: string }[] = [
       CREATE INDEX IF NOT EXISTS idx_activity_attempts_item ON activity_attempts(kind, item_id);
     `,
   },
+  {
+    version: 27,
+    sql: `
+      ALTER TABLE exercises ADD COLUMN set_id TEXT;
+      ALTER TABLE truefalse ADD COLUMN set_id TEXT;
+      ALTER TABLE typed_exercises ADD COLUMN set_id TEXT;
+
+      CREATE INDEX IF NOT EXISTS idx_exercises_set ON exercises(set_id);
+      CREATE INDEX IF NOT EXISTS idx_truefalse_set ON truefalse(set_id);
+      CREATE INDEX IF NOT EXISTS idx_typed_exercises_set ON typed_exercises(set_id);
+    `,
+  },
 ];
 
 export function getDb(): Database.Database {

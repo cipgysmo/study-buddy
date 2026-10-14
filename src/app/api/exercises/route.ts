@@ -3,6 +3,7 @@ import "@/lib/job-handlers";
 import { cleanCustomPrompt, cleanDifficulty } from "@/lib/generation";
 import { listExercisesPage } from "@/lib/practice";
 import { cleanStringArray } from "@/lib/request-utils";
+import { resolveTopicIds } from "@/lib/topics";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,7 @@ export async function POST(req: Request) {
     subjectId?: string;
     count?: number;
     topicIds?: string[];
+    topicNames?: string[];
     columnIds?: string[];
     keywords?: string[];
     difficulty?: string;
@@ -29,7 +31,9 @@ export async function POST(req: Request) {
   }
   if (!body.subjectId) return Response.json({ error: "subjectId_required" }, { status: 400 });
   const count = Math.max(1, Math.min(20, body.count ?? 5));
-  const topicIds = cleanStringArray(body.topicIds);
+  const topicIds = cleanStringArray(body.topicIds).length
+    ? cleanStringArray(body.topicIds)
+    : resolveTopicIds(body.subjectId, cleanStringArray(body.topicNames));
   const columnIds = cleanStringArray(body.columnIds);
   const keywords = cleanStringArray(body.keywords);
   const difficulty = cleanDifficulty(body.difficulty);

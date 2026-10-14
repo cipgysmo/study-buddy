@@ -30,6 +30,7 @@ interface ListItem {
   subject_id: string;
   created_at: string;
   source_refs: string | null;
+  set_id: string | null;
 }
 
 interface Exercise extends ListItem {
@@ -135,7 +136,7 @@ export function PracticeApp({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [visibleCounts, setVisibleCounts] = useState<Record<string, number>>({});
-  const [topicIds, setTopicIds] = useState<string[]>([]);
+  const [topicNames, setTopicNames] = useState<string[]>([]);
   const [columnIds, setColumnIds] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
   const [customPrompt, setCustomPrompt] = useState("");
@@ -226,7 +227,7 @@ export function PracticeApp({
         body: JSON.stringify({
           subjectId,
           count,
-          topicIds,
+          topicNames,
           columnIds,
           keywords,
           difficulty,
@@ -463,7 +464,7 @@ export function PracticeApp({
           value={subjectId}
           onChange={(v) => {
             setSubjectId(v);
-            setTopicIds([]);
+            setTopicNames([]);
             setColumnIds([]);
             setKeywords([]);
             setCustomPrompt("");
@@ -579,8 +580,8 @@ export function PracticeApp({
 
       <GenerationScopePicker
         subjectId={subjectId}
-        topicIds={topicIds}
-        onTopicIdsChange={setTopicIds}
+        topicNames={topicNames}
+        onTopicNamesChange={setTopicNames}
         columnIds={columnIds}
         onColumnIdsChange={setColumnIds}
         keywords={keywords}

@@ -133,7 +133,8 @@ export async function generateTypedExercises(
   subjectId: string,
   count: number,
   topicIds?: string[],
-  opts: GenerationOptions = {}
+  opts: GenerationOptions = {},
+  setId?: string
 ): Promise<TypedExercise[]> {
   const subject = getSubject(subjectId);
   if (!subject) throw new Error("subject_not_found");
@@ -164,8 +165,8 @@ export async function generateTypedExercises(
   const sourceRefs = ctx.sources.length > 0 ? JSON.stringify(ctx.sources) : null;
   const insert = getDb().prepare(
     `INSERT INTO typed_exercises
-      (id, subject_id, prompt, expected_answer, accepted_answers, grading_mode, explanation, difficulty, source_refs, topic_ids, column_ids)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      (id, subject_id, prompt, expected_answer, accepted_answers, grading_mode, explanation, difficulty, source_refs, topic_ids, column_ids, set_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
   const created: TypedExercise[] = [];
   for (const ex of (draft.exercises ?? []).slice(0, count)) {
@@ -195,7 +196,8 @@ export async function generateTypedExercises(
       opts.difficulty ?? "medium",
       sourceRefs,
       JSON.stringify(topicIds ?? []),
-      JSON.stringify(opts.columnIds ?? [])
+      JSON.stringify(opts.columnIds ?? []),
+      setId ?? null
     );
     const saved = getTypedExercise(id);
     if (saved) created.push(saved);

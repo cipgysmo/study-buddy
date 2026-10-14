@@ -2,6 +2,7 @@ import { getSubject } from "@/lib/subjects";
 import { createLesson, setLessonJob } from "@/lib/lessons";
 import { enqueueJob } from "@/lib/jobs";
 import "@/lib/job-handlers";
+import { resolveTopicIds } from "@/lib/topics";
 
 export const dynamic = "force-dynamic";
 
@@ -11,15 +12,19 @@ export async function POST(req: Request, ctx: Ctx) {
   const { id } = await ctx.params;
   if (!getSubject(id)) return Response.json({ error: "not_found" }, { status: 404 });
 
-  let body: { topicIds?: string[] } = {};
+  let body: { topicIds?: string[]; topicNames?: string[] } = {};
   try {
     body = await req.json();
   } catch {
     /* ignore */
   }
-  const topicIds = Array.isArray(body.topicIds)
+  const explicitTopicIds = Array.isArray(body.topicIds)
     ? body.topicIds.filter((x): x is string => typeof x === "string")
     : [];
+  const topicNames = Array.isArray(body.topicNames)
+    ? body.topicNames.filter((x): x is string => typeof x === "string")
+    : [];
+  const topicIds = explicitTopicIds.length ? explicitTopicIds : resolveTopicIds(id, topicNames);
 
   const lesson = createLesson(id, topicIds);
   const job = enqueueJob("lesson", { lessonId: lesson.id });

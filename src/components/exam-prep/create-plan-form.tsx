@@ -11,7 +11,7 @@ export function CreatePlanForm({ subjects }: { subjects: SubjectOption[] }) {
   const t = useTranslations("ExamPrep");
   const router = useRouter();
   const [subjectId, setSubjectId] = useState("");
-  const [topicIds, setTopicIds] = useState<string[]>([]);
+  const [topicNames, setTopicNames] = useState<string[]>([]);
   const [columnIds, setColumnIds] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
   const [title, setTitle] = useState("");
@@ -46,7 +46,7 @@ export function CreatePlanForm({ subjects }: { subjects: SubjectOption[] }) {
           title,
           examDate,
           targetGrade,
-          topicIds,
+          topicNames,
           columnIds,
           keywords,
         }),
@@ -67,7 +67,7 @@ export function CreatePlanForm({ subjects }: { subjects: SubjectOption[] }) {
           value={subjectId}
           onChange={(v) => {
             setSubjectId(v);
-            setTopicIds([]);
+            setTopicNames([]);
             setColumnIds([]);
             setKeywords([]);
           }}
@@ -95,8 +95,8 @@ export function CreatePlanForm({ subjects }: { subjects: SubjectOption[] }) {
       </div>
       <GenerationScopePicker
         subjectId={subjectId}
-        topicIds={topicIds}
-        onTopicIdsChange={setTopicIds}
+        topicNames={topicNames}
+        onTopicNamesChange={setTopicNames}
         columnIds={columnIds}
         onColumnIdsChange={setColumnIds}
         keywords={keywords}

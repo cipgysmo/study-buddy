@@ -3,6 +3,7 @@ import { enqueueJob } from "@/lib/jobs";
 import "@/lib/job-handlers";
 import { listQuizzesPage } from "@/lib/quizzes";
 import { cleanStringArray } from "@/lib/request-utils";
+import { resolveTopicIds } from "@/lib/topics";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,7 @@ export async function POST(req: Request) {
     title?: string;
     durationMin?: number;
     topicIds?: string[];
+    topicNames?: string[];
     columnIds?: string[];
     keywords?: string[];
     difficulty?: string;
@@ -33,7 +35,9 @@ export async function POST(req: Request) {
     typeof body.durationMin === "number" && Number.isFinite(body.durationMin)
       ? Math.max(1, Math.min(180, Math.round(body.durationMin)))
       : undefined;
-  const topicIds = cleanStringArray(body.topicIds);
+  const topicIds = cleanStringArray(body.topicIds).length
+    ? cleanStringArray(body.topicIds)
+    : resolveTopicIds(body.subjectId, cleanStringArray(body.topicNames));
   const columnIds = cleanStringArray(body.columnIds);
   const keywords = cleanStringArray(body.keywords);
   const difficulty = cleanDifficulty(body.difficulty);

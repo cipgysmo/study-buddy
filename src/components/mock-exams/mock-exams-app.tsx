@@ -44,7 +44,7 @@ export function MockExamsApp({
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [visibleCounts, setVisibleCounts] = useState<Record<string, number>>({});
-  const [topicIds, setTopicIds] = useState<string[]>([]);
+  const [topicNames, setTopicNames] = useState<string[]>([]);
   const [columnIds, setColumnIds] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
   const [customPrompt, setCustomPrompt] = useState("");
@@ -79,7 +79,7 @@ export function MockExamsApp({
           subjectId,
           count,
           durationMin: duration,
-          topicIds,
+          topicNames,
           columnIds,
           keywords,
           difficulty,
@@ -106,7 +106,7 @@ export function MockExamsApp({
           value={subjectId}
           onChange={(v) => {
             setSubjectId(v);
-            setTopicIds([]);
+            setTopicNames([]);
             setColumnIds([]);
             setKeywords([]);
             setCustomPrompt("");
@@ -176,8 +176,8 @@ export function MockExamsApp({
 
       <GenerationScopePicker
         subjectId={subjectId}
-        topicIds={topicIds}
-        onTopicIdsChange={setTopicIds}
+        topicNames={topicNames}
+        onTopicNamesChange={setTopicNames}
         columnIds={columnIds}
         onColumnIdsChange={setColumnIds}
         keywords={keywords}

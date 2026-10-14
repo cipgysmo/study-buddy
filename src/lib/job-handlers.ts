@@ -143,33 +143,33 @@ registerJobHandler("plan", async ({ payload }) => {
   return plan.id;
 });
 
-registerJobHandler("exercises", async ({ payload }) => {
+registerJobHandler("exercises", async ({ id, payload }) => {
   await generateExercises(str(payload.subjectId), num(payload.count, 5), topicIdArray(payload.topicIds), {
     columnIds: cleanStringArray(payload.columnIds),
     keywords: cleanStringArray(payload.keywords),
     difficulty: cleanDifficulty(payload.difficulty),
     customPrompt: cleanCustomPrompt(payload.customPrompt),
-  });
+  }, id);
   return null;
 });
 
-registerJobHandler("truefalse", async ({ payload }) => {
+registerJobHandler("truefalse", async ({ id, payload }) => {
   await generateTrueFalse(str(payload.subjectId), num(payload.count, 5), topicIdArray(payload.topicIds), {
     columnIds: cleanStringArray(payload.columnIds),
     keywords: cleanStringArray(payload.keywords),
     difficulty: cleanDifficulty(payload.difficulty),
     customPrompt: cleanCustomPrompt(payload.customPrompt),
-  });
+  }, id);
   return null;
 });
 
-registerJobHandler("typedexercises", async ({ payload }) => {
+registerJobHandler("typedexercises", async ({ id, payload }) => {
   await generateTypedExercises(str(payload.subjectId), num(payload.count, 5), topicIdArray(payload.topicIds), {
     columnIds: cleanStringArray(payload.columnIds),
     keywords: cleanStringArray(payload.keywords),
     difficulty: cleanDifficulty(payload.difficulty),
     customPrompt: cleanCustomPrompt(payload.customPrompt),
-  });
+  }, id);
   return null;
 });
 

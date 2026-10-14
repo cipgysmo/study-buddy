@@ -112,7 +112,8 @@ export async function generateExercises(
   subjectId: string,
   count: number,
   topicIds?: string[],
-  opts: GenerationOptions = {}
+  opts: GenerationOptions = {},
+  setId?: string
 ): Promise<Exercise[]> {
   const subject = getSubject(subjectId);
   if (!subject) throw new Error("subject_not_found");
@@ -142,7 +143,7 @@ export async function generateExercises(
 
   const sourceRefs = ctx.sources.length > 0 ? JSON.stringify(ctx.sources) : null;
   const insert = getDb().prepare(
-    "INSERT INTO exercises (id, subject_id, prompt, solution_steps, difficulty, diagram, source_refs, topic_ids, column_ids) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    "INSERT INTO exercises (id, subject_id, prompt, solution_steps, difficulty, diagram, source_refs, topic_ids, column_ids, set_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
   );
   const created: Exercise[] = [];
   for (const ex of (draft.exercises ?? []).slice(0, count)) {
@@ -161,7 +162,8 @@ export async function generateExercises(
       diagram,
       sourceRefs,
       JSON.stringify(topicIds ?? []),
-      JSON.stringify(opts.columnIds ?? [])
+      JSON.stringify(opts.columnIds ?? []),
+      setId ?? null
     );
     const saved = getExercise(id);
     if (saved) created.push(saved);
@@ -226,7 +228,8 @@ export async function generateTrueFalse(
   subjectId: string,
   count: number,
   topicIds?: string[],
-  opts: GenerationOptions = {}
+  opts: GenerationOptions = {},
+  setId?: string
 ): Promise<TrueFalseItem[]> {
   const subject = getSubject(subjectId);
   if (!subject) throw new Error("subject_not_found");
@@ -256,7 +259,7 @@ export async function generateTrueFalse(
 
   const sourceRefs = ctx.sources.length > 0 ? JSON.stringify(ctx.sources) : null;
   const insert = getDb().prepare(
-    "INSERT INTO truefalse (id, subject_id, statement, is_correct, explanation, source_refs, topic_ids, column_ids) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    "INSERT INTO truefalse (id, subject_id, statement, is_correct, explanation, source_refs, topic_ids, column_ids, set_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
   );
   const created: TrueFalseItem[] = [];
   const items = shuffleArray((draft.items ?? []).slice(0, count));
@@ -271,7 +274,8 @@ export async function generateTrueFalse(
       item.explanation ?? "",
       sourceRefs,
       JSON.stringify(topicIds ?? []),
-      JSON.stringify(opts.columnIds ?? [])
+      JSON.stringify(opts.columnIds ?? []),
+      setId ?? null
     );
     const saved = getTrueFalse(id);
     if (saved) created.push(saved);
