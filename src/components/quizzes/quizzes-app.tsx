@@ -19,7 +19,6 @@ import {
   type SortMode,
 } from "@/lib/list-view";
 import { useJob } from "@/lib/use-jobs";
-import { QuizRunner, type RunnerQuestion } from "./quiz-runner";
 
 const PAGE_SIZE = 10;
 
@@ -59,8 +58,6 @@ export function QuizzesApp({
   const [busy, setBusy] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const [activeQuiz, setActiveQuiz] = useState<Quiz | null>(null);
-  const [questions, setQuestions] = useState<RunnerQuestion[]>([]);
   useJob(jobId, (settled) => {
     if (settled.status === "done") {
       setJobId(null);
@@ -73,11 +70,8 @@ export function QuizzesApp({
     }
   });
 
-  async function loadQuiz(id: string) {
-    const r = await fetch(`/api/quizzes/${id}`);
-    const d = await r.json();
-    setActiveQuiz(d.quiz);
-    setQuestions(d.questions);
+  function loadQuiz(id: string) {
+    router.push(`/quizzes/${id}`);
   }
 
   async function generate() {
@@ -105,20 +99,6 @@ export function QuizzesApp({
       setError(e instanceof Error ? e.message : String(e));
       setBusy(false);
     }
-  }
-
-  if (activeQuiz) {
-    return (
-      <QuizRunner
-        quiz={activeQuiz}
-        questions={questions}
-        backLabel={t("backToQuizzes")}
-        onExit={() => {
-          setActiveQuiz(null);
-          router.refresh();
-        }}
-      />
-    );
   }
 
   return (

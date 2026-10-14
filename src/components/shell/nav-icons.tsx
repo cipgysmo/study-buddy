@@ -32,6 +32,16 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M4 16V4a2 2 0 0 1 2-2h12" />
     </>
   ),
+  requests: (
+    <>
+      <path d="M8 6h13" />
+      <path d="M8 12h13" />
+      <path d="M8 18h13" />
+      <path d="M3 6h.01" />
+      <path d="M3 12h.01" />
+      <path d="M3 18h.01" />
+    </>
+  ),
   reports: (
     <>
       <path d="M3 3v18h18" />

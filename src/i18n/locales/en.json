@@ -12,6 +12,7 @@
     "flashcards": "Flashcards",
     "activities": "Activities",
     "history": "History",
+    "requests": "Requests",
     "reports": "Reports",
     "quizzes": "Quizzes",
     "exercises": "Exercises",
@@ -390,6 +391,7 @@
     "notAnswered": "Not answered",
     "explanation": "Explanation",
     "backToQuizzes": "Back to quizzes",
+    "retake": "Retake test",
     "deleteQuiz": "Delete quiz"
   },
   "Practice": {
@@ -535,6 +537,24 @@
     "versionLabel": "App version",
     "commitLabel": "Build commit",
     "buildDateLabel": "Build date"
+  },
+  "Requests": {
+    "title": "Requests",
+    "subtitle": "History of generated quizzes, exercises, and other activities.",
+    "empty": "No requests yet.",
+    "open": "Open",
+    "status_pending": "Pending",
+    "status_running": "Running",
+    "status_done": "Done",
+    "status_failed": "Failed",
+    "status_cancelled": "Cancelled",
+    "type_flashcards": "Flashcards",
+    "type_quiz": "Quiz",
+    "type_plan": "Study plan",
+    "type_exercises": "Exercises",
+    "type_truefalse": "True/false",
+    "type_typedexercises": "Typed answers",
+    "type_lesson": "Lesson"
   },
   "Reports": {
     "title": "Reports",

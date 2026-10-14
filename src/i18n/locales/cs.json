@@ -12,6 +12,7 @@
     "flashcards": "Kartičky",
     "activities": "Aktivity",
     "history": "Historie",
+    "requests": "Požadavky",
     "reports": "Reporty",
     "quizzes": "Kvízy",
     "exercises": "Cvičení",
@@ -390,6 +391,7 @@
     "notAnswered": "Nezodpovězeno",
     "explanation": "Vysvětlení",
     "backToQuizzes": "Zpět na kvízy",
+    "retake": "Zkusit znovu",
     "deleteQuiz": "Smazat kvíz"
   },
   "Practice": {
@@ -535,6 +537,24 @@
     "versionLabel": "Verze aplikace",
     "commitLabel": "Revize kódu",
     "buildDateLabel": "Datum sestavení"
+  },
+  "Requests": {
+    "title": "Požadavky",
+    "subtitle": "Historie generování kvízů, cvičení a dalších aktivit.",
+    "empty": "Zatím žádné požadavky.",
+    "open": "Otevřít",
+    "status_pending": "Čeká",
+    "status_running": "Běží",
+    "status_done": "Hotovo",
+    "status_failed": "Chyba",
+    "status_cancelled": "Zrušeno",
+    "type_flashcards": "Kartičky",
+    "type_quiz": "Kvíz",
+    "type_plan": "Studijní plán",
+    "type_exercises": "Cvičení",
+    "type_truefalse": "Pravda/nepravda",
+    "type_typedexercises": "Psané odpovědi",
+    "type_lesson": "Lekce"
   },
   "Reports": {
     "title": "Reporty",

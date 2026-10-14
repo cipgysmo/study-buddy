@@ -15,7 +15,6 @@ import {
   type SortMode,
 } from "@/lib/list-view";
 import { useJob } from "@/lib/use-jobs";
-import { QuizRunner, type RunnerQuestion } from "@/components/quizzes/quiz-runner";
 
 const PAGE_SIZE = 10;
 
@@ -55,8 +54,6 @@ export function MockExamsApp({
   const [busy, setBusy] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const [active, setActive] = useState<Exam | null>(null);
-  const [questions, setQuestions] = useState<RunnerQuestion[]>([]);
 
   useJob(jobId, (settled) => {
     if (settled.status === "done") {
@@ -98,26 +95,8 @@ export function MockExamsApp({
     }
   }
 
-  async function start(exam: Exam) {
-    const r = await fetch(`/api/quizzes/${exam.id}`);
-    const d = await r.json();
-    setActive(d.quiz);
-    setQuestions(d.questions);
-  }
-
-  if (active) {
-    return (
-      <QuizRunner
-        quiz={active}
-        questions={questions}
-        durationMin={active.duration_min}
-        backLabel={t("back")}
-        onExit={() => {
-          setActive(null);
-          router.refresh();
-        }}
-      />
-    );
+  function start(exam: Exam) {
+    router.push(`/quizzes/${exam.id}`);
   }
 
   return (

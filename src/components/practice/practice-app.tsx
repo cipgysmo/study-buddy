@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { NavIcon } from "@/components/shell/nav-icons";
+import { MaterialPreviewModal } from "@/components/ui/material-preview-modal";
 import { SourceChips } from "@/components/ui/source-chips";
 import { SubjectSelect, type SubjectOption } from "@/components/ui/subject-select";
 import { GenerationScopePicker } from "@/components/ui/generation-scope-picker";
@@ -18,6 +19,7 @@ import {
   sortItems,
   type GroupMode,
   type SortMode,
+  type SourceRef,
   type SubjectDayGroup,
 } from "@/lib/list-view";
 import { loadSavedFilters, saveSavedFilters } from "@/lib/saved-filters";
@@ -147,6 +149,7 @@ export function PracticeApp({
   const [typedAnswers, setTypedAnswers] = useState<Record<string, string>>({});
   const [typedResults, setTypedResults] = useState<Record<string, GradeResult>>({});
   const [gradingId, setGradingId] = useState<string | null>(null);
+  const [openMaterial, setOpenMaterial] = useState<{ id: string; page?: number } | null>(null);
 
   useEffect(() => {
     /* eslint-disable react-hooks/set-state-in-effect */
@@ -297,6 +300,10 @@ export function PracticeApp({
     if (d === "hard") return ts("difficultyPro");
     if (d === "expert") return ts("difficultyHacker");
     return ts("difficultyPedestrian");
+  }
+
+  function openSource(source: SourceRef) {
+    setOpenMaterial({ id: source.materialId, page: source.pageStart });
   }
 
   function toggleSelected(id: string) {
@@ -665,7 +672,9 @@ export function PracticeApp({
                       {gradingModeLabel(ex.grading_mode)}
                     </span>
                   </div>
-                  {result && <SourceChips value={ex.source_refs} subjectId={ex.subject_id} />}
+                  {result && (
+                    <SourceChips value={ex.source_refs} subjectId={ex.subject_id} onOpen={openSource} />
+                  )}
                   <div className="mt-3 space-y-2">
                     <label className="block text-xs font-semibold text-muted" htmlFor={`typed-${ex.id}`}>
                       {t("yourAnswer")}
@@ -734,7 +743,9 @@ export function PracticeApp({
                     {difficultyLabel(ex.difficulty)}
                   </span>
                 </div>
-                {revealed[ex.id] && <SourceChips value={ex.source_refs} subjectId={ex.subject_id} />}
+                {revealed[ex.id] && (
+                  <SourceChips value={ex.source_refs} subjectId={ex.subject_id} onOpen={openSource} />
+                )}
                 {ex.diagram && (
                   <div className="mt-3">
                     <Diagram svg={ex.diagram} />
@@ -792,7 +803,9 @@ export function PracticeApp({
                       ✕
                     </button>
                   </div>
-                  {answered && <SourceChips value={item.source_refs} subjectId={item.subject_id} />}
+                  {answered && (
+                    <SourceChips value={item.source_refs} subjectId={item.subject_id} onOpen={openSource} />
+                  )}
                   <div className="mt-3 flex gap-2">
                     <Button
                       variant="secondary"
@@ -832,6 +845,12 @@ export function PracticeApp({
             </Card>
           );
         })}
+
+      <MaterialPreviewModal
+        materialId={openMaterial?.id ?? null}
+        page={openMaterial?.page}
+        onClose={() => setOpenMaterial(null)}
+      />
     </div>
   );
 }

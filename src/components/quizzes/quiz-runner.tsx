@@ -46,7 +46,7 @@ function saveQuizSession(quizId: string, session: QuizSession) {
   }
 }
 
-function clearQuizSession(quizId: string) {
+export function clearQuizSession(quizId: string) {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.removeItem(sessionKey(quizId));
@@ -89,12 +89,14 @@ export function QuizRunner({
   durationMin,
   backLabel,
   onExit,
+  onRetake,
 }: {
   quiz: { id: string; title: string };
   questions: RunnerQuestion[];
   durationMin?: number | null;
   backLabel: string;
   onExit: () => void;
+  onRetake?: () => void;
 }) {
   const t = useTranslations("Quizzes");
   const tb = useTranslations("Progress");
@@ -185,6 +187,14 @@ export function QuizRunner({
             </p>
             <p className="mt-1 text-lg font-medium text-accent">{message}</p>
             <p className="text-muted">{t("score")}</p>
+            {onRetake && (
+              <button
+                onClick={onRetake}
+                className="mt-4 min-h-10 rounded-xl bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition hover:opacity-90"
+              >
+                {t("retake")}
+              </button>
+            )}
           </div>
           {newBadges.length > 0 && (
             <div className="animate-pop-in rounded-2xl border border-accent/40 bg-accent/5 p-4">
