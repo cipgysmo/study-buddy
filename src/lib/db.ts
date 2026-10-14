@@ -602,6 +602,26 @@ const MIGRATIONS: { version: number; sql: string }[] = [
       CREATE INDEX IF NOT EXISTS idx_typed_exercises_set ON typed_exercises(set_id);
     `,
   },
+  {
+    version: 28,
+    sql: `
+      CREATE TABLE IF NOT EXISTS practice_sets (
+        id              TEXT PRIMARY KEY,
+        subject_id      TEXT NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+        kind            TEXT NOT NULL,
+        title           TEXT NOT NULL DEFAULT '',
+        status          TEXT NOT NULL DEFAULT 'ready',
+        error           TEXT,
+        job_id          TEXT,
+        created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at      TEXT NOT NULL DEFAULT (datetime('now')),
+        last_opened_at  TEXT
+      );
+      CREATE INDEX IF NOT EXISTS idx_practice_sets_subject_created
+        ON practice_sets(subject_id, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_practice_sets_job ON practice_sets(job_id);
+    `,
+  },
 ];
 
 export function getDb(): Database.Database {

@@ -29,6 +29,7 @@ export interface TypedExercise {
   created_at: string;
   archived_at: string | null;
   source_refs: string | null;
+  set_id: string | null;
 }
 
 export interface TypedGradeResult {
@@ -70,6 +71,7 @@ function parseTypedExercise(row: TypedExerciseRow): TypedExercise {
     created_at: row.created_at,
     archived_at: row.archived_at ?? null,
     source_refs: row.source_refs ?? null,
+    set_id: row.set_id ?? null,
   };
 }
 
@@ -107,6 +109,15 @@ export function listTypedExercisesPage(params: URLSearchParams, subjectId?: stri
     .prepare(`SELECT * FROM typed_exercises ${whereSql} ORDER BY ${orderBySql(q.sort, "prompt")} LIMIT ? OFFSET ?`)
     .all(...args, q.limit, q.offset) as TypedExerciseRow[];
   return pagedResult(rows.map(parseTypedExercise), total, q.limit, q.offset);
+}
+
+export function listTypedExercisesBySet(setId: string): TypedExercise[] {
+  const rows = getDb()
+    .prepare(
+      "SELECT * FROM typed_exercises WHERE set_id = ? AND archived_at IS NULL ORDER BY created_at ASC, rowid ASC"
+    )
+    .all(setId) as TypedExerciseRow[];
+  return rows.map(parseTypedExercise);
 }
 
 export function getTypedExercise(id: string): TypedExercise | null {

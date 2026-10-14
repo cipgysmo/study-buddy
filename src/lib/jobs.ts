@@ -10,6 +10,7 @@ export type JobType =
   | "exercises"
   | "truefalse"
   | "typedexercises"
+  | "practice"
   | "parseExam"
   | "similarExam"
   | "retag"

@@ -22,6 +22,10 @@
     "admin": "Administrace",
     "settings": "Nastavení"
   },
+  "Activities": {
+    "title": "Aktivity",
+    "subtitle": "Kvízy, zkušební testy a procvičování na jednom místě."
+  },
   "Admin": {
     "title": "Administrace",
     "subtitle": "Přiřazuj lekce, testy, poznámky a učební rutiny pro své děti.",
@@ -125,6 +129,7 @@
     "groupLabel": "Skupina",
     "groupNone": "Bez skupin",
     "groupSubject": "Podle předmětu",
+    "groupSet": "Podle relací",
     "selectAll": "Vybrat vše",
     "selectedCount": "Vybráno: {count}",
     "archive": "Archivovat",
@@ -157,6 +162,7 @@
     "exercises": "Cvičení",
     "truefalse": "Pravda/nepravda",
     "typedexercises": "Psané odpovědi",
+    "practice": "Procvičování",
     "parseExam": "Rozklad testu",
     "similarExam": "Podobný test",
     "retag": "Přeznačkování",
@@ -431,7 +437,34 @@
     "score": "Hodnocení: {score}/100",
     "modeExact": "Přesná shoda",
     "modeFlexible": "Variabilní",
-    "modeCreative": "Kreativní"
+    "modeCreative": "Kreativní",
+    "filters": "Filtry",
+    "clearFilters": "Zrušit filtry",
+    "session": "Relace",
+    "sessionFilter": "Relace",
+    "ungrouped": "Bez relace",
+    "openSession": "Otevřít relaci",
+    "clearSessionFilter": "Zrušit filtr relace",
+    "generate": "Vytvořit",
+    "generateTitle": "Vytvořit procvičování",
+    "generateKinds": "Typy",
+    "generateHint": "Vytvoř novou relaci cvičení.",
+    "savedViews": "Uložené pohledy",
+    "viewNamePlaceholder": "Název pohledu",
+    "saveView": "Uložit pohled",
+    "selectView": "Vyber pohled",
+    "applyView": "Použít",
+    "deleteView": "Smazat",
+    "noViews": "Zatím žádné uložené pohledy.",
+    "backToSessions": "Zpět na relace",
+    "lastOpened": "Naposledy otevřeno {date}",
+    "kind_exercises": "Cvičení",
+    "kind_truefalse": "Pravda / Lež",
+    "kind_typed": "Psané odpovědi",
+    "kind_mixed": "Mix cvičení",
+    "answered": "Zodpovězeno {answered}/{total}",
+    "correctCount": "{count, plural, one {# správně} few {# správně} other {# správně}}",
+    "remaining": "{count, plural, one {# zbývá} few {# zbývá} other {# zbývá}}"
   },
   "Progress": {
     "title": "Progres",
@@ -554,6 +587,7 @@
     "type_exercises": "Cvičení",
     "type_truefalse": "Pravda/nepravda",
     "type_typedexercises": "Psané odpovědi",
+    "type_practice": "Procvičování",
     "type_lesson": "Lekce"
   },
   "Reports": {

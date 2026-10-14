@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { groupItemsBySubject, groupItemsBySubjectAndDay, sortItems } from "@/lib/list-view";
+import {
+  groupItemsBySet,
+  groupItemsBySubject,
+  groupItemsBySubjectAndDay,
+  sortItems,
+} from "@/lib/list-view";
 
 const items = [
   { id: "b", subject_id: "s2", created_at: "2026-01-02 10:00:00", title: "Beta" },
@@ -39,6 +44,23 @@ describe("list view helpers", () => {
     expect(groups[0].dayGroups).toHaveLength(2);
     expect(groups[0].dayGroups[0].timeLabel).toBeNull();
     expect(groups[0].dayGroups[1].timeLabel).toContain("–");
+  });
+
+  it("groups items by set id and falls back to day groups for unassigned items", () => {
+    const groups = groupItemsBySet(
+      [
+        { id: "a", subject_id: "s1", created_at: "2026-01-01 10:00:00", set_id: "set-1" },
+        { id: "b", subject_id: "s1", created_at: "2026-01-01 10:05:00", set_id: "set-1" },
+        { id: "c", subject_id: "s1", created_at: "2026-01-02 09:00:00", set_id: null },
+      ],
+      [{ id: "s1", name: "Math", color: "#000" }],
+      "en"
+    );
+    expect(groups).toHaveLength(2);
+    expect(groups[0].setId).toBeNull();
+    expect(groups[0].items.map((x) => x.id)).toEqual(["c"]);
+    expect(groups[1].setId).toBe("set-1");
+    expect(groups[1].items.map((x) => x.id)).toEqual(["a", "b"]);
   });
 
   it("groups items by subject", () => {

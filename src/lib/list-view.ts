@@ -9,7 +9,7 @@ export interface SourceRef {
 }
 
 export type SortMode = "newest" | "oldest" | "name";
-export type GroupMode = "none" | "subject";
+export type GroupMode = "none" | "subject" | "set";
 
 export interface SubjectOption {
   id: string;
@@ -82,6 +82,18 @@ export interface SubjectDayGroup<T> {
   dayGroups: DayGroup<T>[];
 }
 
+export interface SetGroup<T> {
+  key: string;
+  setId: string | null;
+  subjectId: string | null;
+  subjectName: string;
+  color: string | null;
+  dayKey: string;
+  dayLabel: string;
+  timeLabel: string | null;
+  items: T[];
+}
+
 export function groupItemsBySubjectAndDay<T extends { subject_id: string | null; created_at: string }>(
   items: T[],
   subjects: SubjectOption[],
@@ -110,6 +122,47 @@ export function groupItemsBySubjectAndDay<T extends { subject_id: string | null;
 
     return { ...group, dayGroups };
   });
+}
+
+export function groupItemsBySet<T extends { set_id?: string | null; subject_id: string | null; created_at: string }>(
+  items: T[],
+  subjects: SubjectOption[],
+  locale: string,
+  dayOrder: "asc" | "desc" = "desc",
+  timeZone?: string
+): SetGroup<T>[] {
+  const byId = new Map(subjects.map((s) => [s.id, s]));
+  const groups = new Map<string, T[]>();
+
+  for (const item of items) {
+    const dayKey = formatDayKey(item.created_at);
+    const key = item.set_id ? `set:${item.set_id}` : `day:${item.subject_id ?? "__none__"}|${dayKey}`;
+    const list = groups.get(key) ?? [];
+    list.push(item);
+    groups.set(key, list);
+  }
+
+  return [...groups.entries()]
+    .map(([key, groupItems]) => {
+      const first = groupItems[0];
+      const subject = first.subject_id ? byId.get(first.subject_id) : undefined;
+      return {
+        key,
+        setId: first.set_id ?? null,
+        subjectId: first.subject_id ?? null,
+        subjectName: subject?.name ?? "—",
+        color: subject?.color ?? null,
+        dayKey: formatDayKey(first.created_at),
+        dayLabel: formatDayLabel(first.created_at, locale, timeZone),
+        timeLabel: formatTimeRange(groupItems.map((item) => item.created_at), locale, timeZone),
+        items: groupItems,
+      };
+    })
+    .sort((a, b) => {
+      const da = parseSqliteDate(a.items[0].created_at).getTime();
+      const db = parseSqliteDate(b.items[0].created_at).getTime();
+      return dayOrder === "asc" ? da - db : db - da;
+    });
 }
 
 export function findDuplicateIds<T extends { id: string; subject_id: string | null }>(

@@ -23,6 +23,7 @@ export interface Exercise {
   created_at: string;
   archived_at: string | null;
   source_refs: string | null;
+  set_id: string | null;
 }
 
 export interface TrueFalseItem {
@@ -34,6 +35,7 @@ export interface TrueFalseItem {
   created_at: string;
   archived_at: string | null;
   source_refs: string | null;
+  set_id: string | null;
 }
 
 type ExerciseRow = Omit<Exercise, "solution_steps"> & { solution_steps: string };
@@ -87,6 +89,13 @@ export function listExercisesPage(params: URLSearchParams, subjectId?: string): 
     .prepare(`SELECT * FROM exercises ${whereSql} ORDER BY ${orderBySql(q.sort, "prompt")} LIMIT ? OFFSET ?`)
     .all(...args, q.limit, q.offset) as ExerciseRow[];
   return pagedResult(rows.map(parseExercise), total, q.limit, q.offset);
+}
+
+export function listExercisesBySet(setId: string): Exercise[] {
+  const rows = getDb()
+    .prepare("SELECT * FROM exercises WHERE set_id = ? AND archived_at IS NULL ORDER BY created_at ASC, rowid ASC")
+    .all(setId) as ExerciseRow[];
+  return rows.map(parseExercise);
 }
 
 export function getExercise(id: string): Exercise | null {
@@ -203,6 +212,13 @@ export function listTrueFalsePage(params: URLSearchParams, subjectId?: string): 
     .prepare(`SELECT * FROM truefalse ${whereSql} ORDER BY ${orderBySql(q.sort, "statement")} LIMIT ? OFFSET ?`)
     .all(...args, q.limit, q.offset) as TrueFalseRow[];
   return pagedResult(rows.map(parseTrueFalse), total, q.limit, q.offset);
+}
+
+export function listTrueFalseBySet(setId: string): TrueFalseItem[] {
+  const rows = getDb()
+    .prepare("SELECT * FROM truefalse WHERE set_id = ? AND archived_at IS NULL ORDER BY created_at ASC, rowid ASC")
+    .all(setId) as TrueFalseRow[];
+  return rows.map(parseTrueFalse);
 }
 
 export function getTrueFalse(id: string): TrueFalseItem | null {

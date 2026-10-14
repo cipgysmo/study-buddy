@@ -46,8 +46,8 @@ export default async function DashboardPage() {
   const quickActions = [
     { href: "/chat", label: t("chat"), icon: "chat" },
     { href: "/scan", label: t("scan"), icon: "scan" },
-    { href: "/quizzes", label: t("quizzes"), icon: "quizzes" },
-    { href: "/exercises", label: t("exercises"), icon: "exercises" },
+    { href: "/activities?tab=quizzes", label: t("quizzes"), icon: "quizzes" },
+    { href: "/activities?tab=practice", label: t("exercises"), icon: "exercises" },
     { href: "/exam-prep", label: t("examPrep"), icon: "examPrep" },
     { href: "/progress", label: t("progress"), icon: "progress" },
   ];

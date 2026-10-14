@@ -22,6 +22,10 @@
     "admin": "Admin",
     "settings": "Settings"
   },
+  "Activities": {
+    "title": "Activities",
+    "subtitle": "Quizzes, mock exams, and practice in one place."
+  },
   "Admin": {
     "title": "Admin",
     "subtitle": "Assign lessons, tests, notes, and routines for your kids.",
@@ -125,6 +129,7 @@
     "groupLabel": "Group",
     "groupNone": "No grouping",
     "groupSubject": "By subject",
+    "groupSet": "By session",
     "selectAll": "Select all",
     "selectedCount": "Selected: {count}",
     "archive": "Archive",
@@ -157,6 +162,7 @@
     "exercises": "Exercises",
     "truefalse": "True/false",
     "typedexercises": "Typed answers",
+    "practice": "Practice",
     "parseExam": "Exam parsing",
     "similarExam": "Similar exam",
     "retag": "Re-tagging",
@@ -431,7 +437,34 @@
     "score": "Score: {score}/100",
     "modeExact": "Exact match",
     "modeFlexible": "Flexible",
-    "modeCreative": "Creative"
+    "modeCreative": "Creative",
+    "filters": "Filters",
+    "clearFilters": "Clear filters",
+    "session": "Session",
+    "sessionFilter": "Session",
+    "ungrouped": "No session",
+    "openSession": "Open session",
+    "clearSessionFilter": "Clear session filter",
+    "generate": "Generate",
+    "generateTitle": "Generate practice",
+    "generateKinds": "Types",
+    "generateHint": "Create a new practice session.",
+    "savedViews": "Saved views",
+    "viewNamePlaceholder": "View name",
+    "saveView": "Save view",
+    "selectView": "Select view",
+    "applyView": "Apply",
+    "deleteView": "Delete",
+    "noViews": "No saved views yet.",
+    "backToSessions": "Back to sessions",
+    "lastOpened": "Last opened {date}",
+    "kind_exercises": "Exercises",
+    "kind_truefalse": "True / False",
+    "kind_typed": "Typed answers",
+    "kind_mixed": "Mixed practice",
+    "answered": "Answered {answered}/{total}",
+    "correctCount": "{count, plural, one {# correct} other {# correct}}",
+    "remaining": "{count, plural, one {# remaining} other {# remaining}}"
   },
   "Progress": {
     "title": "Progress",
@@ -554,6 +587,7 @@
     "type_exercises": "Exercises",
     "type_truefalse": "True/false",
     "type_typedexercises": "Typed answers",
+    "type_practice": "Practice",
     "type_lesson": "Lesson"
   },
   "Reports": {

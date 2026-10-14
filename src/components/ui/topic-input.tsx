@@ -53,6 +53,9 @@ export function TopicInput({
   }
 
   const listId = `topic-input-${subjectId || "none"}`;
+  const availableSuggestions = suggestions.filter(
+    (name) => !value.some((selected) => selected.toLowerCase() === name.toLowerCase())
+  );
 
   return (
     <div className="flex min-w-64 flex-wrap items-center gap-1.5">
@@ -65,7 +68,7 @@ export function TopicInput({
           <button
             type="button"
             onClick={() => remove(name)}
-            aria-label={t("removeKeyword")}
+            aria-label={t("deleteTopic")}
             className="cursor-pointer text-accent hover:text-foreground"
           >
             ×
@@ -73,6 +76,7 @@ export function TopicInput({
         </span>
       ))}
       <input
+        type="text"
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={(e) => {
@@ -80,14 +84,22 @@ export function TopicInput({
             e.preventDefault();
             addDraft();
           }
+          if (e.key === "Backspace" && !draft && value.length > 0) {
+            onChange(value.slice(0, -1));
+          }
         }}
         onBlur={addDraft}
         list={listId}
         placeholder={t("topicPlaceholder")}
-        className="min-w-40 flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-xs"
+        aria-label={t("topics")}
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
+        className="min-h-8 min-w-40 flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-xs"
       />
       <datalist id={listId}>
-        {suggestions.map((name) => (
+        {availableSuggestions.map((name) => (
           <option key={name} value={name} />
         ))}
       </datalist>

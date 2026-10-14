@@ -405,15 +405,25 @@ export function applyTemplate(templateId: string, studentId?: string | null): As
   return created;
 }
 
+function practiceHref(type: "exercises" | "truefalse" | "typed", subjectId: string | null): string {
+  const params = new URLSearchParams();
+  params.set("tab", "practice");
+  params.set("practiceTab", type === "truefalse" ? "truefalse" : type === "typed" ? "typed" : "exercises");
+  if (subjectId) params.set("subject", subjectId);
+  return `/activities?${params.toString()}`;
+}
+
 export function assignmentHref(assignment: Pick<Assignment, "type" | "subject_id" | "target_id">): string {
   if (assignment.type === "lesson" && assignment.target_id) return `/lessons/${assignment.target_id}`;
-  if (assignment.type === "quiz" && assignment.subject_id) return `/quizzes?subject=${assignment.subject_id}`;
-  if (assignment.type === "mock_exam") return "/mock-exams";
+  if (assignment.type === "quiz" && assignment.subject_id) {
+    return `/activities?tab=quizzes&subject=${assignment.subject_id}`;
+  }
+  if (assignment.type === "mock_exam") return "/activities?tab=mock";
   if (assignment.type === "material" && assignment.subject_id) return `/subjects/${assignment.subject_id}`;
   if (assignment.type === "flashcards")
     return assignment.subject_id ? `/flashcards?subject=${assignment.subject_id}` : "/flashcards";
   if (assignment.type === "exercises" || assignment.type === "truefalse" || assignment.type === "typed")
-    return assignment.subject_id ? `/exercises?subject=${assignment.subject_id}` : "/exercises";
+    return practiceHref(assignment.type, assignment.subject_id);
   if (assignment.subject_id) return `/subjects/${assignment.subject_id}`;
   return "/";
 }

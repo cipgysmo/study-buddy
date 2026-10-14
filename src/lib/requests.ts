@@ -21,6 +21,7 @@ const GENERATION_TYPES: JobType[] = [
   "exercises",
   "truefalse",
   "typedexercises",
+  "practice",
   "lesson",
 ];
 

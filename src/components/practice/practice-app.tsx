@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -10,20 +11,27 @@ import { NavIcon } from "@/components/shell/nav-icons";
 import { MaterialPreviewModal } from "@/components/ui/material-preview-modal";
 import { SourceChips } from "@/components/ui/source-chips";
 import { SubjectSelect, type SubjectOption } from "@/components/ui/subject-select";
-import { GenerationScopePicker } from "@/components/ui/generation-scope-picker";
 import { Diagram } from "@/components/ui/diagram";
-import type { GenerationDifficulty } from "@/lib/generation";
+import { PracticeGenerateModal } from "@/components/practice/practice-generate-modal";
 import {
   findDuplicateIds,
+  groupItemsBySet,
   groupItemsBySubjectAndDay,
   sortItems,
   type GroupMode,
+  type SetGroup,
   type SortMode,
   type SourceRef,
   type SubjectDayGroup,
 } from "@/lib/list-view";
 import { loadSavedFilters, saveSavedFilters } from "@/lib/saved-filters";
 import { useJob } from "@/lib/use-jobs";
+
+export type PracticeTab = "exercises" | "truefalse" | "typed";
+
+export function isPracticeTab(value: unknown): value is PracticeTab {
+  return value === "exercises" || value === "truefalse" || value === "typed";
+}
 
 interface ListItem {
   id: string;
@@ -70,29 +78,42 @@ interface SavedFilters {
   duplicatesOnly: boolean;
 }
 
+interface PracticeView {
+  id: string;
+  name: string;
+  tab: PracticeTab;
+  filters: SavedFilters;
+}
+
 const PAGE_SIZE = 10;
-const FILTER_KEY = "study-buddy:practice-filters:v2";
+const FILTER_KEY = "study-buddy:practice-filters:v3";
 const SESSION_KEY = "study-buddy:practice-session:v1";
+const VIEWS_KEY = "study-buddy:practice-views:v1";
+const TABS: PracticeTab[] = ["exercises", "truefalse", "typed"];
 
 interface PracticeSession {
   revealed: Record<string, boolean>;
   tfAnswers: Record<string, boolean>;
   typedAnswers: Record<string, string>;
+  typedResults: Record<string, GradeResult>;
 }
 
 function loadPracticeSession(): PracticeSession {
-  if (typeof window === "undefined") return { revealed: {}, tfAnswers: {}, typedAnswers: {} };
+  if (typeof window === "undefined") {
+    return { revealed: {}, tfAnswers: {}, typedAnswers: {}, typedResults: {} };
+  }
   try {
     const raw = window.localStorage.getItem(SESSION_KEY);
-    if (!raw) return { revealed: {}, tfAnswers: {}, typedAnswers: {} };
+    if (!raw) return { revealed: {}, tfAnswers: {}, typedAnswers: {}, typedResults: {} };
     const parsed = JSON.parse(raw) as Partial<PracticeSession>;
     return {
       revealed: parsed.revealed ?? {},
       tfAnswers: parsed.tfAnswers ?? {},
       typedAnswers: parsed.typedAnswers ?? {},
+      typedResults: parsed.typedResults ?? {},
     };
   } catch {
-    return { revealed: {}, tfAnswers: {}, typedAnswers: {} };
+    return { revealed: {}, tfAnswers: {}, typedAnswers: {}, typedResults: {} };
   }
 }
 
@@ -100,6 +121,28 @@ function savePracticeSession(session: PracticeSession): void {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    window.dispatchEvent(new Event("study-buddy:practice-session-updated"));
+  } catch {
+    /* ignore */
+  }
+}
+
+function loadViews(): PracticeView[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(VIEWS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? (parsed as PracticeView[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveViews(views: PracticeView[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(VIEWS_KEY, JSON.stringify(views));
   } catch {
     /* ignore */
   }
@@ -111,38 +154,50 @@ export function PracticeApp({
   typedExercises,
   subjects,
   initialSubjectId = "",
+  initialTab = "exercises",
+  initialSetId = "",
+  tabParamName = "tab",
+  sessionMode = false,
 }: {
   exercises: Exercise[];
   items: TrueFalseItem[];
   typedExercises: TypedExercise[];
   subjects: SubjectOption[];
   initialSubjectId?: string;
+  initialTab?: PracticeTab;
+  initialSetId?: string;
+  tabParamName?: string;
+  sessionMode?: boolean;
 }) {
   const t = useTranslations("Practice");
   const tc = useTranslations("Common");
   const ts = useTranslations("Subjects");
   const locale = useLocale();
   const router = useRouter();
-  const [tab, setTab] = useState<"exercises" | "truefalse" | "typed">("exercises");
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const urlTab = searchParams?.get(tabParamName) ?? null;
+  const urlSet = searchParams?.get("set") ?? null;
+  const [tab, setTab] = useState<PracticeTab>(isPracticeTab(urlTab) ? urlTab : initialTab);
+  const [setIdFilter, setSetIdFilter] = useState(urlSet ?? initialSetId);
   const [subjectId, setSubjectId] = useState(initialSubjectId);
   const [sort, setSort] = useState<SortMode>("newest");
-  const [group, setGroup] = useState<GroupMode>("subject");
+  const [group, setGroup] = useState<GroupMode>(sessionMode ? "none" : "set");
   const [query, setQuery] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState("");
   const [gradingModeFilter, setGradingModeFilter] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [duplicatesOnly, setDuplicatesOnly] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [views, setViews] = useState<PracticeView[]>([]);
+  const [viewName, setViewName] = useState("");
+  const [selectedViewId, setSelectedViewId] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [visibleCounts, setVisibleCounts] = useState<Record<string, number>>({});
-  const [topicNames, setTopicNames] = useState<string[]>([]);
-  const [columnIds, setColumnIds] = useState<string[]>([]);
-  const [keywords, setKeywords] = useState<string[]>([]);
-  const [customPrompt, setCustomPrompt] = useState("");
-  const [difficulty, setDifficulty] = useState<GenerationDifficulty>("balanced");
-  const [count, setCount] = useState(5);
-  const [busy, setBusy] = useState(false);
+  const [generateOpen, setGenerateOpen] = useState(false);
+  const [generateKinds, setGenerateKinds] = useState<PracticeTab[]>(["exercises"]);
   const [jobId, setJobId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
@@ -151,6 +206,7 @@ export function PracticeApp({
   const [typedResults, setTypedResults] = useState<Record<string, GradeResult>>({});
   const [gradingId, setGradingId] = useState<string | null>(null);
   const [openMaterial, setOpenMaterial] = useState<{ id: string; page?: number } | null>(null);
+  const busy = jobId !== null;
 
   useEffect(() => {
     /* eslint-disable react-hooks/set-state-in-effect */
@@ -158,19 +214,21 @@ export function PracticeApp({
     setRevealed(session.revealed);
     setTfAnswers(session.tfAnswers);
     setTypedAnswers(session.typedAnswers);
+    setTypedResults(session.typedResults);
     /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
   useEffect(() => {
-    savePracticeSession({ revealed, tfAnswers, typedAnswers });
-  }, [revealed, tfAnswers, typedAnswers]);
+    savePracticeSession({ revealed, tfAnswers, typedAnswers, typedResults });
+  }, [revealed, tfAnswers, typedAnswers, typedResults]);
 
   useEffect(() => {
+    if (sessionMode) return;
     /* eslint-disable react-hooks/set-state-in-effect */
     const saved = loadSavedFilters<SavedFilters>(FILTER_KEY, {
       subjectId: initialSubjectId,
       sort: "newest",
-      group: "subject",
+      group: "set",
       query: "",
       difficultyFilter: "",
       gradingModeFilter: "",
@@ -187,10 +245,12 @@ export function PracticeApp({
     setDateFrom(saved.dateFrom);
     setDateTo(saved.dateTo);
     setDuplicatesOnly(saved.duplicatesOnly);
+    setViews(loadViews());
     /* eslint-enable react-hooks/set-state-in-effect */
-  }, [initialSubjectId]);
+  }, [initialSubjectId, sessionMode]);
 
   useEffect(() => {
+    if (sessionMode) return;
     saveSavedFilters<SavedFilters>(FILTER_KEY, {
       subjectId,
       sort,
@@ -202,45 +262,119 @@ export function PracticeApp({
       dateTo,
       duplicatesOnly,
     });
-  }, [subjectId, sort, group, query, difficultyFilter, gradingModeFilter, dateFrom, dateTo, duplicatesOnly]);
+  }, [subjectId, sort, group, query, difficultyFilter, gradingModeFilter, dateFrom, dateTo, duplicatesOnly, sessionMode]);
+
+  useEffect(() => {
+    if (sessionMode) return;
+    saveViews(views);
+  }, [sessionMode, views]);
 
   useJob(jobId, (settled) => {
     if (settled.status === "done") {
       setJobId(null);
-      setBusy(false);
       router.refresh();
     } else {
       setJobId(null);
-      setBusy(false);
       setError(settled.error ?? "error");
     }
   });
 
-  async function generate(kind: "exercises" | "truefalse" | "typedexercises") {
-    if (!subjectId || busy) return;
-    setBusy(true);
-    setError("");
-    try {
-      const r = await fetch(`/api/${kind}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subjectId,
-          count,
-          topicNames,
-          columnIds,
-          keywords,
-          difficulty,
-          customPrompt,
-        }),
-      });
-      const d = (await r.json()) as { job?: { id: string }; error?: string };
-      if (!r.ok || !d.job) throw new Error(d.error || "error");
-      setJobId(d.job.id);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-      setBusy(false);
+  function updateQuery(updates: Record<string, string | null>) {
+    const params = new URLSearchParams(searchParams?.toString() ?? "");
+    for (const [key, value] of Object.entries(updates)) {
+      if (value) params.set(key, value);
+      else params.delete(key);
     }
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }
+
+  function changeSubject(next: string) {
+    setSubjectId(next);
+    updateQuery({ subject: next || null });
+  }
+
+  function changeTab(next: PracticeTab) {
+    if (next === tab) return;
+    setTab(next);
+    setSelected(new Set());
+    if (sessionMode) {
+      updateQuery({ [tabParamName]: next });
+      return;
+    }
+    setSetIdFilter("");
+    updateQuery({ [tabParamName]: next, set: null });
+  }
+
+  function changeSetFilter(next: string) {
+    setSetIdFilter(next);
+    updateQuery({ set: next || null });
+  }
+
+  function clearFilters() {
+    setDifficultyFilter("");
+    setGradingModeFilter("");
+    setDateFrom("");
+    setDateTo("");
+    setDuplicatesOnly(false);
+    setSetIdFilter("");
+    updateQuery({ set: null });
+  }
+
+  function openGenerate(kinds: PracticeTab[] = [tab]) {
+    setGenerateKinds(kinds);
+    setGenerateOpen(true);
+  }
+
+  function saveView() {
+    const name = viewName.trim();
+    if (!name) return;
+    const view: PracticeView = {
+      id: Math.random().toString(36).slice(2),
+      name,
+      tab,
+      filters: {
+        subjectId,
+        sort,
+        group,
+        query,
+        difficultyFilter,
+        gradingModeFilter,
+        dateFrom,
+        dateTo,
+        duplicatesOnly,
+      },
+    };
+    setViews((prev) => [...prev, view]);
+    setSelectedViewId(view.id);
+    setViewName("");
+  }
+
+  function applyView() {
+    const view = views.find((x) => x.id === selectedViewId);
+    if (!view) return;
+    setTab(view.tab);
+    setSubjectId(view.filters.subjectId);
+    setSort(view.filters.sort);
+    setGroup(view.filters.group);
+    setQuery(view.filters.query);
+    setDifficultyFilter(view.filters.difficultyFilter);
+    setGradingModeFilter(view.filters.gradingModeFilter);
+    setDateFrom(view.filters.dateFrom);
+    setDateTo(view.filters.dateTo);
+    setDuplicatesOnly(view.filters.duplicatesOnly);
+    setSetIdFilter("");
+    updateQuery({
+      [tabParamName]: view.tab,
+      subject: view.filters.subjectId || null,
+      set: null,
+    });
+  }
+
+  function deleteView() {
+    if (!selectedViewId) return;
+    setViews((prev) => prev.filter((x) => x.id !== selectedViewId));
+    setSelectedViewId("");
   }
 
   async function answerTrueFalse(id: string, answer: boolean) {
@@ -325,17 +459,18 @@ export function PracticeApp({
     });
   }
 
-  function visibleGroups<T extends ListItem>(
+  function filterAndSort<T extends ListItem>(
     all: T[],
     nameOf: (item: T) => string,
     extraFilter?: (item: T) => boolean
-  ): SubjectDayGroup<T>[] {
+  ): T[] {
     const q = query.trim().toLowerCase();
     const duplicates = duplicatesOnly ? findDuplicateIds(all, nameOf) : null;
     const filtered = all.filter((item) => {
       const day = item.created_at.slice(0, 10);
       return (
         (!subjectId || item.subject_id === subjectId) &&
+        (!setIdFilter || item.set_id === setIdFilter) &&
         (!q || nameOf(item).toLowerCase().includes(q)) &&
         (!dateFrom || day >= dateFrom) &&
         (!dateTo || day <= dateTo) &&
@@ -343,7 +478,10 @@ export function PracticeApp({
         (!extraFilter || extraFilter(item))
       );
     });
-    const sorted = sortItems(filtered, sort, nameOf, locale);
+    return sortItems(filtered, sort, nameOf, locale);
+  }
+
+  function subjectGroups<T extends ListItem>(sorted: T[]): SubjectDayGroup<T>[] {
     if (group === "subject") {
       return groupItemsBySubjectAndDay(sorted, subjects, locale, sort === "oldest" ? "asc" : "desc");
     }
@@ -357,19 +495,60 @@ export function PracticeApp({
     ];
   }
 
-  const typedGroups = visibleGroups(
+  function setGroups<T extends ListItem>(sorted: T[]): SetGroup<T>[] {
+    return groupItemsBySet(sorted, subjects, locale, sort === "oldest" ? "asc" : "desc");
+  }
+
+  const typedSorted = filterAndSort(
     typedExercises,
     (item) => item.prompt,
     (item) =>
       (!difficultyFilter || item.difficulty === difficultyFilter) &&
       (!gradingModeFilter || item.grading_mode === gradingModeFilter)
   );
-  const exerciseGroups = visibleGroups(
+  const exerciseSorted = filterAndSort(
     exercises,
     (item) => item.prompt,
     (item) => !difficultyFilter || item.difficulty === difficultyFilter
   );
-  const itemGroups = visibleGroups(items, (item) => item.statement);
+  const itemSorted = filterAndSort(items, (item) => item.statement);
+  const counts = {
+    exercises: exerciseSorted.length,
+    truefalse: itemSorted.length,
+    typed: typedSorted.length,
+  };
+  const activeFilterCount = [
+    tab !== "truefalse" ? difficultyFilter : "",
+    tab === "typed" ? gradingModeFilter : "",
+    dateFrom,
+    dateTo,
+    duplicatesOnly ? "duplicates" : "",
+    setIdFilter,
+  ].filter(Boolean).length;
+
+  function renderEmpty(emptyTitle: string, icon: "exercises" | "quizzes") {
+    const action = sessionMode
+      ? undefined
+      : activeFilterCount > 0
+        ? (
+            <Button size="sm" onClick={clearFilters}>
+              {t("clearFilters")}
+            </Button>
+          )
+        : (
+            <Button size="sm" onClick={() => openGenerate([tab])}>
+              {t("generate")}
+            </Button>
+          );
+    return (
+      <EmptyState
+        title={emptyTitle}
+        hint={sessionMode ? undefined : t("generateHint")}
+        action={action}
+        icon={<NavIcon name={icon} className="h-5 w-5" />}
+      />
+    );
+  }
 
   function renderGrouped<T extends ListItem>(
     groups: SubjectDayGroup<T>[],
@@ -378,7 +557,7 @@ export function PracticeApp({
     renderItem: (item: T, index: number) => ReactNode
   ) {
     if (groups.every((section) => section.dayGroups.every((day) => day.items.length === 0))) {
-      return <EmptyState title={emptyTitle} icon={<NavIcon name={icon} className="h-5 w-5" />} />;
+      return renderEmpty(emptyTitle, icon);
     }
 
     return (
@@ -445,7 +624,95 @@ export function PracticeApp({
     );
   }
 
+  function renderSetGrouped<T extends ListItem>(
+    groups: SetGroup<T>[],
+    emptyTitle: string,
+    icon: "exercises" | "quizzes",
+    renderItem: (item: T, index: number) => ReactNode
+  ) {
+    if (groups.length === 0) {
+      return renderEmpty(emptyTitle, icon);
+    }
+
+    return (
+      <div className="space-y-5">
+        {groups.map((setGroup) => {
+          const key = `set|${setGroup.key}`;
+          const isCollapsed = collapsed.has(key);
+          const limit = visibleCounts[key] ?? PAGE_SIZE;
+          const shown = isCollapsed ? [] : setGroup.items.slice(0, limit);
+          return (
+            <div key={key} className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(key)}
+                  className="min-h-10 rounded-lg px-2 text-left text-xs font-medium text-muted transition hover:bg-foreground/5 hover:text-foreground"
+                  aria-expanded={!isCollapsed}
+                >
+                  {isCollapsed ? tc("expand") : tc("collapse")}
+                </button>
+                {setGroup.color && (
+                  <span className="h-3 w-3 rounded-full" style={{ backgroundColor: setGroup.color }} />
+                )}
+                <p className="text-xs font-medium text-muted">
+                  {setGroup.setId ? t("session") : t("ungrouped")}
+                  {setGroup.subjectName && setGroup.subjectName !== "—" ? ` · ${setGroup.subjectName}` : ""}
+                  {setGroup.dayLabel ? ` · ${setGroup.dayLabel}` : ""}
+                  {setGroup.timeLabel ? ` · ${setGroup.timeLabel}` : ""}
+                  <span className="ml-2 opacity-70">({setGroup.items.length})</span>
+                </p>
+                {setGroup.setId && (
+                  <Link
+                    href={`/practice/${setGroup.setId}`}
+                    className="inline-flex min-h-8 items-center rounded-lg border border-border bg-background px-3 text-xs font-medium transition hover:border-accent hover:text-accent"
+                  >
+                    {t("openSession")}
+                  </Link>
+                )}
+              </div>
+              <div className="space-y-3">
+                {shown.map((item, index) => renderItem(item, index))}
+              </div>
+              {!isCollapsed && setGroup.items.length > limit && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setVisibleCounts((prev) => ({ ...prev, [key]: limit + PAGE_SIZE }))}
+                >
+                  {tc("showMore")}
+                </Button>
+              )}
+              {!isCollapsed && limit > PAGE_SIZE && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setVisibleCounts((prev) => ({ ...prev, [key]: PAGE_SIZE }))}
+                >
+                  {tc("showLess")}
+                </Button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  function renderList<T extends ListItem>(
+    sorted: T[],
+    emptyTitle: string,
+    icon: "exercises" | "quizzes",
+    renderItem: (item: T, index: number) => ReactNode
+  ) {
+    if (group === "set") {
+      return renderSetGrouped(setGroups(sorted), emptyTitle, icon, renderItem);
+    }
+    return renderGrouped(subjectGroups(sorted), emptyTitle, icon, renderItem);
+  }
+
   function checkbox(id: string) {
+    if (sessionMode) return null;
     return (
       <input
         type="checkbox"
@@ -458,177 +725,204 @@ export function PracticeApp({
   }
 
   return (
-    <div className="space-y-6">
-      <Card className="sticky top-0 z-10 flex flex-wrap items-end gap-3 p-4 backdrop-blur">
-        <SubjectSelect
-          value={subjectId}
-          onChange={(v) => {
-            setSubjectId(v);
-            setTopicNames([]);
-            setColumnIds([]);
-            setKeywords([]);
-            setCustomPrompt("");
-          }}
-          subjects={subjects}
-          placeholder={t("selectSubject")}
-          className="min-w-52"
-        />
-        <input
-          type="number"
-          min={1}
-          max={20}
-          value={count}
-          onChange={(e) => setCount(Number(e.target.value))}
-          className="w-24 min-h-10 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-ring"
-        />
-        <Button onClick={() => generate("exercises")} disabled={busy || !subjectId}>
-          {busy ? t("generating") : t("generateExercises")}
-        </Button>
-        <Button variant="secondary" onClick={() => generate("truefalse")} disabled={busy || !subjectId}>
-          {t("generateTrueFalse")}
-        </Button>
-        <Button variant="secondary" onClick={() => generate("typedexercises")} disabled={busy || !subjectId}>
-          {t("generateTyped")}
-        </Button>
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={tc("searchPlaceholder")}
-          aria-label={tc("search")}
-          className="min-h-10 min-w-52 flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-ring"
-        />
-        <div className="ml-auto flex flex-wrap items-center gap-2">
-          <label className="text-xs text-muted">
-            {tc("sortLabel")}
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value as SortMode)}
-              className="ml-2 min-h-10 rounded-xl border border-border bg-background px-2 py-1 text-sm outline-none focus:border-accent"
-            >
-              <option value="newest">{tc("sortNewest")}</option>
-              <option value="oldest">{tc("sortOldest")}</option>
-              <option value="name">{tc("sortName")}</option>
-            </select>
-          </label>
-          <label className="text-xs text-muted">
-            {tc("groupLabel")}
-            <select
-              value={group}
-              onChange={(e) => setGroup(e.target.value as GroupMode)}
-              className="ml-2 min-h-10 rounded-xl border border-border bg-background px-2 py-1 text-sm outline-none focus:border-accent"
-            >
-              <option value="none">{tc("groupNone")}</option>
-              <option value="subject">{tc("groupSubject")}</option>
-            </select>
-          </label>
-          <label className="text-xs text-muted">
-            {tc("difficultyFilter")}
-            <select
-              value={difficultyFilter}
-              onChange={(e) => setDifficultyFilter(e.target.value)}
-              className="ml-2 min-h-10 rounded-xl border border-border bg-background px-2 py-1 text-sm outline-none focus:border-accent"
-            >
-              <option value="">—</option>
-              <option value="balanced">{ts("difficultyBalanced")}</option>
-              <option value="easy">{ts("difficultyNoob")}</option>
-              <option value="medium">{ts("difficultyPedestrian")}</option>
-              <option value="hard">{ts("difficultyPro")}</option>
-              <option value="expert">{ts("difficultyHacker")}</option>
-            </select>
-          </label>
-          {tab === "typed" && (
-            <label className="text-xs text-muted">
-              {tc("gradingModeFilter")}
-              <select
-                value={gradingModeFilter}
-                onChange={(e) => setGradingModeFilter(e.target.value)}
-                className="ml-2 min-h-10 rounded-xl border border-border bg-background px-2 py-1 text-sm outline-none focus:border-accent"
-              >
-                <option value="">—</option>
-                <option value="exact">{t("modeExact")}</option>
-                <option value="flexible">{t("modeFlexible")}</option>
-                <option value="creative">{t("modeCreative")}</option>
-              </select>
-            </label>
-          )}
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            aria-label={tc("dateFrom")}
-            className="min-h-10 rounded-xl border border-border bg-background px-2 py-1 text-sm"
-          />
-          <input
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            aria-label={tc("dateTo")}
-            className="min-h-10 rounded-xl border border-border bg-background px-2 py-1 text-sm"
-          />
-          <label className="flex min-h-10 items-center gap-2 text-xs text-muted">
-            <input
-              type="checkbox"
-              checked={duplicatesOnly}
-              onChange={(e) => setDuplicatesOnly(e.target.checked)}
-              className="h-4 w-4 accent-[var(--color-accent)]"
+    <div className="space-y-5">
+      {!sessionMode && (
+        <Card className="sticky top-0 z-10 p-4 backdrop-blur">
+          <div className="flex flex-wrap items-end gap-3">
+            <SubjectSelect
+              value={subjectId}
+              onChange={changeSubject}
+              subjects={subjects}
+              placeholder={t("selectSubject")}
+              className="min-w-52"
             />
-            {tc("duplicates")}
-          </label>
-        </div>
-        {error && <span className="text-sm text-danger">{error}</span>}
-      </Card>
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={tc("searchPlaceholder")}
+              aria-label={tc("search")}
+              className="min-h-10 min-w-52 flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-ring"
+            />
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              <label className="text-xs text-muted">
+                {tc("sortLabel")}
+                <select
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value as SortMode)}
+                  className="ml-2 min-h-10 rounded-xl border border-border bg-background px-2 py-1 text-sm outline-none focus:border-accent"
+                >
+                  <option value="newest">{tc("sortNewest")}</option>
+                  <option value="oldest">{tc("sortOldest")}</option>
+                  <option value="name">{tc("sortName")}</option>
+                </select>
+              </label>
+              <label className="text-xs text-muted">
+                {tc("groupLabel")}
+                <select
+                  value={group}
+                  onChange={(e) => setGroup(e.target.value as GroupMode)}
+                  className="ml-2 min-h-10 rounded-xl border border-border bg-background px-2 py-1 text-sm outline-none focus:border-accent"
+                >
+                  <option value="none">{tc("groupNone")}</option>
+                  <option value="subject">{tc("groupSubject")}</option>
+                  <option value="set">{tc("groupSet")}</option>
+                </select>
+              </label>
+              <Button variant="ghost" size="sm" onClick={() => setShowFilters((v) => !v)}>
+                {t("filters")}
+                {activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+              </Button>
+              <Button size="sm" onClick={() => openGenerate([tab])} disabled={busy}>
+                {busy ? t("generating") : t("generate")}
+              </Button>
+            </div>
+          </div>
 
-      <GenerationScopePicker
-        subjectId={subjectId}
-        topicNames={topicNames}
-        onTopicNamesChange={setTopicNames}
-        columnIds={columnIds}
-        onColumnIdsChange={setColumnIds}
-        keywords={keywords}
-        onKeywordsChange={setKeywords}
-        difficulty={difficulty}
-        onDifficultyChange={setDifficulty}
-        customPrompt={customPrompt}
-        onCustomPromptChange={setCustomPrompt}
-      />
+          {showFilters && (
+            <div className="mt-3 space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                {tab !== "truefalse" && (
+                  <label className="text-xs text-muted">
+                    {tc("difficultyFilter")}
+                    <select
+                      value={difficultyFilter}
+                      onChange={(e) => setDifficultyFilter(e.target.value)}
+                      className="ml-2 min-h-10 rounded-xl border border-border bg-background px-2 py-1 text-sm outline-none focus:border-accent"
+                    >
+                      <option value="">—</option>
+                      <option value="balanced">{ts("difficultyBalanced")}</option>
+                      <option value="easy">{ts("difficultyNoob")}</option>
+                      <option value="medium">{ts("difficultyPedestrian")}</option>
+                      <option value="hard">{ts("difficultyPro")}</option>
+                      <option value="expert">{ts("difficultyHacker")}</option>
+                    </select>
+                  </label>
+                )}
+                {tab === "typed" && (
+                  <label className="text-xs text-muted">
+                    {tc("gradingModeFilter")}
+                    <select
+                      value={gradingModeFilter}
+                      onChange={(e) => setGradingModeFilter(e.target.value)}
+                      className="ml-2 min-h-10 rounded-xl border border-border bg-background px-2 py-1 text-sm outline-none focus:border-accent"
+                    >
+                      <option value="">—</option>
+                      <option value="exact">{t("modeExact")}</option>
+                      <option value="flexible">{t("modeFlexible")}</option>
+                      <option value="creative">{t("modeCreative")}</option>
+                    </select>
+                  </label>
+                )}
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  aria-label={tc("dateFrom")}
+                  className="min-h-10 rounded-xl border border-border bg-background px-2 py-1 text-sm"
+                />
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  aria-label={tc("dateTo")}
+                  className="min-h-10 rounded-xl border border-border bg-background px-2 py-1 text-sm"
+                />
+                <label className="flex min-h-10 items-center gap-2 text-xs text-muted">
+                  <input
+                    type="checkbox"
+                    checked={duplicatesOnly}
+                    onChange={(e) => setDuplicatesOnly(e.target.checked)}
+                    className="h-4 w-4 accent-[var(--color-accent)]"
+                  />
+                  {tc("duplicates")}
+                </label>
+                {activeFilterCount > 0 && (
+                  <Button size="sm" variant="ghost" onClick={clearFilters}>
+                    {t("clearFilters")}
+                  </Button>
+                )}
+              </div>
 
-      <div className="inline-flex rounded-xl border border-border bg-card p-1 shadow-soft">
-        <button
-          onClick={() => setTab("exercises")}
-          className={
-            "min-h-10 rounded-lg px-3 py-1.5 text-sm font-medium transition " +
-            (tab === "exercises"
-              ? "bg-accent/10 text-accent ring-1 ring-accent/20"
-              : "text-muted hover:text-foreground")
-          }
-        >
-          {t("exercises")}
-        </button>
-        <button
-          onClick={() => setTab("truefalse")}
-          className={
-            "min-h-10 rounded-lg px-3 py-1.5 text-sm font-medium transition " +
-            (tab === "truefalse"
-              ? "bg-accent/10 text-accent ring-1 ring-accent/20"
-              : "text-muted hover:text-foreground")
-          }
-        >
-          {t("trueFalse")}
-        </button>
-        <button
-          onClick={() => setTab("typed")}
-          className={
-            "min-h-10 rounded-lg px-3 py-1.5 text-sm font-medium transition " +
-            (tab === "typed"
-              ? "bg-accent/10 text-accent ring-1 ring-accent/20"
-              : "text-muted hover:text-foreground")
-          }
-        >
-          {t("typed")}
-        </button>
+              <div className="space-y-2 rounded-xl border border-border bg-background p-3">
+                <p className="text-xs font-semibold text-muted">{t("savedViews")}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    value={viewName}
+                    onChange={(e) => setViewName(e.target.value)}
+                    placeholder={t("viewNamePlaceholder")}
+                    aria-label={t("viewNamePlaceholder")}
+                    className="min-h-10 min-w-48 flex-1 rounded-xl border border-border bg-card px-3 py-2 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-ring"
+                  />
+                  <Button size="sm" onClick={saveView} disabled={!viewName.trim()}>
+                    {t("saveView")}
+                  </Button>
+                </div>
+                {views.length > 0 ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <select
+                      value={selectedViewId}
+                      onChange={(e) => setSelectedViewId(e.target.value)}
+                      aria-label={t("savedViews")}
+                      className="min-h-10 min-w-48 rounded-xl border border-border bg-card px-2 py-1 text-sm outline-none focus:border-accent"
+                    >
+                      <option value="">{t("selectView")}</option>
+                      {views.map((view) => (
+                        <option key={view.id} value={view.id}>
+                          {view.name}
+                        </option>
+                      ))}
+                    </select>
+                    <Button size="sm" variant="secondary" onClick={applyView} disabled={!selectedViewId}>
+                      {t("applyView")}
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={deleteView} disabled={!selectedViewId}>
+                      {t("deleteView")}
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted">{t("noViews")}</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {setIdFilter && (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-accent/10 px-2 py-1 text-xs font-medium text-accent">
+                {t("sessionFilter")}
+              </span>
+              <Button size="sm" variant="ghost" onClick={() => changeSetFilter("")}>
+                {t("clearSessionFilter")}
+              </Button>
+            </div>
+          )}
+
+          {error && <span className="mt-2 block text-sm text-danger">{error}</span>}
+        </Card>
+      )}
+
+      <div role="tablist" className="inline-flex rounded-xl border border-border bg-card p-1 shadow-soft">
+        {TABS.map((id) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={tab === id}
+            onClick={() => changeTab(id)}
+            className={
+              "min-h-10 rounded-lg px-3 py-1.5 text-sm font-medium transition " +
+              (tab === id ? "bg-accent/10 text-accent ring-1 ring-accent/20" : "text-muted hover:text-foreground")
+            }
+          >
+            {t(id === "truefalse" ? "trueFalse" : id)}
+            <span className="ml-2 text-xs opacity-70">{counts[id]}</span>
+          </button>
+        ))}
       </div>
 
-      {selected.size > 0 && (
+      {sessionMode && error && <p className="text-sm text-danger">{error}</p>}
+
+      {!sessionMode && selected.size > 0 && (
         <div className="sticky top-14 z-10 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 shadow-soft">
           <span className="text-sm text-muted">{tc("selectedCount", { count: selected.size })}</span>
           <Button size="sm" variant="secondary" onClick={() => void bulk("archive")}>
@@ -644,7 +938,7 @@ export function PracticeApp({
       )}
 
       {tab === "typed" &&
-        renderGrouped(typedGroups, t("emptyTyped"), "exercises", (ex, index) => {
+        renderList(typedSorted, t("emptyTyped"), "exercises", (ex, index) => {
           const result = typedResults[ex.id];
           return (
             <Card key={ex.id} className="p-4">
@@ -656,14 +950,17 @@ export function PracticeApp({
                       <span className="mr-2 text-muted">{index + 1}.</span>
                       {ex.prompt}
                     </p>
-                    <button
-                      onClick={() => remove("typedexercises", ex.id)}
-                      className="shrink-0 text-xs text-muted transition hover:text-danger"
-                      title={t("deleteTyped")}
-                      aria-label={t("deleteTyped")}
-                    >
-                      ✕
-                    </button>
+                    {!sessionMode && (
+                      <button
+                        type="button"
+                        onClick={() => remove("typedexercises", ex.id)}
+                        className="shrink-0 text-xs text-muted transition hover:text-danger"
+                        title={t("deleteTyped")}
+                        aria-label={t("deleteTyped")}
+                      >
+                        ✕
+                      </button>
+                    )}
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs text-accent">
@@ -720,7 +1017,7 @@ export function PracticeApp({
         })}
 
       {tab === "exercises" &&
-        renderGrouped(exerciseGroups, t("emptyExercises"), "exercises", (ex, index) => (
+        renderList(exerciseSorted, t("emptyExercises"), "exercises", (ex, index) => (
           <Card key={ex.id} className="p-4">
             <div className="flex items-start gap-2">
               {checkbox(ex.id)}
@@ -730,14 +1027,17 @@ export function PracticeApp({
                     <span className="mr-2 text-muted">{index + 1}.</span>
                     {ex.prompt}
                   </p>
-                  <button
-                    onClick={() => remove("exercises", ex.id)}
-                    className="shrink-0 text-xs text-muted transition hover:text-danger"
-                    title={t("deleteExercise")}
-                    aria-label={t("deleteExercise")}
-                  >
-                    ✕
-                  </button>
+                  {!sessionMode && (
+                    <button
+                      type="button"
+                      onClick={() => remove("exercises", ex.id)}
+                      className="shrink-0 text-xs text-muted transition hover:text-danger"
+                      title={t("deleteExercise")}
+                      aria-label={t("deleteExercise")}
+                    >
+                      ✕
+                    </button>
+                  )}
                 </div>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs text-accent">
@@ -776,7 +1076,7 @@ export function PracticeApp({
         ))}
 
       {tab === "truefalse" &&
-        renderGrouped(itemGroups, t("emptyTrueFalse"), "quizzes", (item, index) => {
+        renderList(itemSorted, t("emptyTrueFalse"), "quizzes", (item, index) => {
           const answered = item.id in tfAnswers;
           const correct = tfAnswers[item.id] === item.is_correct;
           const btnClass = (value: boolean) => {
@@ -795,14 +1095,17 @@ export function PracticeApp({
                       <span className="mr-2 text-muted">{index + 1}.</span>
                       {item.statement}
                     </p>
-                    <button
-                      onClick={() => remove("truefalse", item.id)}
-                      className="shrink-0 text-xs text-muted transition hover:text-danger"
-                      title={t("deleteItem")}
-                      aria-label={t("deleteItem")}
-                    >
-                      ✕
-                    </button>
+                    {!sessionMode && (
+                      <button
+                        type="button"
+                        onClick={() => remove("truefalse", item.id)}
+                        className="shrink-0 text-xs text-muted transition hover:text-danger"
+                        title={t("deleteItem")}
+                        aria-label={t("deleteItem")}
+                      >
+                        ✕
+                      </button>
+                    )}
                   </div>
                   {answered && (
                     <SourceChips value={item.source_refs} subjectId={item.subject_id} onOpen={openSource} />
@@ -846,6 +1149,18 @@ export function PracticeApp({
             </Card>
           );
         })}
+
+      {!sessionMode && generateOpen && (
+        <PracticeGenerateModal
+          open
+          onClose={() => setGenerateOpen(false)}
+          subjects={subjects}
+          subjectId={subjectId}
+          onSubjectChange={changeSubject}
+          initialKinds={generateKinds}
+          onJob={setJobId}
+        />
+      )}
 
       <MaterialPreviewModal
         materialId={openMaterial?.id ?? null}

@@ -9,6 +9,9 @@ function resultHref(type: string, result: string | null): string | null {
   if (type === "quiz" || type === "similarExam") return `/quizzes/${result}`;
   if (type === "lesson") return `/lessons/${result}`;
   if (type === "plan") return `/exam-prep/${result}`;
+  if (type === "exercises" || type === "truefalse" || type === "typedexercises" || type === "practice") {
+    return `/practice/${result}`;
+  }
   return null;
 }
 

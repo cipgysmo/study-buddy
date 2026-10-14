@@ -61,8 +61,12 @@ export default async function SubjectDetailPage({
 
   const actions = [
     { href: `/flashcards?subject=${id}`, label: t("practiceFlashcards"), icon: "flashcards" },
-    { href: `/quizzes?subject=${id}`, label: t("practiceQuizzes"), icon: "quizzes" },
-    { href: `/exercises?subject=${id}`, label: t("practiceExercises"), icon: "exercises" },
+    { href: `/activities?tab=quizzes&subject=${id}`, label: t("practiceQuizzes"), icon: "quizzes" },
+    {
+      href: `/activities?tab=practice&practiceTab=exercises&subject=${id}`,
+      label: t("practiceExercises"),
+      icon: "exercises",
+    },
     { href: "/scan", label: t("scanMaterial"), icon: "scan" },
   ];
 

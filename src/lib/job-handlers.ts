@@ -6,6 +6,7 @@ import { generateFlashcards } from "./flashcards";
 import { generateQuiz } from "./quizzes";
 import { createPlan } from "./plans";
 import { generateExercises, generateTrueFalse } from "./practice";
+import { cleanPracticeKinds, ensurePracticeSet } from "./practice-sets";
 import { generateTypedExercises } from "./typed-exercises";
 import { addMaterialWithText, getMaterial, linkMaterialParseJob, listMaterials, processMaterial } from "./subjects";
 import { autoTagMaterialTopics } from "./topics";
@@ -144,33 +145,64 @@ registerJobHandler("plan", async ({ payload }) => {
 });
 
 registerJobHandler("exercises", async ({ id, payload }) => {
-  await generateExercises(str(payload.subjectId), num(payload.count, 5), topicIdArray(payload.topicIds), {
+  const subjectId = str(payload.subjectId);
+  ensurePracticeSet(id, subjectId, "exercises", id);
+  await generateExercises(subjectId, num(payload.count, 5), topicIdArray(payload.topicIds), {
     columnIds: cleanStringArray(payload.columnIds),
     keywords: cleanStringArray(payload.keywords),
     difficulty: cleanDifficulty(payload.difficulty),
     customPrompt: cleanCustomPrompt(payload.customPrompt),
   }, id);
-  return null;
+  return id;
 });
 
 registerJobHandler("truefalse", async ({ id, payload }) => {
-  await generateTrueFalse(str(payload.subjectId), num(payload.count, 5), topicIdArray(payload.topicIds), {
+  const subjectId = str(payload.subjectId);
+  ensurePracticeSet(id, subjectId, "truefalse", id);
+  await generateTrueFalse(subjectId, num(payload.count, 5), topicIdArray(payload.topicIds), {
     columnIds: cleanStringArray(payload.columnIds),
     keywords: cleanStringArray(payload.keywords),
     difficulty: cleanDifficulty(payload.difficulty),
     customPrompt: cleanCustomPrompt(payload.customPrompt),
   }, id);
-  return null;
+  return id;
 });
 
 registerJobHandler("typedexercises", async ({ id, payload }) => {
-  await generateTypedExercises(str(payload.subjectId), num(payload.count, 5), topicIdArray(payload.topicIds), {
+  const subjectId = str(payload.subjectId);
+  ensurePracticeSet(id, subjectId, "typed", id);
+  await generateTypedExercises(subjectId, num(payload.count, 5), topicIdArray(payload.topicIds), {
     columnIds: cleanStringArray(payload.columnIds),
     keywords: cleanStringArray(payload.keywords),
     difficulty: cleanDifficulty(payload.difficulty),
     customPrompt: cleanCustomPrompt(payload.customPrompt),
   }, id);
-  return null;
+  return id;
+});
+
+registerJobHandler("practice", async ({ id, payload }) => {
+  const subjectId = str(payload.subjectId);
+  const kinds = cleanPracticeKinds(payload.kinds);
+  const count = num(payload.count, 5);
+  const topicIds = topicIdArray(payload.topicIds);
+  const opts = {
+    columnIds: cleanStringArray(payload.columnIds),
+    keywords: cleanStringArray(payload.keywords),
+    difficulty: cleanDifficulty(payload.difficulty),
+    customPrompt: cleanCustomPrompt(payload.customPrompt),
+  };
+  ensurePracticeSet(id, subjectId, kinds.length > 1 ? "mixed" : kinds[0], id);
+
+  if (kinds.includes("exercises")) {
+    await generateExercises(subjectId, count, topicIds, opts, id);
+  }
+  if (kinds.includes("truefalse")) {
+    await generateTrueFalse(subjectId, count, topicIds, opts, id);
+  }
+  if (kinds.includes("typed")) {
+    await generateTypedExercises(subjectId, count, topicIds, opts, id);
+  }
+  return id;
 });
 
 registerJobHandler("lesson", async ({ payload }) => {

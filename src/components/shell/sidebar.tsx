@@ -11,6 +11,7 @@ import { ThemeToggle } from "./theme-toggle";
 interface NavItem {
   href: string;
   labelKey: string;
+  activePaths?: string[];
 }
 
 const NAV: NavItem[] = [
@@ -20,7 +21,11 @@ const NAV: NavItem[] = [
   { href: "/subjects", labelKey: "subjects" },
   { href: "/exam-prep", labelKey: "examPrep" },
   { href: "/flashcards", labelKey: "flashcards" },
-  { href: "/activities", labelKey: "activities" },
+  {
+    href: "/activities",
+    labelKey: "activities",
+    activePaths: ["/activities", "/quizzes", "/exercises", "/mock-exams"],
+  },
   { href: "/history", labelKey: "history" },
   { href: "/requests", labelKey: "requests" },
   { href: "/reports", labelKey: "reports" },
@@ -40,8 +45,12 @@ export function Sidebar({
   const t = useTranslations("Nav");
   const activeJobs = useActiveJobs();
 
-  const isActive = (href: string) =>
-    href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
+  const isActive = (item: NavItem) => {
+    const paths = item.activePaths ?? [item.href];
+    return paths.some((href) =>
+      href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/")
+    );
+  };
 
   return (
     <aside className="h-full w-60 shrink-0 border-e border-border bg-card/70 backdrop-blur">
@@ -51,7 +60,7 @@ export function Sidebar({
         </div>
         <nav className="flex-1 space-y-1.5 overflow-y-auto px-3 pb-6">
           {NAV.map((item) => {
-            const active = isActive(item.href);
+            const active = isActive(item);
             return (
               <Link
                 key={item.href}

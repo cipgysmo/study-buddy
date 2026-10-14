@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { ActivitiesApp } from "@/components/activities/activities-app";
+import { isPracticeTab } from "@/components/practice/practice-app";
 import { listExercises, listTrueFalse } from "@/lib/practice";
 import { listQuizzes, listTimedQuizzes } from "@/lib/quizzes";
 import { listSubjects } from "@/lib/subjects";
@@ -8,10 +9,12 @@ import { listTypedExercises } from "@/lib/typed-exercises";
 export default async function ActivitiesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ subject?: string; tab?: string }>;
+  searchParams: Promise<{ subject?: string; tab?: string; practiceTab?: string; set?: string }>;
 }) {
-  const t = await getTranslations("Nav");
-  const { subject, tab } = await searchParams;
+  const t = await getTranslations("Activities");
+  const { subject, tab, practiceTab, set } = await searchParams;
+  const initialTab = tab === "mock" || tab === "practice" ? tab : "quizzes";
+  const initialPracticeTab = isPracticeTab(practiceTab) ? practiceTab : "exercises";
   const subjects = listSubjects().map((s) => ({ id: s.id, name: s.name, color: s.color }));
   const quizzes = listQuizzes().map((q) => ({
     id: q.id,
@@ -36,6 +39,7 @@ export default async function ActivitiesPage({
     difficulty: e.difficulty,
     created_at: e.created_at,
     source_refs: e.source_refs,
+    set_id: e.set_id,
   }));
   const items = listTrueFalse(subject).map((i) => ({
     id: i.id,
@@ -45,6 +49,7 @@ export default async function ActivitiesPage({
     explanation: i.explanation,
     created_at: i.created_at,
     source_refs: i.source_refs,
+    set_id: i.set_id,
   }));
   const typedExercises = listTypedExercises(subject).map((e) => ({
     id: e.id,
@@ -57,13 +62,14 @@ export default async function ActivitiesPage({
     difficulty: e.difficulty,
     created_at: e.created_at,
     source_refs: e.source_refs,
+    set_id: e.set_id,
   }));
 
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-3xl font-semibold tracking-tight">{t("activities")}</h1>
-        <p className="mt-1 text-muted">Quizzes, mock exams, and practice in one place.</p>
+        <h1 className="text-3xl font-semibold tracking-tight">{t("title")}</h1>
+        <p className="mt-1 text-muted">{t("subtitle")}</p>
       </header>
       <ActivitiesApp
         quizzes={quizzes}
@@ -73,7 +79,9 @@ export default async function ActivitiesPage({
         typedExercises={typedExercises}
         subjects={subjects}
         initialSubjectId={subject ?? ""}
-        initialTab={tab === "mock" || tab === "practice" ? tab : "quizzes"}
+        initialTab={initialTab}
+        initialPracticeTab={initialPracticeTab}
+        initialSetId={set ?? ""}
       />
     </div>
   );

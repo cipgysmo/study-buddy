@@ -1,31 +1,13 @@
-import { getTranslations } from "next-intl/server";
-import { listQuizzes } from "@/lib/quizzes";
-import { listSubjects } from "@/lib/subjects";
-import { QuizzesApp } from "@/components/quizzes/quizzes-app";
+import { redirect } from "next/navigation";
 
 export default async function QuizzesPage({
   searchParams,
 }: {
   searchParams: Promise<{ subject?: string }>;
 }) {
-  const t = await getTranslations("Quizzes");
   const { subject } = await searchParams;
-  const quizzes = listQuizzes().map((q) => ({
-    id: q.id,
-    subject_id: q.subject_id,
-    title: q.title,
-    created_at: q.created_at,
-    source_refs: q.source_refs,
-  }));
-  const subjects = listSubjects().map((s) => ({ id: s.id, name: s.name, color: s.color }));
-
-  return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="text-3xl font-semibold tracking-tight">{t("title")}</h1>
-        <p className="mt-1 text-muted">{t("subtitle")}</p>
-      </header>
-      <QuizzesApp quizzes={quizzes} subjects={subjects} initialSubjectId={subject ?? ""} />
-    </div>
-  );
+  const params = new URLSearchParams();
+  params.set("tab", "quizzes");
+  if (subject) params.set("subject", subject);
+  redirect(`/activities?${params.toString()}`);
 }
