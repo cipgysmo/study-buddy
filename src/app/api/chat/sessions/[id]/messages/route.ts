@@ -52,9 +52,14 @@ export async function POST(req: Request, ctx: Ctx) {
 
   const locale = await resolveLocale();
   const languageName = LANGUAGES.find((l) => l.code === locale)?.name ?? locale;
-  const context = subjectId
-    ? buildSubjectContext(subjectId, topicIds, CHAT_CONTEXT_CHARS)
-    : undefined;
+  let context: string | undefined;
+  if (subjectId) {
+    try {
+      context = buildSubjectContext(subjectId, topicIds, CHAT_CONTEXT_CHARS);
+    } catch {
+      context = undefined;
+    }
+  }
   const system = tutorSystemPrompt(languageName, context, topicNames(topicIds), getStudentName());
 
   const history = listMessages(id).slice(-MAX_HISTORY_MESSAGES);

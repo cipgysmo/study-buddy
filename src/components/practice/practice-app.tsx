@@ -69,6 +69,38 @@ interface SavedFilters {
 
 const PAGE_SIZE = 10;
 const FILTER_KEY = "study-buddy:practice-filters:v2";
+const SESSION_KEY = "study-buddy:practice-session:v1";
+
+interface PracticeSession {
+  revealed: Record<string, boolean>;
+  tfAnswers: Record<string, boolean>;
+  typedAnswers: Record<string, string>;
+}
+
+function loadPracticeSession(): PracticeSession {
+  if (typeof window === "undefined") return { revealed: {}, tfAnswers: {}, typedAnswers: {} };
+  try {
+    const raw = window.localStorage.getItem(SESSION_KEY);
+    if (!raw) return { revealed: {}, tfAnswers: {}, typedAnswers: {} };
+    const parsed = JSON.parse(raw) as Partial<PracticeSession>;
+    return {
+      revealed: parsed.revealed ?? {},
+      tfAnswers: parsed.tfAnswers ?? {},
+      typedAnswers: parsed.typedAnswers ?? {},
+    };
+  } catch {
+    return { revealed: {}, tfAnswers: {}, typedAnswers: {} };
+  }
+}
+
+function savePracticeSession(session: PracticeSession): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  } catch {
+    /* ignore */
+  }
+}
 
 export function PracticeApp({
   exercises,
@@ -115,6 +147,19 @@ export function PracticeApp({
   const [typedAnswers, setTypedAnswers] = useState<Record<string, string>>({});
   const [typedResults, setTypedResults] = useState<Record<string, GradeResult>>({});
   const [gradingId, setGradingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
+    const session = loadPracticeSession();
+    setRevealed(session.revealed);
+    setTfAnswers(session.tfAnswers);
+    setTypedAnswers(session.typedAnswers);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, []);
+
+  useEffect(() => {
+    savePracticeSession({ revealed, tfAnswers, typedAnswers });
+  }, [revealed, tfAnswers, typedAnswers]);
 
   useEffect(() => {
     /* eslint-disable react-hooks/set-state-in-effect */

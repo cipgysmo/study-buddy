@@ -17,6 +17,44 @@ export interface RunnerQuestion {
   diagram?: string | null;
 }
 
+interface QuizSession {
+  answers: Record<string, number>;
+  remaining: number | null;
+}
+
+function sessionKey(quizId: string) {
+  return `study-buddy:quiz-session:${quizId}`;
+}
+
+function loadQuizSession(quizId: string): QuizSession | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(sessionKey(quizId));
+    if (!raw) return null;
+    return JSON.parse(raw) as QuizSession;
+  } catch {
+    return null;
+  }
+}
+
+function saveQuizSession(quizId: string, session: QuizSession) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(sessionKey(quizId), JSON.stringify(session));
+  } catch {
+    /* ignore */
+  }
+}
+
+function clearQuizSession(quizId: string) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(sessionKey(quizId));
+  } catch {
+    /* ignore */
+  }
+}
+
 function formatTime(totalSeconds: number): string {
   const m = Math.floor(totalSeconds / 60);
   const s = totalSeconds % 60;
@@ -70,6 +108,21 @@ export function QuizRunner({
   );
   const submittedRef = useRef(false);
 
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
+    const saved = loadQuizSession(quiz.id);
+    if (saved) {
+      setAnswers(saved.answers ?? {});
+      if (durationMin && saved.remaining != null) setRemaining(saved.remaining);
+    }
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [quiz.id, durationMin]);
+
+  useEffect(() => {
+    if (result) return;
+    saveQuizSession(quiz.id, { answers, remaining });
+  }, [quiz.id, answers, remaining, result]);
+
   const submit = useCallback(async () => {
     if (submittedRef.current || submitting) return;
     submittedRef.current = true;
@@ -87,6 +140,7 @@ export function QuizRunner({
     setResult({ score: d.score, total: d.total });
     setNewBadges(d.newAchievements ?? []);
     setCelebrate(true);
+    clearQuizSession(quiz.id);
     void playSound(d.score / d.total >= 0.5 ? "fanfare" : "encourage");
   }, [quiz.id, answers, submitting]);
 

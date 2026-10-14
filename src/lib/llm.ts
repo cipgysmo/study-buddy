@@ -106,7 +106,6 @@ async function acquireLlmSlot(signal?: AbortSignal): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     function release() {
       signal?.removeEventListener("abort", onAbort);
-      activeLlmRequests++;
       resolve();
     }
     function onAbort() {

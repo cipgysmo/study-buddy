@@ -23,7 +23,9 @@ export function tutorSystemPrompt(
   if (topics?.length) parts.push(`Focus the discussion on these topics: ${topics.join(", ")}.`);
   if (subjectContext && subjectContext.trim()) {
     parts.push(
-      "The student's own study notes for this subject are provided below. Prefer them as the reference when relevant.\n\n<notes>\n" +
+      "The student's own study notes for this subject are provided below. Prefer them as the reference when relevant.",
+      "When you use a fact from the notes, cite the exact source inline as: [filename — chapter/section, p. page]. If the source block includes page markers, use the most precise page number you can identify.",
+      "\n<notes>\n" +
         subjectContext +
         "\n</notes>"
     );

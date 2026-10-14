@@ -43,7 +43,8 @@ export function sourceLabel(source: SourceRef): string {
       : source.pageStart
         ? `p. ${source.pageStart}`
         : "";
-  return [source.title ?? source.filename, pages].filter(Boolean).join(" · ");
+  const label = source.title ? `${source.filename} — ${source.title}` : source.filename;
+  return [label, pages].filter(Boolean).join(" · ");
 }
 
 export function sortItems<T extends { id: string; created_at: string }>(
