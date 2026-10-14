@@ -20,14 +20,16 @@
     "scan": "Scan",
     "progress": "Progress",
     "admin": "Admin",
-    "settings": "Settings"
+    "settings": "Settings",
+    "arena": "Arena",
+    "rewards": "Rewards"
   },
   "Activities": {
     "title": "Activities",
     "subtitle": "Quizzes, mock exams, and practice in one place."
   },
   "Admin": {
-    "title": "Admin",
+    "title": "Title",
     "subtitle": "Assign lessons, tests, notes, and routines for your kids.",
     "login": "Sign in",
     "loggingIn": "Signing in…",
@@ -46,7 +48,6 @@
     "noSubject": "No subject",
     "type": "Type",
     "dueDate": "Due date",
-    "title": "Title",
     "description": "Description",
     "target": "Linked item",
     "noTarget": "No linked item",
@@ -313,7 +314,17 @@
     "error": "Error",
     "stop": "Stop",
     "deleteChat": "Delete chat",
-    "deleteConfirm": "Delete this chat? This cannot be undone."
+    "deleteConfirm": "Delete this chat? This cannot be undone.",
+    "attach": "Attach image or PDF",
+    "attachCamera": "Snap a problem",
+    "removeAttachment": "Remove",
+    "uploading": "Uploading…",
+    "attachmentTooLarge": "Attachment too large",
+    "attachmentUnsupported": "Unsupported attachment",
+    "dictate": "Dictate",
+    "oralMode": "Oral tutor (hands-free)",
+    "readAloud": "Read aloud",
+    "listening": "Listening…"
   },
   "Lessons": {
     "title": "Guided Learning",
@@ -645,5 +656,46 @@
   "NotFound": {
     "message": "This page doesn't exist.",
     "backHome": "Back to dashboard"
+  },
+  "Arena": {
+    "title": "Model Arena",
+    "subtitle": "Ask the same question and compare two models side by side.",
+    "question": "Your question",
+    "placeholder": "Type a question to compare…",
+    "modelA": "Model A",
+    "modelB": "Model B",
+    "compare": "Compare",
+    "thinking": "Both models are thinking…",
+    "pickWinner": "Which answer is better?",
+    "winnerA": "A is better",
+    "winnerB": "B is better",
+    "tie": "It's a tie",
+    "voted": "Thanks — winner recorded.",
+    "error": "Error",
+    "recent": "Recent comparisons",
+    "noRecent": "No comparisons yet.",
+    "answerA": "Answer A",
+    "answerB": "Answer B"
+  },
+  "Rewards": {
+    "title": "Rewards",
+    "subtitle": "Stars, daily challenges, and your weekly league.",
+    "weekly": "Stars this week",
+    "today": "Today",
+    "league": "League",
+    "dailyChallenges": "Daily challenges",
+    "weeklyBreakdown": "How you earned stars this week",
+    "noActivity": "No activity yet this week.",
+    "kindReview": "Flashcard reviews",
+    "kindQuiz": "Quizzes",
+    "kindTyped": "Typed exercises",
+    "kindExercise": "Exercises",
+    "kindTrueFalse": "True/false",
+    "kindChat": "Tutor questions",
+    "kindMaterial": "Materials added",
+    "kindLesson": "Lessons built",
+    "challengeReview": "Review 10 flashcards",
+    "challengeQuestions": "Ask 3 tutor questions",
+    "challengeActivities": "Do 2 different activity types"
   }
 }

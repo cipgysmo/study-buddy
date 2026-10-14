@@ -622,6 +622,38 @@ const MIGRATIONS: { version: number; sql: string }[] = [
       CREATE INDEX IF NOT EXISTS idx_practice_sets_job ON practice_sets(job_id);
     `,
   },
+  {
+    version: 29,
+    sql: `
+      CREATE TABLE IF NOT EXISTS chat_attachments (
+        id         TEXT PRIMARY KEY,
+        session_id TEXT NOT NULL REFERENCES chat_sessions(id) ON DELETE CASCADE,
+        kind       TEXT NOT NULL,
+        name       TEXT NOT NULL,
+        mime       TEXT NOT NULL,
+        path       TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_chat_attachments_session ON chat_attachments(session_id);
+      ALTER TABLE chat_messages ADD COLUMN attachments TEXT;
+    `,
+  },
+  {
+    version: 30,
+    sql: `
+      CREATE TABLE IF NOT EXISTS arena_results (
+        id         TEXT PRIMARY KEY,
+        prompt     TEXT NOT NULL,
+        model_a    TEXT NOT NULL,
+        model_b    TEXT NOT NULL,
+        answer_a   TEXT NOT NULL DEFAULT '',
+        answer_b   TEXT NOT NULL DEFAULT '',
+        winner     TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_arena_results_created ON arena_results(created_at DESC);
+    `,
+  },
 ];
 
 export function getDb(): Database.Database {

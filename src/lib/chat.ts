@@ -9,12 +9,34 @@ export interface ChatSession {
   updated_at: string;
 }
 
+export interface ChatAttachmentMeta {
+  id: string;
+  kind: "image" | "pdf";
+  name: string;
+  mime: string;
+}
+
 export interface ChatMessage {
   id: string;
   session_id: string;
   role: "user" | "assistant" | "system";
   content: string;
+  attachments: ChatAttachmentMeta[] | null;
   created_at: string;
+}
+
+function parseAttachments(raw: unknown): ChatAttachmentMeta[] | null {
+  if (typeof raw !== "string" || !raw) return null;
+  try {
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) && arr.length ? (arr as ChatAttachmentMeta[]) : null;
+  } catch {
+    return null;
+  }
+}
+
+function hydrate(row: Record<string, unknown>): ChatMessage {
+  return { ...(row as Omit<ChatMessage, "attachments">), attachments: parseAttachments(row.attachments) };
 }
 
 export function listSessions(): ChatSession[] {
@@ -55,24 +77,58 @@ export function setSessionTitle(sessionId: string, title: string): void {
 }
 
 export function listMessages(sessionId: string): ChatMessage[] {
-  return getDb()
+  const rows = getDb()
     .prepare("SELECT * FROM chat_messages WHERE session_id = ? ORDER BY created_at ASC, rowid ASC")
-    .all(sessionId) as ChatMessage[];
+    .all(sessionId) as Record<string, unknown>[];
+  return rows.map(hydrate);
 }
 
 export function addMessage(
   sessionId: string,
   role: ChatMessage["role"],
-  content: string
+  content: string,
+  attachments?: ChatAttachmentMeta[]
 ): ChatMessage {
   const id = randomUUID();
   const db = getDb();
-  db.prepare("INSERT INTO chat_messages (id, session_id, role, content) VALUES (?, ?, ?, ?)").run(
-    id,
-    sessionId,
-    role,
-    content
-  );
+  db.prepare(
+    "INSERT INTO chat_messages (id, session_id, role, content, attachments) VALUES (?, ?, ?, ?, ?)"
+  ).run(id, sessionId, role, content, attachments?.length ? JSON.stringify(attachments) : null);
   db.prepare("UPDATE chat_sessions SET updated_at = datetime('now') WHERE id = ?").run(sessionId);
-  return db.prepare("SELECT * FROM chat_messages WHERE id = ?").get(id) as ChatMessage;
+  return hydrate(
+    db.prepare("SELECT * FROM chat_messages WHERE id = ?").get(id) as Record<string, unknown>
+  );
+}
+
+export interface ChatAttachmentRow {
+  id: string;
+  session_id: string;
+  kind: "image" | "pdf";
+  name: string;
+  mime: string;
+  path: string;
+  created_at: string;
+}
+
+export function createAttachment(
+  sessionId: string,
+  kind: "image" | "pdf",
+  name: string,
+  mime: string,
+  filePath: string
+): ChatAttachmentRow {
+  const id = randomUUID();
+  getDb()
+    .prepare(
+      "INSERT INTO chat_attachments (id, session_id, kind, name, mime, path) VALUES (?, ?, ?, ?, ?, ?)"
+    )
+    .run(id, sessionId, kind, name, mime, filePath);
+  return getAttachment(id)!;
+}
+
+export function getAttachment(id: string): ChatAttachmentRow | null {
+  const row = getDb().prepare("SELECT * FROM chat_attachments WHERE id = ?").get(id) as
+    | ChatAttachmentRow
+    | undefined;
+  return row ?? null;
 }

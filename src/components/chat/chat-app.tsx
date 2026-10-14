@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { TopicPicker } from "@/components/ui/topic-picker";
 import { RichText } from "@/components/ui/rich-text";
+import { speak, stopSpeaking, useSpeechRecognition } from "@/lib/use-voice";
 
 interface Session {
   id: string;
@@ -15,10 +16,18 @@ interface Subject {
   id: string;
   name: string;
 }
+interface AttachmentMeta {
+  id: string;
+  kind: "image" | "pdf";
+  name: string;
+  mime: string;
+  url: string;
+}
 interface Msg {
   id: string;
   role: "user" | "assistant";
   content: string;
+  attachments?: AttachmentMeta[] | null;
 }
 
 const TMP_USER = "tmp-user";
@@ -51,6 +60,18 @@ export function ChatApp({
   const [streaming, setStreaming] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const [pending, setPending] = useState<AttachmentMeta[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [attachError, setAttachError] = useState<string | null>(null);
+
+  const locale = useLocale();
+  const voiceLang = locale === "cs" ? "cs-CZ" : "en-GB";
+  const rec = useSpeechRecognition(voiceLang);
+  const [oralMode, setOralMode] = useState(false);
+  const oralRef = useRef(false);
+  oralRef.current = oralMode;
 
   useEffect(() => {
     if (!activeId) {
@@ -97,18 +118,75 @@ export function ChatApp({
     if (id === activeId) setActiveId(next[0]?.id ?? null);
   }
 
-  async function send() {
-    const content = input.trim();
-    if (!content || streaming) return;
+  async function ensureSession(): Promise<string> {
+    if (activeId) return activeId;
+    return createSession();
+  }
+
+  async function onFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setAttachError(null);
+    setUploading(true);
+    try {
+      const sessionId = await ensureSession();
+      setActiveId(sessionId);
+      for (const file of Array.from(files)) {
+        const form = new FormData();
+        form.append("file", file);
+        const r = await fetch(`/api/chat/sessions/${sessionId}/attachments`, {
+          method: "POST",
+          body: form,
+        });
+        if (!r.ok) {
+          const d = await r.json().catch(() => ({}));
+          setAttachError(d.error === "too_large" ? t("attachmentTooLarge") : t("attachmentUnsupported"));
+          continue;
+        }
+        const d = await r.json();
+        setPending((prev) => [...prev, d.attachment as AttachmentMeta]);
+      }
+    } catch {
+      setAttachError(t("attachmentUnsupported"));
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+      if (cameraRef.current) cameraRef.current.value = "";
+    }
+  }
+
+  function removePending(id: string) {
+    setPending((prev) => prev.filter((a) => a.id !== id));
+  }
+
+  function dictate() {
+    if (rec.listening) {
+      rec.stop();
+      return;
+    }
+    stopSpeaking();
+    rec.start((final) => setInput((prev) => (prev ? prev + " " : "") + final));
+  }
+
+  function listenAuto() {
+    rec.start((final) => {
+      if (final) void send(final);
+    });
+  }
+
+  async function send(textArg?: string) {
+    const content = (textArg ?? input).trim();
+    if ((!content && pending.length === 0) || streaming) return;
 
     let sessionId = activeId;
     if (!sessionId) sessionId = await createSession();
     setActiveId(sessionId);
 
+    const sentAttachments = pending;
     setInput("");
+    setPending([]);
     setMessages((prev) => [
       ...prev,
-      { id: TMP_USER, role: "user", content },
+      { id: TMP_USER, role: "user", content, attachments: sentAttachments },
       { id: TMP_ASST, role: "assistant", content: "" },
     ]);
     setStreaming(true);
@@ -119,12 +197,18 @@ export function ChatApp({
       const res = await fetch(`/api/chat/sessions/${sessionId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, subjectId: subjectId || null, topicIds }),
+        body: JSON.stringify({
+          content,
+          subjectId: subjectId || null,
+          topicIds,
+          attachmentIds: sentAttachments.map((a) => a.id),
+        }),
         signal: controller.signal,
       });
       const reader = res.body!.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
+      let asstFull = "";
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -137,6 +221,7 @@ export function ChatApp({
           if (!line.startsWith("data:")) continue;
           const payload = JSON.parse(line.slice(5).trim());
           if (payload.type === "delta") {
+            asstFull += payload.content;
             setMessages((prev) => {
               const next = [...prev];
               const last = next[next.length - 1];
@@ -148,6 +233,9 @@ export function ChatApp({
             setMessages((prev) =>
               prev.map((m) => (m.id === TMP_ASST ? { ...m, id: payload.messageId } : m))
             );
+            if (oralRef.current) {
+              speak(asstFull, voiceLang, () => listenAuto());
+            }
           } else if (payload.type === "error") {
             setMessages((prev) =>
               prev.map((m) =>
@@ -251,41 +339,184 @@ export function ChatApp({
                   : "bg-foreground/5")
               }
             >
-              {m.role === "assistant" ? <RichText content={m.content} /> : m.content}
+              {m.attachments && m.attachments.length > 0 && (
+                <div className="mb-2 flex flex-wrap gap-2">
+                  {m.attachments.map((a) =>
+                    a.kind === "image" ? (
+                      <a key={a.id} href={a.url} target="_blank" rel="noreferrer">
+                        <img
+                          src={a.url}
+                          alt={a.name}
+                          className="max-h-40 rounded-lg border border-border object-contain"
+                        />
+                      </a>
+                    ) : (
+                      <a
+                        key={a.id}
+                        href={a.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-md bg-foreground/10 px-2 py-1 text-xs underline"
+                      >
+                        📄 {a.name}
+                      </a>
+                    )
+                  )}
+                </div>
+              )}
+              {m.role === "assistant" ? (
+                <>
+                  <RichText content={m.content} />
+                  {m.content.trim() && (
+                    <button
+                      onClick={() => speak(m.content, voiceLang)}
+                      aria-label={t("readAloud")}
+                      title={t("readAloud")}
+                      className="mt-1 text-xs text-muted transition-colors hover:text-foreground"
+                    >
+                      🔊 {t("readAloud")}
+                    </button>
+                  )}
+                </>
+              ) : (
+                m.content
+              )}
             </div>
           ))}
           <div ref={bottomRef} />
         </div>
 
-        <div className="flex gap-2 border-t border-border p-3">
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                send();
-              }
-            }}
-            placeholder={t("placeholder")}
-            className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
-          />
-          {streaming ? (
-            <button
-              onClick={stop}
-              className="rounded-lg bg-danger px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
-            >
-              {t("stop")}
-            </button>
-          ) : (
-            <button
-              onClick={send}
-              disabled={!input.trim()}
-              className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground disabled:opacity-50"
-            >
-              {t("send")}
-            </button>
+        <div className="border-t border-border p-3">
+          {pending.length > 0 && (
+            <div className="mb-2 flex flex-wrap gap-2">
+              {pending.map((a) => (
+                <div key={a.id} className="relative">
+                  {a.kind === "image" ? (
+                    <img
+                      src={a.url}
+                      alt={a.name}
+                      className="max-h-20 rounded-lg border border-border object-contain"
+                    />
+                  ) : (
+                    <span className="rounded-md bg-foreground/10 px-2 py-1 text-xs">📄 {a.name}</span>
+                  )}
+                  <button
+                    onClick={() => removePending(a.id)}
+                    aria-label={t("removeAttachment")}
+                    className="absolute -right-1.5 -top-1.5 rounded-full bg-danger px-1.5 text-xs text-white"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
           )}
+          {attachError && <p className="mb-2 text-xs text-danger">{attachError}</p>}
+          <div className="flex gap-2">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*,application/pdf"
+              multiple
+              className="hidden"
+              onChange={(e) => void onFiles(e.target.files)}
+            />
+            <input
+              ref={cameraRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => void onFiles(e.target.files)}
+            />
+            <button
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading || streaming}
+              aria-label={t("attach")}
+              title={t("attach")}
+              className="rounded-lg border border-border px-3 py-2 text-sm text-muted transition-colors hover:text-foreground disabled:opacity-50"
+            >
+              📎
+            </button>
+            <button
+              onClick={() => cameraRef.current?.click()}
+              disabled={uploading || streaming}
+              aria-label={t("attachCamera")}
+              title={t("attachCamera")}
+              className="rounded-lg border border-border px-3 py-2 text-sm text-muted transition-colors hover:text-foreground disabled:opacity-50"
+            >
+              📷
+            </button>
+            {rec.supported && (
+              <button
+                onClick={dictate}
+                disabled={streaming}
+                aria-label={t("dictate")}
+                title={t("dictate")}
+                className={
+                  "rounded-lg border px-3 py-2 text-sm transition-colors disabled:opacity-50 " +
+                  (rec.listening
+                    ? "border-danger bg-danger/10 text-danger"
+                    : "border-border text-muted hover:text-foreground")
+                }
+              >
+                🎤
+              </button>
+            )}
+            {rec.supported && (
+              <button
+                onClick={() => {
+                  const next = !oralMode;
+                  setOralMode(next);
+                  if (!next) {
+                    stopSpeaking();
+                    rec.stop();
+                  }
+                }}
+                aria-pressed={oralMode}
+                aria-label={t("oralMode")}
+                title={t("oralMode")}
+                className={
+                  "rounded-lg border px-3 py-2 text-sm transition-colors " +
+                  (oralMode
+                    ? "border-accent bg-accent/10 text-accent"
+                    : "border-border text-muted hover:text-foreground")
+                }
+              >
+                🗣
+              </button>
+            )}
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  send();
+                }
+              }}
+              placeholder={
+                rec.listening ? rec.interim || t("listening") : uploading ? t("uploading") : t("placeholder")
+              }
+              className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
+            />
+            {streaming ? (
+              <button
+                onClick={stop}
+                className="rounded-lg bg-danger px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
+              >
+                {t("stop")}
+              </button>
+            ) : (
+              <button
+                onClick={() => send()}
+                disabled={(!input.trim() && pending.length === 0) || uploading}
+                className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground disabled:opacity-50"
+              >
+                {t("send")}
+              </button>
+            )}
+          </div>
         </div>
       </section>
     </div>

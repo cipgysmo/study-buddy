@@ -41,6 +41,8 @@ export interface ChatOptions {
   messages: ChatMessage[];
   temperature?: number;
   maxTokens?: number;
+  /** Override the router model id for this call (used by Arena A/B compare). */
+  model?: string;
   /** Request a strict JSON object response (used by chatJSON). */
   json?: boolean;
   /** Abort the upstream request (e.g. when the client disconnects). */
@@ -191,7 +193,7 @@ export async function chat(opts: ChatOptions): Promise<string> {
     () =>
       client().chat.completions.create(
         {
-          model: llmModel(),
+          model: opts.model?.trim() || llmModel(),
           messages: opts.messages,
           temperature: opts.temperature ?? 0.4,
           ...(opts.maxTokens ? { max_tokens: opts.maxTokens } : {}),
@@ -217,7 +219,7 @@ export async function* chatStream(opts: ChatOptions): AsyncGenerator<string> {
     try {
       stream = await client().chat.completions.create(
         {
-          model: llmModel(),
+          model: opts.model?.trim() || llmModel(),
           messages: opts.messages,
           temperature: opts.temperature ?? 0.4,
           ...(opts.maxTokens ? { max_tokens: opts.maxTokens } : {}),

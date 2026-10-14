@@ -20,14 +20,16 @@
     "scan": "Sken",
     "progress": "Progres",
     "admin": "Administrace",
-    "settings": "Nastavení"
+    "settings": "Nastavení",
+    "arena": "Aréna",
+    "rewards": "Odmeny"
   },
   "Activities": {
     "title": "Aktivity",
     "subtitle": "Kvízy, zkušební testy a procvičování na jednom místě."
   },
   "Admin": {
-    "title": "Administrace",
+    "title": "Název",
     "subtitle": "Přiřazuj lekce, testy, poznámky a učební rutiny pro své děti.",
     "login": "Přihlásit se",
     "loggingIn": "Přihlašuji…",
@@ -46,7 +48,6 @@
     "noSubject": "Bez předmětu",
     "type": "Typ",
     "dueDate": "Termín",
-    "title": "Název",
     "description": "Popis",
     "target": "Propojená položka",
     "noTarget": "Bez propojené položky",
@@ -313,7 +314,17 @@
     "error": "Chyba",
     "stop": "Zastavit",
     "deleteChat": "Smazat chat",
-    "deleteConfirm": "Smazat tento chat? Tuto akci nelze vrátit."
+    "deleteConfirm": "Smazat tento chat? Tuto akci nelze vrátit.",
+    "attach": "Přiložit obrázek nebo PDF",
+    "attachCamera": "Vyfotit příklad",
+    "removeAttachment": "Odebrat",
+    "uploading": "Nahrávám…",
+    "attachmentTooLarge": "Příloha je příliš velká",
+    "attachmentUnsupported": "Nepodporovaná příloha",
+    "dictate": "Diktovat",
+    "oralMode": "Ústní tutor (hands-free)",
+    "readAloud": "Přečíst nahlas",
+    "listening": "Poslouchám…"
   },
   "Lessons": {
     "title": "Řízené učení",
@@ -645,5 +656,46 @@
   "NotFound": {
     "message": "Tahle stránka neexistuje.",
     "backHome": "Zpět na přehled"
+  },
+  "Arena": {
+    "title": "Aréna modelů",
+    "subtitle": "Polož stejnou otázku a porovnej dva modely vedle sebe.",
+    "question": "Tvůj dotaz",
+    "placeholder": "Zadej otázku na porovnání…",
+    "modelA": "Model A",
+    "modelB": "Model B",
+    "compare": "Porovnat",
+    "thinking": "Oba modely přemýšlejí…",
+    "pickWinner": "Která odpověď je lepší?",
+    "winnerA": "A je lepší",
+    "winnerB": "B je lepší",
+    "tie": "Remíza",
+    "voted": "Díky – vítěz zaznamenán.",
+    "error": "Chyba",
+    "recent": "Předchozí porovnání",
+    "noRecent": "Zatím žádná porovnání.",
+    "answerA": "Odpověď A",
+    "answerB": "Odpověď B"
+  },
+  "Rewards": {
+    "title": "Odmeny",
+    "subtitle": "Hvězdy, denní výzvy a tvůj týdenní žebříček.",
+    "weekly": "Hvězdy tento týden",
+    "today": "Dnes",
+    "league": "Žebříček",
+    "dailyChallenges": "Denní výzvy",
+    "weeklyBreakdown": "Jak jsi získal hvězdy tento týden",
+    "noActivity": "Zatím žádná aktivita tento týden.",
+    "kindReview": "Opakování kartiček",
+    "kindQuiz": "Kvízy",
+    "kindTyped": "Psané cvičení",
+    "kindExercise": "Cvičení",
+    "kindTrueFalse": "Pravda/nepravda",
+    "kindChat": "Otázky tutorovi",
+    "kindMaterial": "Přidané materiály",
+    "kindLesson": "Vytvořené lekce",
+    "challengeReview": "Zopakuj 10 kartiček",
+    "challengeQuestions": "Polož 3 otázky tutorovi",
+    "challengeActivities": "Udělej 2 různé typy aktivit"
   }
 }

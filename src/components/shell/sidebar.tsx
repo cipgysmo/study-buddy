@@ -17,6 +17,7 @@ interface NavItem {
 const NAV: NavItem[] = [
   { href: "/", labelKey: "dashboard" },
   { href: "/chat", labelKey: "chat" },
+  { href: "/arena", labelKey: "arena" },
   { href: "/lessons", labelKey: "lessons" },
   { href: "/subjects", labelKey: "subjects" },
   { href: "/exam-prep", labelKey: "examPrep" },
@@ -31,6 +32,7 @@ const NAV: NavItem[] = [
   { href: "/reports", labelKey: "reports" },
   { href: "/scan", labelKey: "scan" },
   { href: "/progress", labelKey: "progress" },
+  { href: "/rewards", labelKey: "rewards" },
   { href: "/admin", labelKey: "admin" },
   { href: "/settings", labelKey: "settings" },
 ];
