@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { GenerationScopePicker } from "@/components/ui/generation-scope-picker";
 import { SubjectSelect, type SubjectOption } from "@/components/ui/subject-select";
 import type { GenerationDifficulty } from "@/lib/generation";
-import type { PracticeTab } from "@/components/practice/practice-app";
+import type { PracticeTab } from "@/lib/practice-types";
 
 const KINDS: PracticeTab[] = ["exercises", "truefalse", "typed"];
 

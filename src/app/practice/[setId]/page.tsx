@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
-import { isPracticeTab, PracticeApp } from "@/components/practice/practice-app";
+import { PracticeApp } from "@/components/practice/practice-app";
 import { PracticeSessionProgress } from "@/components/practice/practice-session-progress";
 import { formatDate } from "@/lib/format";
 import { getPracticeSet, getPracticeSetItems, touchPracticeSet } from "@/lib/practice-sets";
+import { isPracticeTab } from "@/lib/practice-types";
 import { listSubjects } from "@/lib/subjects";
 import { getTimezone } from "@/lib/timezone";
 

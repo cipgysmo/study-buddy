@@ -13,6 +13,7 @@ import { SourceChips } from "@/components/ui/source-chips";
 import { SubjectSelect, type SubjectOption } from "@/components/ui/subject-select";
 import { Diagram } from "@/components/ui/diagram";
 import { PracticeGenerateModal } from "@/components/practice/practice-generate-modal";
+import { isPracticeTab, type PracticeTab } from "@/lib/practice-types";
 import {
   findDuplicateIds,
   groupItemsBySet,
@@ -26,12 +27,6 @@ import {
 } from "@/lib/list-view";
 import { loadSavedFilters, saveSavedFilters } from "@/lib/saved-filters";
 import { useJob } from "@/lib/use-jobs";
-
-export type PracticeTab = "exercises" | "truefalse" | "typed";
-
-export function isPracticeTab(value: unknown): value is PracticeTab {
-  return value === "exercises" || value === "truefalse" || value === "typed";
-}
 
 interface ListItem {
   id: string;

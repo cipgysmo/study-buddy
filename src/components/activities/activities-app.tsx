@@ -4,9 +4,10 @@ import { useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { MockExamsApp } from "@/components/mock-exams/mock-exams-app";
-import { isPracticeTab, PracticeApp, type PracticeTab } from "@/components/practice/practice-app";
+import { PracticeApp } from "@/components/practice/practice-app";
 import { QuizzesApp } from "@/components/quizzes/quizzes-app";
 import type { SubjectOption } from "@/components/ui/subject-select";
+import { isPracticeTab, type PracticeTab } from "@/lib/practice-types";
 
 type Tab = "quizzes" | "mock" | "practice";
 

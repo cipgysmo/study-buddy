@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { ActivitiesApp } from "@/components/activities/activities-app";
-import { isPracticeTab } from "@/components/practice/practice-app";
 import { listExercises, listTrueFalse } from "@/lib/practice";
+import { isPracticeTab } from "@/lib/practice-types";
 import { listQuizzes, listTimedQuizzes } from "@/lib/quizzes";
 import { listSubjects } from "@/lib/subjects";
 import { listTypedExercises } from "@/lib/typed-exercises";
