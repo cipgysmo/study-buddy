@@ -15,12 +15,14 @@ function resultHref(type: string, result: string | null): string | null {
   return null;
 }
 
-function summarize(payload: Record<string, unknown>): string[] {
+function summarize(payload: Record<string, unknown>, t: (key: string) => string): string[] {
   const bits: string[] = [];
   if (typeof payload.count === "number") bits.push(`${payload.count}`);
-  if (typeof payload.durationMin === "number") bits.push(`${payload.durationMin} min`);
-  if (Array.isArray(payload.topicIds) && payload.topicIds.length) bits.push(`${payload.topicIds.length} topics`);
-  if (Array.isArray(payload.columnIds) && payload.columnIds.length) bits.push(`${payload.columnIds.length} containers`);
+  if (typeof payload.durationMin === "number") bits.push(`${payload.durationMin} ${t("min")}`);
+  if (Array.isArray(payload.topicIds) && payload.topicIds.length)
+    bits.push(`${payload.topicIds.length} ${t("topics")}`);
+  if (Array.isArray(payload.columnIds) && payload.columnIds.length)
+    bits.push(`${payload.columnIds.length} ${t("containers")}`);
   if (Array.isArray(payload.keywords) && payload.keywords.length) bits.push(payload.keywords.join(", "));
   if (typeof payload.difficulty === "string") bits.push(payload.difficulty);
   if (typeof payload.customPrompt === "string" && payload.customPrompt.trim()) bits.push(payload.customPrompt.trim());
@@ -77,7 +79,7 @@ export default async function RequestsPage() {
                   </div>
                 </div>
                 <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted">
-                  {summarize(req.payload).map((bit, i) => (
+                  {summarize(req.payload, t).map((bit, i) => (
                     <span key={i} className="rounded-full bg-foreground/5 px-2 py-0.5">
                       {bit}
                     </span>

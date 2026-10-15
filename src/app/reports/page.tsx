@@ -9,7 +9,21 @@ function accuracyClass(area: ReportArea): string {
   return "bg-danger/10 text-danger border-danger/20";
 }
 
-function AreaList({ title, areas, empty }: { title: string; areas: ReportArea[]; empty: string }) {
+function AreaList({
+  title,
+  areas,
+  empty,
+  correctLabel,
+  incorrectLabel,
+  attemptsLabel,
+}: {
+  title: string;
+  areas: ReportArea[];
+  empty: string;
+  correctLabel: string;
+  incorrectLabel: string;
+  attemptsLabel: string;
+}) {
   if (areas.length === 0) {
     return (
       <section className="space-y-2">
@@ -35,7 +49,8 @@ function AreaList({ title, areas, empty }: { title: string; areas: ReportArea[];
               </span>
             </div>
             <div className="mt-1 text-xs opacity-80">
-              {area.correct} correct · {area.incorrect} incorrect · {area.attempts} attempts
+              {area.correct} {correctLabel} · {area.incorrect} {incorrectLabel} · {area.attempts}{" "}
+              {attemptsLabel}
             </div>
             <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-black/10">
               <div
@@ -73,8 +88,22 @@ export default async function ReportsPage({
         <span className="rounded-full border border-danger/20 bg-danger/10 px-2 py-1 text-danger">{t("weak")}</span>
       </div>
 
-      <AreaList title={t("topics")} areas={report.topics} empty={t("emptyTopics")} />
-      <AreaList title={t("containers")} areas={report.containers} empty={t("emptyContainers")} />
+      <AreaList
+        title={t("topics")}
+        areas={report.topics}
+        empty={t("emptyTopics")}
+        correctLabel={t("correct")}
+        incorrectLabel={t("incorrect")}
+        attemptsLabel={t("attempts")}
+      />
+      <AreaList
+        title={t("containers")}
+        areas={report.containers}
+        empty={t("emptyContainers")}
+        correctLabel={t("correct")}
+        incorrectLabel={t("incorrect")}
+        attemptsLabel={t("attempts")}
+      />
     </div>
   );
 }

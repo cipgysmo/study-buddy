@@ -92,7 +92,7 @@ export default async function DashboardPage() {
               <p className="mt-1 text-sm text-muted">{primaryAction.hint}</p>
               {activeJobs.length > 0 && (
                 <p className="mt-2 text-xs text-accent">
-                  {activeJobs.length} job{activeJobs.length === 1 ? "" : "s"} processing…
+                  {t("jobsProcessing", { count: activeJobs.length })}
                 </p>
               )}
             </div>

@@ -157,7 +157,9 @@
     "explain": "Vysvětlit",
     "hideExplanation": "Skrýt vysvětlení",
     "error": "Chyba",
-    "cancelJob": "Zrušit úlohu"
+    "cancelJob": "Zrušit úlohu",
+    "min": "min",
+    "menu": "Menu"
   },
   "Jobs": {
     "ocr": "OCR",
@@ -209,7 +211,8 @@
     "assignments": "Úkoly",
     "assignmentsHint": "Úkoly přiřazené rodičem nebo učitelem.",
     "markDone": "Hotovo",
-    "openAssignment": "Otevřít"
+    "openAssignment": "Otevřít",
+    "jobsProcessing": "{count, plural, one {# úloha zpracovává…} few {# úlohy zpracovává…} other {# úloh zpracovává…}}"
   },
   "Subjects": {
     "title": "Předměty",
@@ -414,7 +417,8 @@
     "explanation": "Vysvětlení",
     "backToQuizzes": "Zpět na kvízy",
     "retake": "Zkusit znovu",
-    "deleteQuiz": "Smazat kvíz"
+    "deleteQuiz": "Smazat kvíz",
+    "min": "min"
   },
   "Practice": {
     "title": "Cvičení",
@@ -606,7 +610,10 @@
     "type_truefalse": "Pravda/nepravda",
     "type_typedexercises": "Psané odpovědi",
     "type_practice": "Procvičování",
-    "type_lesson": "Lekce"
+    "type_lesson": "Lekce",
+    "min": "min",
+    "topics": "témat",
+    "containers": "kontejnerů"
   },
   "Reports": {
     "title": "Reporty",
@@ -618,7 +625,10 @@
     "topics": "Témata / dovednosti",
     "containers": "Kontejnery",
     "emptyTopics": "Zatím žádná data pro témata.",
-    "emptyContainers": "Zatím žádná data pro kontejnery."
+    "emptyContainers": "Zatím žádná data pro kontejnery.",
+    "correct": "správně",
+    "incorrect": "špatně",
+    "attempts": "pokusů"
   },
   "History": {
     "title": "Historie",
@@ -636,7 +646,9 @@
     "kind_quiz": "Kvíz",
     "kind_typed": "Psaná odpověď",
     "kind_truefalse": "Pravda/nepravda",
-    "kind_exercise": "Cvičení"
+    "kind_exercise": "Cvičení",
+    "answerTrue": "Pravda",
+    "answerFalse": "Nepravda"
   },
   "MockExams": {
     "title": "Zkušební testy",

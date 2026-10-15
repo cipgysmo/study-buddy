@@ -22,7 +22,7 @@ export default async function QuizSessionPage({
         <h1 className="text-3xl font-semibold tracking-tight">{quiz.title}</h1>
         <p className="mt-1 text-muted">
           {subject?.name ?? t("title")}
-          {quiz.duration_min ? ` · ${quiz.duration_min} min` : ""}
+          {quiz.duration_min ? ` · ${quiz.duration_min} ${t("min")}` : ""}
         </p>
       </header>
       <QuizSession

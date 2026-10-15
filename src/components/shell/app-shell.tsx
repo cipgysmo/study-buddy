@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { JobsIndicator } from "./jobs-indicator";
 import { Sidebar } from "./sidebar";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const t = useTranslations("Common");
   const [open, setOpen] = useState(false);
 
   return (
@@ -14,7 +16,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <header className="fixed inset-x-0 top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-card/90 px-4 backdrop-blur md:hidden">
         <button
           onClick={() => setOpen(true)}
-          aria-label="Menu"
+          aria-label={t("menu")}
           className="rounded-lg p-2 text-foreground hover:bg-foreground/5"
         >
           <svg

@@ -35,8 +35,12 @@ function parsePayload(value: string | null): AttemptPayload | null {
   }
 }
 
-function formatAnswer(value: string | boolean | null | undefined): string {
-  if (typeof value === "boolean") return value ? "True" : "False";
+function formatAnswer(
+  value: string | boolean | null | undefined,
+  trueLabel: string,
+  falseLabel: string
+): string {
+  if (typeof value === "boolean") return value ? trueLabel : falseLabel;
   return value ?? "—";
 }
 
@@ -56,6 +60,8 @@ export default async function HistoryPage({
   const subjects = listSubjects().map((s) => ({ id: s.id, name: s.name, color: s.color }));
   const timezone = getTimezone();
   const groups = groupItemsBySubjectAndDay(items, subjects, locale, "desc", timezone);
+  const fmt = (v: string | boolean | null | undefined) =>
+    formatAnswer(v, t("answerTrue"), t("answerFalse"));
 
   return (
     <div className="space-y-6">
@@ -148,10 +154,10 @@ export default async function HistoryPage({
                                     <li key={i} className="space-y-1">
                                       <p className="font-medium">{d.prompt}</p>
                                       <p className="text-muted">
-                                        {t("yourAnswer")}: {formatAnswer(d.answer)}
+                                        {t("yourAnswer")}: {fmt(d.answer)}
                                       </p>
                                       <p className="text-muted">
-                                        {t("correctAnswer")}: {formatAnswer(d.correctAnswer)}
+                                        {t("correctAnswer")}: {fmt(d.correctAnswer)}
                                       </p>
                                     </li>
                                   ))}
@@ -162,7 +168,7 @@ export default async function HistoryPage({
                                 <div className="space-y-1">
                                   <p className="font-medium">{payload.prompt}</p>
                                   <p className="text-muted">
-                                    {t("yourAnswer")}: {formatAnswer(payload.answer)}
+                                    {t("yourAnswer")}: {fmt(payload.answer)}
                                   </p>
                                   {payload.expected_answer ? (
                                     <p className="text-muted">
@@ -186,10 +192,10 @@ export default async function HistoryPage({
                                 <div className="space-y-1">
                                   <p className="font-medium">{payload.statement}</p>
                                   <p className="text-muted">
-                                    {t("yourAnswer")}: {formatAnswer(payload.answer)}
+                                    {t("yourAnswer")}: {fmt(payload.answer)}
                                   </p>
                                   <p className="text-muted">
-                                    {t("correctAnswer")}: {formatAnswer(payload.correct_answer)}
+                                    {t("correctAnswer")}: {fmt(payload.correct_answer)}
                                   </p>
                                   {payload.explanation ? (
                                     <p className="text-muted">

@@ -157,7 +157,9 @@
     "explain": "Explain",
     "hideExplanation": "Hide explanation",
     "error": "Error",
-    "cancelJob": "Cancel job"
+    "cancelJob": "Cancel job",
+    "min": "min",
+    "menu": "Menu"
   },
   "Jobs": {
     "ocr": "OCR",
@@ -209,7 +211,8 @@
     "assignments": "Assignments",
     "assignmentsHint": "Tasks assigned by a parent or teacher.",
     "markDone": "Mark done",
-    "openAssignment": "Open"
+    "openAssignment": "Open",
+    "jobsProcessing": "{count, plural, one {# job processing…} other {# jobs processing…}}"
   },
   "Subjects": {
     "title": "Subjects",
@@ -414,7 +417,8 @@
     "explanation": "Explanation",
     "backToQuizzes": "Back to quizzes",
     "retake": "Retake test",
-    "deleteQuiz": "Delete quiz"
+    "deleteQuiz": "Delete quiz",
+    "min": "min"
   },
   "Practice": {
     "title": "Practice",
@@ -606,7 +610,10 @@
     "type_truefalse": "True/false",
     "type_typedexercises": "Typed answers",
     "type_practice": "Practice",
-    "type_lesson": "Lesson"
+    "type_lesson": "Lesson",
+    "min": "min",
+    "topics": "topics",
+    "containers": "containers"
   },
   "Reports": {
     "title": "Reports",
@@ -618,7 +625,10 @@
     "topics": "Topics / skills",
     "containers": "Containers",
     "emptyTopics": "No topic data yet.",
-    "emptyContainers": "No container data yet."
+    "emptyContainers": "No container data yet.",
+    "correct": "correct",
+    "incorrect": "incorrect",
+    "attempts": "attempts"
   },
   "History": {
     "title": "History",
@@ -636,7 +646,9 @@
     "kind_quiz": "Quiz",
     "kind_typed": "Typed answer",
     "kind_truefalse": "True/false",
-    "kind_exercise": "Exercise"
+    "kind_exercise": "Exercise",
+    "answerTrue": "True",
+    "answerFalse": "False"
   },
   "MockExams": {
     "title": "Mock Exams",
