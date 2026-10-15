@@ -6,10 +6,13 @@ import {
   clearAdminPassword,
   setAdminPassword,
 } from "@/lib/admin-auth";
+import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+  const denied = requireAuth(req);
+  if (denied) return denied;
   let body: { password?: string } = {};
   try {
     body = await req.json();
@@ -34,7 +37,9 @@ export async function POST(req: Request) {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(req: Request) {
+  const denied = requireAuth(req);
+  if (denied) return denied;
   clearAdminPassword();
   const store = await cookies();
   store.delete(ADMIN_COOKIE);

@@ -9,6 +9,7 @@ import {
 } from "@/lib/chat";
 import { attachmentUrl, buildAttachmentParts, toMeta } from "@/lib/chat-attachments";
 import { buildSubjectContext } from "@/lib/context";
+import { getSubject } from "@/lib/subjects";
 import { resolveLocale } from "@/lib/locale";
 import { chatStream, type ChatMessage as LlmMessage } from "@/lib/llm";
 import { getStudentName } from "@/lib/profile";
@@ -59,7 +60,12 @@ export async function POST(req: Request, ctx: Ctx) {
   }
 
   const subjectId = body.subjectId ?? session.subject_id;
-  if (body.subjectId !== undefined) setSessionSubject(id, subjectId);
+  if (body.subjectId !== undefined) {
+    if (subjectId && !getSubject(subjectId)) {
+      return Response.json({ error: "subject_not_found" }, { status: 404 });
+    }
+    setSessionSubject(id, subjectId);
+  }
   if (session.title === "New chat") setSessionTitle(id, content.slice(0, 40));
 
   const topicIds = Array.isArray(body.topicIds)

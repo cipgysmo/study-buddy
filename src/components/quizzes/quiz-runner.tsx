@@ -129,21 +129,28 @@ export function QuizRunner({
     if (submittedRef.current || submitting) return;
     submittedRef.current = true;
     setSubmitting(true);
-    const r = await fetch(`/api/quizzes/${quiz.id}/submit`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ answers }),
-    });
-    const d = (await r.json()) as {
-      score: number;
-      total: number;
-      newAchievements?: { id: string; icon: string }[];
-    };
-    setResult({ score: d.score, total: d.total });
-    setNewBadges(d.newAchievements ?? []);
-    setCelebrate(true);
-    clearQuizSession(quiz.id);
-    void playSound(d.score / d.total >= 0.5 ? "fanfare" : "encourage");
+    try {
+      const r = await fetch(`/api/quizzes/${quiz.id}/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answers }),
+      });
+      if (!r.ok) throw new Error(String(r.status));
+      const d = (await r.json()) as {
+        score: number;
+        total: number;
+        newAchievements?: { id: string; icon: string }[];
+      };
+      const total = d.total || 0;
+      setResult({ score: d.score, total });
+      setNewBadges(d.newAchievements ?? []);
+      setCelebrate(true);
+      clearQuizSession(quiz.id);
+      void playSound(total > 0 && d.score / total >= 0.5 ? "fanfare" : "encourage");
+    } catch {
+      submittedRef.current = false;
+      setSubmitting(false);
+    }
   }, [quiz.id, answers, submitting]);
 
   const running = remaining !== null && result === null;
@@ -158,6 +165,7 @@ export function QuizRunner({
 
   useEffect(() => {
     if (remaining === 0 && result === null) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       void submit();
     }
   }, [remaining, result, submit]);
@@ -169,7 +177,7 @@ export function QuizRunner({
   const answeredCount = Object.keys(answers).length;
 
   if (result) {
-    const ratio = result.score / result.total;
+    const ratio = result.total > 0 ? result.score / result.total : 0;
     const message =
       ratio >= 0.8 ? t("greatScore") : ratio >= 0.5 ? t("goodScore") : t("keepGoing");
     return (

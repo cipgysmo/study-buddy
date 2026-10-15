@@ -24,10 +24,16 @@ export interface ExamQuestion {
 type ExamQuestionRow = Omit<ExamQuestion, "options"> & { options: string | null };
 
 function parseRow(row: ExamQuestionRow): ExamQuestion {
-  return {
-    ...row,
-    options: row.options ? (JSON.parse(row.options) as string[]) : null,
-  };
+  let options: string[] | null = null;
+  if (row.options) {
+    try {
+      const parsed = JSON.parse(row.options);
+      if (Array.isArray(parsed)) options = parsed.filter((o): o is string => typeof o === "string");
+    } catch {
+      options = null;
+    }
+  }
+  return { ...row, options };
 }
 
 export function listExamQuestions(materialId: string): ExamQuestion[] {

@@ -50,7 +50,14 @@ function shuffleArray<T>(items: T[]): T[] {
 }
 
 function parseExercise(row: ExerciseRow): Exercise {
-  return { ...row, solution_steps: JSON.parse(row.solution_steps) as string[] };
+  let steps: string[] = [];
+  try {
+    const parsed = JSON.parse(row.solution_steps);
+    if (Array.isArray(parsed)) steps = parsed.filter((s): s is string => typeof s === "string");
+  } catch {
+    /* corrupt row: treat as no steps */
+  }
+  return { ...row, solution_steps: steps };
 }
 
 function parseTrueFalse(row: TrueFalseRow): TrueFalseItem {

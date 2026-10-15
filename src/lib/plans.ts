@@ -68,8 +68,9 @@ export function deletePlan(id: string): void {
   getDb().prepare("DELETE FROM study_plans WHERE id = ?").run(id);
 }
 
-export function setItemDone(planItemId: string, done: boolean): void {
-  getDb().prepare("UPDATE plan_items SET done = ? WHERE id = ?").run(done ? 1 : 0, planItemId);
+export function setItemDone(planItemId: string, done: boolean): boolean {
+  const info = getDb().prepare("UPDATE plan_items SET done = ? WHERE id = ?").run(done ? 1 : 0, planItemId);
+  return info.changes > 0;
 }
 
 export async function createPlan(opts: {

@@ -12,6 +12,8 @@ export async function PATCH(req: Request, ctx: Ctx) {
   } catch {
     /* ignore */
   }
-  setItemDone(itemId, !!body.done);
+  if (!setItemDone(itemId, !!body.done)) {
+    return Response.json({ error: "not_found" }, { status: 404 });
+  }
   return Response.json({ ok: true });
 }

@@ -44,3 +44,17 @@ export function checkPassword(pw: string): boolean {
 export function authCookieValue(pw: string): string {
   return tokenFor(pw).toString("hex");
 }
+
+/**
+ * Defense-in-depth guard for route handlers. Returns a 401 Response when the
+ * LAN gate is enabled and the request lacks a valid auth cookie, otherwise null.
+ * (The proxy already gates most routes; this protects escalation endpoints even
+ * if the matcher is bypassed.)
+ */
+export function requireAuth(req: Request): Response | null {
+  if (!authEnabled()) return null;
+  const cookie = req.headers.get("cookie") ?? "";
+  const match = new RegExp(`(?:^|; )${AUTH_COOKIE}=([^;]*)`).exec(cookie);
+  const token = match ? decodeURIComponent(match[1]) : undefined;
+  return isAuthed(token) ? null : Response.json({ error: "unauthorized" }, { status: 401 });
+}

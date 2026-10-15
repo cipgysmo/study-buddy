@@ -1,4 +1,5 @@
 import { getLlmSettings, updateLlmSettings } from "@/lib/llm-settings";
+import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -7,6 +8,8 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const denied = requireAuth(req);
+  if (denied) return denied;
   let body: {
     languageEnabled?: boolean;
     baseUrl?: string;

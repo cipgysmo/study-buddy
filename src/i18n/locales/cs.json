@@ -22,7 +22,12 @@
     "admin": "Administrace",
     "settings": "Nastavení",
     "arena": "Aréna",
-    "rewards": "Odmeny"
+    "rewards": "Odmeny",
+    "sectionStudy": "Studium",
+    "sectionPractice": "Cvičení",
+    "sectionProgress": "Pokroky",
+    "sectionTools": "Nástroje",
+    "sectionManage": "Správa"
   },
   "Activities": {
     "title": "Aktivity",

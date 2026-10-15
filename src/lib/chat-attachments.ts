@@ -8,8 +8,12 @@ const MAX_CHAT_IMAGE_BYTES = 12 * 1024 * 1024;
 const MAX_CHAT_PDF_BYTES = 20 * 1024 * 1024;
 const MAX_PDF_TEXT_CHARS = 12000;
 
+const SAFE_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
+
 export function classifyAttachment(mime: string): "image" | "pdf" | null {
-  if (mime.startsWith("image/")) return "image";
+  // SVG and other XML/HTML image types are excluded: they can carry scripts and
+  // become stored-XSS vectors when served inline.
+  if (SAFE_IMAGE_TYPES.has(mime)) return "image";
   if (mime === "application/pdf") return "pdf";
   return null;
 }

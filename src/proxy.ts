@@ -38,8 +38,10 @@ export default function proxy(req: NextRequest) {
 }
 
 export const config = {
-  // Protect everything except the login page/route, health checks, and static assets.
+  // Protect everything except the login page/route, health checks, and static
+  // assets. The extension exclusion is intentionally NOT applied to /api paths,
+  // so a request like `DELETE /api/admin/students/x.svg` cannot bypass the gate.
   matcher: [
-    "/((?!login|api/login|api/health|_next/static|_next/image|favicon.ico|icon.jpg|.*\\.(?:png|jpg|jpeg|svg|ico|css|js|woff2?)$).*)",
+    "/((?!login|api/login|api/health|_next/static|_next/image|favicon.ico|icon.jpg|manifest.webmanifest|sounds/).*)",
   ],
 };

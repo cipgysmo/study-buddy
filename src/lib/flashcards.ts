@@ -8,6 +8,7 @@ import { resolveLocale } from "./locale";
 import { chatJSON } from "./llm";
 import { flashcardGeneratorPrompt, type FlashcardDraft } from "./prompts/flashcards";
 import { getSubject } from "./subjects";
+import { localToday } from "./timezone";
 import { topicNames } from "./topics";
 
 const scheduler = fsrs();
@@ -30,7 +31,7 @@ export interface Flashcard {
 }
 
 function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
+  return localToday();
 }
 
 export function listFlashcards(subjectId?: string): Flashcard[] {

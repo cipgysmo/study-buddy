@@ -261,10 +261,6 @@ export function completeAssignment(id: string): Assignment | null {
   return updateAssignment(id, { status: "done" });
 }
 
-export function reopenAssignment(id: string): Assignment | null {
-  return updateAssignment(id, { status: "todo" });
-}
-
 export function deleteAssignment(id: string): void {
   getDb().prepare("DELETE FROM assignments WHERE id = ?").run(id);
 }

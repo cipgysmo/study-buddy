@@ -173,7 +173,15 @@ function storeFile(
 ): { storedPath: string; kind: MaterialKind } {
   const kind = kindFromMime(file.mime, file.filename);
   const ext = path.extname(file.filename) || (kind === "pdf" ? ".pdf" : "");
-  const dir = path.join(dataDir(), "uploads", subjectId);
+  // Contain the path: subjectId must be a plain id (no separators / traversal).
+  if (!subjectId || /[\\/]/.test(subjectId) || subjectId === "." || subjectId === "..") {
+    throw new Error("invalid_subject_id");
+  }
+  const root = path.resolve(dataDir());
+  const dir = path.join(root, "uploads", subjectId);
+  if (!path.resolve(dir).startsWith(root + path.sep)) {
+    throw new Error("invalid_subject_id");
+  }
   fs.mkdirSync(dir, { recursive: true });
   const storedPath = path.join(dir, `${id}${ext}`);
   fs.writeFileSync(storedPath, file.buffer);

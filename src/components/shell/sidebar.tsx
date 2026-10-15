@@ -14,27 +14,55 @@ interface NavItem {
   activePaths?: string[];
 }
 
-const NAV: NavItem[] = [
-  { href: "/", labelKey: "dashboard" },
-  { href: "/chat", labelKey: "chat" },
-  { href: "/arena", labelKey: "arena" },
-  { href: "/lessons", labelKey: "lessons" },
-  { href: "/subjects", labelKey: "subjects" },
-  { href: "/exam-prep", labelKey: "examPrep" },
-  { href: "/flashcards", labelKey: "flashcards" },
+interface NavSection {
+  labelKey: string;
+  items: NavItem[];
+}
+
+const NAV_SECTIONS: NavSection[] = [
   {
-    href: "/activities",
-    labelKey: "activities",
-    activePaths: ["/activities", "/quizzes", "/exercises", "/mock-exams"],
+    labelKey: "sectionStudy",
+    items: [
+      { href: "/", labelKey: "dashboard" },
+      { href: "/chat", labelKey: "chat" },
+      { href: "/lessons", labelKey: "lessons" },
+      { href: "/subjects", labelKey: "subjects" },
+      { href: "/exam-prep", labelKey: "examPrep" },
+    ],
   },
-  { href: "/history", labelKey: "history" },
-  { href: "/requests", labelKey: "requests" },
-  { href: "/reports", labelKey: "reports" },
-  { href: "/scan", labelKey: "scan" },
-  { href: "/progress", labelKey: "progress" },
-  { href: "/rewards", labelKey: "rewards" },
-  { href: "/admin", labelKey: "admin" },
-  { href: "/settings", labelKey: "settings" },
+  {
+    labelKey: "sectionPractice",
+    items: [
+      {
+        href: "/activities",
+        labelKey: "activities",
+        activePaths: ["/activities", "/quizzes", "/exercises", "/mock-exams"],
+      },
+      { href: "/flashcards", labelKey: "flashcards" },
+      { href: "/arena", labelKey: "arena" },
+    ],
+  },
+  {
+    labelKey: "sectionProgress",
+    items: [
+      { href: "/progress", labelKey: "progress" },
+      { href: "/rewards", labelKey: "rewards" },
+      { href: "/reports", labelKey: "reports" },
+      { href: "/history", labelKey: "history" },
+    ],
+  },
+  {
+    labelKey: "sectionTools",
+    items: [{ href: "/scan", labelKey: "scan" }],
+  },
+  {
+    labelKey: "sectionManage",
+    items: [
+      { href: "/requests", labelKey: "requests" },
+      { href: "/admin", labelKey: "admin" },
+      { href: "/settings", labelKey: "settings" },
+    ],
+  },
 ];
 
 export function Sidebar({
@@ -60,27 +88,36 @@ export function Sidebar({
         <div className="px-5 py-5">
           <span className="text-lg font-semibold tracking-tight">Study Buddy</span>
         </div>
-        <nav className="flex-1 space-y-1.5 overflow-y-auto px-3 pb-6">
-          {NAV.map((item) => {
-            const active = isActive(item);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onNavigate}
-                aria-current={active ? "page" : undefined}
-                className={
-                  "flex min-h-10 items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition " +
-                  (active
-                    ? "bg-accent/10 text-accent ring-1 ring-accent/20"
-                    : "text-foreground/80 hover:bg-foreground/5 hover:text-foreground")
-                }
-              >
-                <NavIcon name={item.labelKey} className="h-[18px] w-[18px]" />
-                {t(item.labelKey)}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 space-y-4 overflow-y-auto px-3 pb-6">
+          {NAV_SECTIONS.map((section) => (
+            <div key={section.labelKey}>
+              <div className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted/70">
+                {t(section.labelKey)}
+              </div>
+              <div className="space-y-1.5">
+                {section.items.map((item) => {
+                  const active = isActive(item);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={onNavigate}
+                      aria-current={active ? "page" : undefined}
+                      className={
+                        "flex min-h-10 items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition " +
+                        (active
+                          ? "bg-accent/10 text-accent ring-1 ring-accent/20"
+                          : "text-foreground/80 hover:bg-foreground/5 hover:text-foreground")
+                      }
+                    >
+                      <NavIcon name={item.labelKey} className="h-[18px] w-[18px]" />
+                      {t(item.labelKey)}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
         {activeJobs.length > 0 && (
           <div className="px-4 pb-1">

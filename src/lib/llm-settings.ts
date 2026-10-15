@@ -16,8 +16,16 @@ const VISION_MODEL_KEY = "llm_vision_model";
 const VISION_API_KEY_KEY = "llm_vision_api_key";
 
 function cleanBaseUrl(value: unknown): string {
-  const text = typeof value === "string" ? value.trim() : "";
-  return text.slice(0, 500);
+  const text = (typeof value === "string" ? value.trim() : "").slice(0, 500);
+  if (!text) return "";
+  // Only http(s) endpoints are allowed (blocks file:, gopher:, etc. SSRF vectors).
+  try {
+    const u = new URL(text);
+    if (u.protocol !== "http:" && u.protocol !== "https:") return "";
+  } catch {
+    return "";
+  }
+  return text;
 }
 
 function cleanModel(value: unknown): string {

@@ -6,13 +6,12 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   let llm: "ok" | "error" = "ok";
   let models: string[] = [];
-  let error: string | undefined;
 
   try {
     models = await listModels();
-  } catch (e) {
+  } catch {
     llm = "error";
-    error = e instanceof Error ? e.message : String(e);
+    // Do not surface the upstream error (it can leak internal host/IP).
   }
 
   return Response.json({
@@ -20,7 +19,6 @@ export async function GET() {
     llm,
     model: llmModel(),
     models,
-    error,
     time: new Date().toISOString(),
   });
 }

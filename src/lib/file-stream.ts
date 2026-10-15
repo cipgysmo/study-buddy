@@ -24,7 +24,21 @@ function parseRange(range: string, size: number): { start: number; end: number }
   return { start, end: Math.min(end, size - 1) };
 }
 
-export function streamFileWithRange(req: Request, filePath: string, mime: string): Response {
+const INLINE_SAFE_TYPES = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/gif",
+  "application/pdf",
+  "text/plain",
+]);
+
+export function streamFileWithRange(
+  req: Request,
+  filePath: string,
+  mime: string,
+  filename?: string
+): Response {
   const stat = fs.statSync(filePath);
   const size = stat.size;
   const rangeHeader = req.headers.get("range");
@@ -33,7 +47,15 @@ export function streamFileWithRange(req: Request, filePath: string, mime: string
     "Content-Type": mime,
     "Accept-Ranges": "bytes",
     "Cache-Control": "private, max-age=3600",
+    "X-Content-Type-Options": "nosniff",
   });
+  // Serve anything that could execute inline (SVG, HTML, XML, …) as a download.
+  if (!INLINE_SAFE_TYPES.has(mime)) {
+    headers.set(
+      "Content-Disposition",
+      `attachment; filename="${encodeURIComponent(filename ?? "download")}"`
+    );
+  }
 
   if (!rangeHeader) {
     headers.set("Content-Length", String(size));

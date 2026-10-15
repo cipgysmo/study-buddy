@@ -17,7 +17,7 @@ export interface UploadSession {
   total_chunks: number;
   received_chunks: number;
   received_bytes: number;
-  status: "uploading" | "complete" | "cancelled" | "failed";
+  status: "uploading" | "completing" | "complete" | "cancelled" | "failed";
   error: string | null;
   created_at: string;
   updated_at: string;
@@ -97,23 +97,40 @@ export async function createUploadSession(input: {
 export async function appendUploadChunk(id: string, chunkIndex: number, buffer: Buffer): Promise<UploadSession> {
   const session = getUploadSession(id);
   if (!session) throw new UploadError(404, "upload_not_found");
-  if (session.status !== "uploading") throw new UploadError(409, `upload_${session.status}`);
-  if (chunkIndex !== session.received_chunks) throw new UploadError(409, "chunk_out_of_order");
-  if (chunkIndex >= session.total_chunks) throw new UploadError(400, "chunk_index_invalid");
   if (buffer.length === 0) throw new UploadError(400, "empty_chunk");
   if (buffer.length > maxUploadChunkBytes()) throw new UploadError(413, "chunk_too_large");
-  if (session.received_bytes + buffer.length > session.size) throw new UploadError(413, "upload_overflow");
 
-  await fs.appendFile(session.temp_path, buffer);
-  getDb()
+  // Atomically claim this chunk index (better-sqlite3 .run is synchronous, so
+  // concurrent callers cannot both win the same slot). Append only after winning.
+  const claim = getDb()
     .prepare(
       `UPDATE upload_sessions
        SET received_chunks = received_chunks + 1,
            received_bytes = received_bytes + ?,
            updated_at = datetime('now')
-       WHERE id = ?`
+       WHERE id = ? AND status = 'uploading' AND received_chunks = ?
+         AND received_chunks < total_chunks AND received_bytes + ? <= size`
     )
-    .run(buffer.length, id);
+    .run(buffer.length, id, chunkIndex, buffer.length);
+
+  if (claim.changes === 0) {
+    const s = getUploadSession(id)!;
+    if (s.status !== "uploading") throw new UploadError(409, `upload_${s.status}`);
+    if (chunkIndex >= s.total_chunks) throw new UploadError(400, "chunk_index_invalid");
+    if (chunkIndex !== s.received_chunks) throw new UploadError(409, "chunk_out_of_order");
+    throw new UploadError(413, "upload_overflow");
+  }
+
+  try {
+    await fs.appendFile(session.temp_path, buffer);
+  } catch (e) {
+    getDb()
+      .prepare(
+        `UPDATE upload_sessions SET received_chunks = received_chunks - 1, received_bytes = received_bytes - ? WHERE id = ?`
+      )
+      .run(buffer.length, id);
+    throw e;
+  }
 
   return getUploadSession(id)!;
 }
@@ -122,16 +139,35 @@ export async function completeUploadSession(id: string): Promise<UploadSession> 
   const session = getUploadSession(id);
   if (!session) throw new UploadError(404, "upload_not_found");
   if (session.status === "complete") return session;
-  if (session.status !== "uploading") throw new UploadError(409, `upload_${session.status}`);
-  if (session.received_chunks !== session.total_chunks || session.received_bytes !== session.size) {
+
+  // Atomically transition uploading -> completing so only one caller renames.
+  const claim = getDb()
+    .prepare(
+      `UPDATE upload_sessions SET status = 'completing', updated_at = datetime('now')
+       WHERE id = ? AND status = 'uploading' AND received_chunks = total_chunks AND received_bytes = size`
+    )
+    .run(id);
+
+  if (claim.changes === 0) {
+    const s = getUploadSession(id)!;
+    if (s.status === "complete") return s;
+    if (s.status === "completing") throw new UploadError(409, "upload_completing");
+    if (s.status !== "uploading") throw new UploadError(409, `upload_${s.status}`);
     throw new UploadError(409, "upload_incomplete");
   }
 
   const ext = path.extname(session.filename);
   const finalDir = path.join(dataDir(), "uploads", session.subject_id);
   const finalPath = path.join(finalDir, `${session.id}${ext}`);
-  await fs.mkdir(finalDir, { recursive: true });
-  await fs.rename(session.temp_path, finalPath);
+  try {
+    await fs.mkdir(finalDir, { recursive: true });
+    await fs.rename(session.temp_path, finalPath);
+  } catch (e) {
+    getDb()
+      .prepare("UPDATE upload_sessions SET status = 'uploading', updated_at = datetime('now') WHERE id = ?")
+      .run(id);
+    throw e;
+  }
 
   getDb()
     .prepare("UPDATE upload_sessions SET status = 'complete', updated_at = datetime('now') WHERE id = ?")

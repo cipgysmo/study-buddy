@@ -22,7 +22,12 @@
     "admin": "Admin",
     "settings": "Settings",
     "arena": "Arena",
-    "rewards": "Rewards"
+    "rewards": "Rewards",
+    "sectionStudy": "Study",
+    "sectionPractice": "Practice",
+    "sectionProgress": "Progress",
+    "sectionTools": "Tools",
+    "sectionManage": "Manage"
   },
   "Activities": {
     "title": "Activities",

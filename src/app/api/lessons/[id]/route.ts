@@ -13,6 +13,7 @@ export async function GET(_req: Request, ctx: Ctx) {
 
 export async function DELETE(_req: Request, ctx: Ctx) {
   const { id } = await ctx.params;
+  if (!getLesson(id)) return Response.json({ error: "not_found" }, { status: 404 });
   deleteLesson(id);
   return Response.json({ ok: true });
 }

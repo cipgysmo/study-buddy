@@ -1,8 +1,10 @@
 import { getDb } from "./db";
+import { dayKeyInZone, localToday } from "./timezone";
 
 // --- star economy -----------------------------------------------------------
 // Stars are derived from real activity so no backfill or extra bookkeeping is
 // needed. Each source has a per-event value; a daily cap prevents farming.
+// Activity is bucketed by the configured timezone's calendar day, not UTC.
 
 const STAR_VALUE: Record<string, number> = {
   review: 1, // one flashcard review
@@ -16,39 +18,33 @@ const STAR_VALUE: Record<string, number> = {
 };
 const DAILY_CAP = 120;
 
-function isoWeekStart(now = new Date()): string {
-  const d = new Date(now);
-  const day = (d.getUTCDay() + 6) % 7; // Monday = 0
-  d.setUTCDate(d.getUTCDate() - day);
-  return d.toISOString().slice(0, 10);
-}
-
-interface DayRow {
-  day: string;
+interface Event {
+  day: string; // local calendar day (YYYY-MM-DD)
   kind: string;
-  n: number;
 }
 
-function collectDayRows(): DayRow[] {
+function collectEvents(): Event[] {
   const db = getDb();
-  const rows: DayRow[] = [];
+  const events: Event[] = [];
   const add = (sql: string) => {
-    for (const r of db.prepare(sql).all() as { day: string; kind: string; n: number }[]) {
-      rows.push({ day: r.day, kind: r.kind, n: r.n });
+    for (const r of db.prepare(sql).all() as { ts: string; kind: string }[]) {
+      events.push({ day: dayKeyInZone(r.ts), kind: r.kind });
     }
   };
-  add(
-    "SELECT substr(reviewed_at,1,10) day, 'review' kind, COUNT(*) n FROM review_logs GROUP BY day"
-  );
-  add(
-    "SELECT substr(created_at,1,10) day, kind, COUNT(*) n FROM activity_attempts GROUP BY day, kind"
-  );
-  add(
-    "SELECT substr(created_at,1,10) day, 'chat' kind, COUNT(*) n FROM chat_messages WHERE role='user' GROUP BY day"
-  );
-  add("SELECT substr(created_at,1,10) day, 'material' kind, COUNT(*) n FROM materials GROUP BY day");
-  add("SELECT substr(created_at,1,10) day, 'lesson' kind, COUNT(*) n FROM lessons GROUP BY day");
-  return rows;
+  add("SELECT reviewed_at ts, 'review' kind FROM review_logs");
+  add("SELECT created_at ts, kind FROM activity_attempts");
+  add("SELECT created_at ts, 'chat' kind FROM chat_messages WHERE role='user'");
+  add("SELECT created_at ts, 'material' kind FROM materials");
+  add("SELECT created_at ts, 'lesson' kind FROM lessons");
+  return events;
+}
+
+/** Monday of the current local week as YYYY-MM-DD. */
+function localWeekStart(today: string): string {
+  const d = new Date(`${today}T12:00:00Z`);
+  const dow = (d.getUTCDay() + 6) % 7; // Monday = 0
+  d.setUTCDate(d.getUTCDate() - dow);
+  return d.toISOString().slice(0, 10);
 }
 
 export interface StarsSummary {
@@ -61,37 +57,42 @@ export interface StarsSummary {
   breakdown: { kind: string; stars: number }[];
 }
 
-function starsFor(kind: string, n: number): number {
-  return n * (STAR_VALUE[kind] ?? 2);
+function starsFor(kind: string): number {
+  return STAR_VALUE[kind] ?? 2;
 }
 
 export function getStars(): StarsSummary {
-  const rows = collectDayRows();
-  const today = new Date().toISOString().slice(0, 10);
-  const weekStart = isoWeekStart();
+  const events = collectEvents();
+  const today = localToday();
+  const weekStart = localWeekStart(today);
 
-  // Group by day so the daily cap can be applied to the summed total.
-  const byDay = new Map<string, number>();
-  for (const r of rows) {
-    const stars = starsFor(r.kind, r.n);
-    byDay.set(r.day, (byDay.get(r.day) ?? 0) + stars);
+  // Count events per (local day, kind) so the daily cap applies to the total.
+  const dayKind = new Map<string, Map<string, number>>();
+  for (const e of events) {
+    const m = dayKind.get(e.day) ?? new Map<string, number>();
+    m.set(e.kind, (m.get(e.kind) ?? 0) + 1);
+    dayKind.set(e.day, m);
   }
+
   let allTime = 0;
   let weekly = 0;
   let todayStars = 0;
-  for (const [day, raw] of byDay) {
+  const weekByKind = new Map<string, number>();
+
+  for (const [day, kinds] of dayKind) {
+    let raw = 0;
+    for (const [kind, n] of kinds) raw += n * starsFor(kind);
     const capped = Math.min(raw, DAILY_CAP);
     allTime += capped;
     if (day >= weekStart) weekly += capped;
     if (day === today) todayStars = capped;
+    if (day >= weekStart) {
+      for (const [kind, n] of kinds) {
+        weekByKind.set(kind, (weekByKind.get(kind) ?? 0) + n * starsFor(kind));
+      }
+    }
   }
 
-  // Weekly breakdown by kind (uncapped per kind; informational only).
-  const weekByKind = new Map<string, number>();
-  for (const r of rows) {
-    if (r.day < weekStart) continue;
-    weekByKind.set(r.kind, (weekByKind.get(r.kind) ?? 0) + starsFor(r.kind, r.n));
-  }
   const breakdown = [...weekByKind.entries()]
     .filter(([, v]) => v > 0)
     .map(([kind, stars]) => ({ kind, stars }))
@@ -117,17 +118,16 @@ export interface DailyChallenge {
 }
 
 export function getDailyChallenges(): DailyChallenge[] {
-  const db = getDb();
-  const today = new Date().toISOString().slice(0, 10);
-  const one = (sql: string) => (db.prepare(sql).get(today) as { n: number } | undefined)?.n ?? 0;
+  const today = localToday();
+  const events = collectEvents().filter((e) => e.day === today);
 
-  const reviews = one("SELECT COUNT(*) n FROM review_logs WHERE substr(reviewed_at,1,10)=?");
-  const questions = one(
-    "SELECT COUNT(*) n FROM chat_messages WHERE role='user' AND substr(created_at,1,10)=?"
-  );
-  const activities = one(
-    "SELECT COUNT(DISTINCT kind) n FROM activity_attempts WHERE substr(created_at,1,10)=?"
-  );
+  const reviews = events.filter((e) => e.kind === "review").length;
+  const questions = events.filter((e) => e.kind === "chat").length;
+  const activities = new Set(
+    events
+      .filter((e) => e.kind === "quiz" || e.kind === "typed" || e.kind === "exercise" || e.kind === "truefalse")
+      .map((e) => e.kind)
+  ).size;
 
   const mk = (id: string, current: number, target: number): DailyChallenge => ({
     id,

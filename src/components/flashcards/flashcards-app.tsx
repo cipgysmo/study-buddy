@@ -50,10 +50,15 @@ export function FlashcardsApp({
   const [due, setDue] = useState<Card[]>(initialDue);
   const [revealed, setRevealed] = useState(false);
   const loadDue = useCallback(async (sid: string) => {
-    const r = await fetch(`/api/flashcards/due?subjectId=${sid || ""}`);
-    const d = await r.json();
-    setDue(d.flashcards.map((c: Card) => ({ id: c.id, front: c.front, back: c.back })));
-    setRevealed(false);
+    try {
+      const r = await fetch(`/api/flashcards/due?subjectId=${sid || ""}`);
+      if (!r.ok) return;
+      const d = (await r.json()) as { flashcards?: Card[] };
+      setDue((d.flashcards ?? []).map((c) => ({ id: c.id, front: c.front, back: c.back })));
+      setRevealed(false);
+    } catch {
+      /* keep current list */
+    }
   }, []);
 
   useJob(jobId, (settled) => {

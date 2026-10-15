@@ -2,7 +2,7 @@ import { assignMaterialToColumn, resolveBoardColumn } from "@/lib/board";
 import { maxUploadChunkBytes } from "@/lib/env";
 import { enqueueJob } from "@/lib/jobs";
 import "@/lib/job-handlers";
-import { addMaterialPending, linkMaterialJob, listMaterials } from "@/lib/subjects";
+import { addMaterialPending, getSubject, linkMaterialJob, listMaterials } from "@/lib/subjects";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +17,7 @@ export async function GET(_req: Request, ctx: Ctx) {
 
 export async function POST(req: Request, ctx: Ctx) {
   const { id } = await ctx.params;
+  if (!getSubject(id)) return Response.json({ error: "subject_not_found" }, { status: 404 });
   const contentLength = Number(req.headers.get("content-length") ?? "0");
   if (Number.isFinite(contentLength) && contentLength > MAX_DIRECT_BODY_BYTES) {
     return Response.json({ error: "use_chunked_upload" }, { status: 413 });

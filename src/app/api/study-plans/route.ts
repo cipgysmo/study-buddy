@@ -29,6 +29,13 @@ export async function POST(req: Request) {
   if (!body.subjectId || !body.examDate) {
     return Response.json({ error: "subjectId_and_examDate_required" }, { status: 400 });
   }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(body.examDate)) {
+    return Response.json({ error: "invalid_examDate" }, { status: 400 });
+  }
+  const { getSubject } = await import("@/lib/subjects");
+  if (!getSubject(body.subjectId)) {
+    return Response.json({ error: "subject_not_found" }, { status: 404 });
+  }
   const topicIds = cleanStringArray(body.topicIds).length
     ? cleanStringArray(body.topicIds)
     : resolveTopicIds(body.subjectId, cleanStringArray(body.topicNames));

@@ -2,6 +2,7 @@ import { fsrs, type CardInput } from "ts-fsrs";
 import { getDb } from "./db";
 import { dueFlashcards, listFlashcards } from "./flashcards";
 import { listSubjects } from "./subjects";
+import { dayKeyInZone, dayLabel, lastNDaysLocal } from "./timezone";
 
 const retentionScheduler = fsrs();
 
@@ -54,18 +55,11 @@ function predictedRetention(): number | null {
 }
 
 function dayKey(iso: string): string {
-  return iso.slice(0, 10);
+  return dayKeyInZone(iso);
 }
 
 function lastNDays(n: number): string[] {
-  const days: string[] = [];
-  const now = new Date();
-  for (let i = n - 1; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(now.getDate() - i);
-    days.push(d.toISOString().slice(0, 10));
-  }
-  return days;
+  return lastNDaysLocal(n);
 }
 
 export function getProgress(): ProgressData {
@@ -104,11 +98,11 @@ export function getProgress(): ProgressData {
 
   const activeDays = new Set(dayCounts.keys());
   const cursor = new Date();
-  if (!activeDays.has(cursor.toISOString().slice(0, 10))) {
+  if (!activeDays.has(dayLabel(cursor))) {
     cursor.setDate(cursor.getDate() - 1);
   }
   let current = 0;
-  while (activeDays.has(cursor.toISOString().slice(0, 10))) {
+  while (activeDays.has(dayLabel(cursor))) {
     current++;
     cursor.setDate(cursor.getDate() - 1);
   }

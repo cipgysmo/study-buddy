@@ -2,12 +2,6 @@ import { randomUUID } from "node:crypto";
 import { chat, type ChatMessage } from "./llm";
 import { getDb } from "./db";
 
-export interface ArenaSide {
-  model: string;
-  answer: string;
-  error?: string;
-}
-
 export interface ArenaResult {
   id: string;
   prompt: string;

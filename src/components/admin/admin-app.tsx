@@ -33,6 +33,7 @@ interface MaterialOption {
   filename: string;
 }
 interface TemplateItemDraft {
+  key: string;
   type: AssignmentType;
   title: string;
   description: string;
@@ -70,8 +71,10 @@ function emptyAssignmentForm() {
   };
 }
 
+let templateItemSeq = 0;
 function emptyTemplateItem(): TemplateItemDraft {
   return {
+    key: `ti-${++templateItemSeq}`,
     type: "custom",
     title: "",
     description: "",
@@ -498,7 +501,7 @@ export function AdminApp({
                 </Button>
               </div>
               {templateItems.map((item, index) => (
-                <div key={index} className="rounded-xl border border-border bg-background p-3">
+                <div key={item.key} className="rounded-xl border border-border bg-background p-3">
                   <div className="grid gap-2 sm:grid-cols-2">
                     <Select
                       value={item.type}

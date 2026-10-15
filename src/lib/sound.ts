@@ -9,10 +9,6 @@ let muted = false;
 let ctx: AudioContext | null = null;
 const buffers = new Map<SoundName, AudioBuffer>();
 
-export function setSoundMuted(m: boolean): void {
-  muted = m;
-}
-
 /** Fetch the persisted sound preference and apply it. Safe to call repeatedly. */
 export async function loadSoundSetting(): Promise<void> {
   try {
